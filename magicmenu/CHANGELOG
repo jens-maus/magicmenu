@@ -1,5 +1,15 @@
+2001-11-15  Stephan Rupprecht <mail@stephan-rupprecht.de>
+  
+  * fixed PPC support (didn't work well on some systems).
+  * fixed the "Checkmark leaves garbage" bug reported by Andreas
+    Kürzinger. At least I hope so (no answer yet).
+  * bumped version to 2.33.
+  * MagicMenuPrefs: fixed compiler specific problem with the
+    displayhook of the slidergadget.
+
 2001-10-22  Stephan Rupprecht <mail@stephan-rupprecht.de>
-  * added ENABLEPPC tooltype.
+  
+  * added ENABLEPPC tooltype (2.32 beta release).
 
 2001-10-17  Stephan Rupprecht <mail@stephan-rupprecht.de>
 

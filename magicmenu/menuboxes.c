@@ -422,7 +422,7 @@ LocalDrawImage(
 				SetFgPen(rp,image->PlaneOnOff);
 				SetDrawMode(rp,JAM1);
 
-				RectFill(rp,x,y,x+image->Width-1,y+image->Height);
+				RectFill(rp,x,y,x+image->Width-1,y+image->Height-1); // Stephan
 
 				SetFgPen(rp,pen);
 				SetDrawMode(rp,mode);

@@ -3,7 +3,7 @@
 @author "Olaf Barthel"
 @node main "MagicMenu"
 
-                               MagicMenu 2.32
+                               MagicMenu 2.33
                      A utility to enhance the Intuition
                             pull-down menu system
 
@@ -1275,6 +1275,15 @@ MagicMenu 2.32 (17.10.2001)
   the "ENABLEPPC=NO" tooltype. Of course, this version also works without a
   PPC. Responsible for PPC support is Stephan, so please send bugreports
   to <stephan@magicmenu.de> if you experience any problems with it.
+
+
+MagicMenu 2.33 (16.10.2001)
+
+- fixed PPC support (didn't work well on some systems).
+- fixed the "Checkmark leaves garbage" bug reported by Andreas
+  Kürzinger. At least I hope so (no answer yet).
+- MagicMenuPrefs: fixed compiler specific problem with the
+  displayhook of the slidergadget (color precision).
 
 @endnode
 

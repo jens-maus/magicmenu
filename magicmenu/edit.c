@@ -255,6 +255,10 @@ struct LoadThatColour
 extern struct ExecBase	*SysBase;
 extern struct Library	*DOSBase;
 
+#ifdef __STORMGCC__
+extern LONG PrecisionDispFuncAsm(struct Gadget *, WORD);
+#endif
+
 /******************************************************************************/
 
 struct IntuitionBase	*IntuitionBase;
@@ -519,7 +523,7 @@ GetString(ULONG ID)
 /******************************************************************************/
 
 LONG SAVEDS STDARGS
-PrecisionDispFunc(struct Gadget *UnusedGadget,WORD Offset)
+PrecisionDispFunc( struct Gadget *UnusedGadget, WORD Offset )
 {
 	LONG Which;
 
@@ -2312,7 +2316,11 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Chars,		10,
 							GTSL_Min,		PRECISION_EXACT,
 							GTSL_Max,		PRECISION_GUI,
+#ifdef __STORMGCC__
+							GTSL_DispFunc,		PrecisionDispFuncAsm, /* gnuc holt stets langwörter vom stack */
+#else
 							GTSL_DispFunc,		PrecisionDispFunc,
+#endif
 							GTSL_LevelFormat,	"%s",
 							LASL_FullCheck,		TRUE,
 						TAG_DONE);

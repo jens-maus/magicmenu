@@ -1720,9 +1720,25 @@ AllocateShadowBuffer(LONG width,LONG height)
 
 	if(ShadowBuffer == NULL || ShadowBufferSize < bytesNeeded)
 	{
-		FreeVecPooled(ShadowBuffer);
+#ifdef __MIXEDBINARY__
+		if (PowerPCBase != NULL)
+		{
+			if( ShadowBuffer != NULL )
+				FreeVecPooled(((ULONG *)ShadowBuffer)[-1]);
 
-		ShadowBuffer = AllocVecPooled(bytesNeeded,MEMF_ANY);
+			if( ShadowBuffer = AllocVecPooled(bytesNeeded+56,MEMF_PUBLIC) )
+			{
+				ULONG	p = (((ULONG)ShadowBuffer)+39)&0xffffffe0;
+				((ULONG *)p)[-1] = ShadowBuffer;
+				ShadowBuffer = p;
+			}
+		}
+		else
+#endif
+		{
+			FreeVecPooled(ShadowBuffer);
+			ShadowBuffer = AllocVecPooled(bytesNeeded,MEMF_ANY);
+		}
 		if(ShadowBuffer != NULL)
 			ShadowBufferSize = bytesNeeded;
 	}
@@ -1892,9 +1908,8 @@ TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 }
 
 #ifdef __MIXEDBINARY__
-extern VOID BlurAndTintPixelBufferPPC(UBYTE * pix,ULONG pixfmt, ULONG mod,LONG width,LONG height,int r,int g,int b);
+extern VOID BlurAndTintPixelBufferPPC(UBYTE * pix,LONG width,LONG height,int r,int g,int b);
 #endif
-extern VOID BlurAndTintPixelBuffer(UBYTE * pix,ULONG pixfmt, ULONG mod,LONG width,LONG height,int r,int g,int b);
 
 struct BackgroundCover *
 CreateBackgroundCover(
@@ -1941,35 +1956,27 @@ CreateBackgroundCover(
 
 					return bgc;
 				}
+#if 0
+				BltBitMap( friend, left,top, bgc->bgc_BitMap, 0,0, width,height, 0xc0, 0xff, NULL );
+				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+#else
+				rp.BitMap = friend;
+				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
+#endif
 #ifdef __MIXEDBINARY__
 				if(PowerPCBase != NULL)
 				{
-					APTR	 handle;
-					ULONG	 mod, pixfmt;
-					UBYTE *baddr;
-
-					BltBitMap(friend,left,top,bgc->bgc_BitMap,0,0,width,height,MINTERM_COPY,~0,NULL);
-
-					if(handle = LockBitMapTags(bgc->bgc_BitMap,
-						LBMI_PIXFMT, &pixfmt,
-						LBMI_BYTESPERROW, &mod,
-						LBMI_BASEADDRESS, &baddr,
-						TAG_DONE))
-					{
-						BlurAndTintPixelBufferPPC(baddr,pixfmt,mod,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
-						UnLockBitMap(handle);
-					}
+					BlurAndTintPixelBufferPPC(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
 				}
 				else
 #endif
 				{
-					rp.BitMap = friend;
-					ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
 					BlurPixelBuffer(ShadowBuffer,width,height);
 					TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
-					rp.BitMap = bgc->bgc_BitMap;
-					WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
 				}
+
+				rp.BitMap = bgc->bgc_BitMap;
+				WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
 			}
 			else
 			{
