@@ -1210,24 +1210,38 @@ struct Menu *MenStrip;
 struct Rectangle MenDispClip;
 struct RastPort ScrRPort;
 struct TextAttr MenTextAttr;
-struct Image *CheckImage, *NoCheckImage;
-struct Image *MXImage, *NoMXImage;
-struct Image *CommandImage, *SubArrowImage;
-struct Image *CommandImageGhosted, *CheckImageGhosted;
-struct Image *SubArrowImageGhosted;
-struct Image *CheckImageActive, *NoCheckImageActive;
-struct Image *CommandImageActive, *SubArrowImageActive;
-struct Image *CheckImageRmp, *NoCheckImageRmp;
-struct Image *CommandImageRmp, *SubArrowImageRmp;
-struct Image *CommandImageGhostedRmp, *CheckImageGhostedRmp;
-struct Image *SubArrowImageGhostedRmp;
 
-struct Image *MXImageRmp;
-struct Image *NoMXImageRmp;
-struct Image *MXImageGhosted;
-struct Image *NoMXImageGhosted;
-struct Image *MXImageActive;
-struct Image *NoMXImageActive;
+struct Image * CheckImage;
+struct Image * CheckImageActive;
+struct Image * CheckImageGhosted;
+struct Image * CheckImageGhostedRmp;
+struct Image * CheckImageRmp;
+
+struct Image * CommandImage;
+struct Image * CommandImageActive;
+struct Image * CommandImageGhosted;
+struct Image * CommandImageGhostedRmp;
+struct Image * CommandImageRmp;
+
+struct Image * MXImage;
+struct Image * MXImageActive;
+struct Image * MXImageGhosted;
+struct Image * MXImageRmp;
+
+struct Image * NoCheckImage;
+struct Image * NoCheckImageActive;
+struct Image * NoCheckImageRmp;
+
+struct Image * NoMXImage;
+struct Image * NoMXImageActive;
+struct Image * NoMXImageGhosted;
+struct Image * NoMXImageRmp;
+
+struct Image * SubArrowImage;
+struct Image * SubArrowImageActive;
+struct Image * SubArrowImageGhosted;
+struct Image * SubArrowImageGhostedRmp;
+struct Image * SubArrowImageRmp;
 
 ULONG IBaseLock;
 
@@ -1237,3 +1251,7 @@ char ProgName[32];
 /******************************************************************************/
 
 UWORD Crosshatch[2] = {0x5555, 0xAAAA};
+
+/******************************************************************************/
+
+BOOL GlobalPopUp;

@@ -1,7 +1,7 @@
 /*
 **   $Id$
 **
-**   :ts=8
+**   :ts=4
 */
 
 /*#define DEBUG*/
@@ -54,58 +54,58 @@ ULONG __asm CallScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(
 BOOL
 MMCheckParentScreen (struct Window *Window,BOOL PlayItSafe)
 {
-  BOOL Wait;
+	BOOL Wait;
 
-  SafeObtainSemaphoreShared (GetPointerSemaphore);
+	SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenScr == Window->WScreen) && (PlayItSafe || IsBlocking) && (FindTask(NULL) != ThisTask);
+	Wait = (MenScr == Window->WScreen) && (PlayItSafe || IsBlocking) && (FindTask(NULL) != ThisTask);
 
-  ReleaseSemaphore (GetPointerSemaphore);
+	ReleaseSemaphore (GetPointerSemaphore);
 
-  if (!Wait)
-    return (FALSE);
+	if (!Wait)
+		return (FALSE);
 
-  ObtainSemaphore (MenuActSemaphore);
+	ObtainSemaphore (MenuActSemaphore);
 
-  return (TRUE);
+	return (TRUE);
 }
 
 BOOL
 MMCheckScreen (void)
 {
-  BOOL Wait;
+	BOOL Wait;
 
-  SafeObtainSemaphoreShared (GetPointerSemaphore);
+	SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenScr != NULL) && (FindTask(NULL) != ThisTask);
+	Wait = (MenScr != NULL) && (FindTask(NULL) != ThisTask);
 
-  ReleaseSemaphore (GetPointerSemaphore);
+	ReleaseSemaphore (GetPointerSemaphore);
 
-  if (!Wait)
-    return (FALSE);
+	if (!Wait)
+		return (FALSE);
 
-  ObtainSemaphore (MenuActSemaphore);
+	ObtainSemaphore (MenuActSemaphore);
 
-  return (TRUE);
+	return (TRUE);
 }
 
 BOOL
 MMCheckWindow (struct Window * Win)
 {
-  BOOL Wait;
+	BOOL Wait;
 
-  SafeObtainSemaphoreShared (GetPointerSemaphore);
+	SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenWin == Win) && (FindTask(NULL) != ThisTask);
+	Wait = (MenWin == Win) && (FindTask(NULL) != ThisTask);
 
-  ReleaseSemaphore (GetPointerSemaphore);
+	ReleaseSemaphore (GetPointerSemaphore);
 
-  if (!Wait)
-    return (FALSE);
+	if (!Wait)
+		return (FALSE);
 
-  ObtainSemaphore (MenuActSemaphore);
+	ObtainSemaphore (MenuActSemaphore);
 
-  return (TRUE);
+	return (TRUE);
 }
 
 /*****************************************************************************************/
@@ -113,333 +113,342 @@ MMCheckWindow (struct Window * Win)
 ULONG __asm __saveds
 MMOpenWindow (REG(a0) struct NewWindow * NW)
 {
-  ULONG Win;
+	ULONG Win;
 
-  D(("|%s| in OpenWindow patch",FindTask (NULL)->tc_Node.ln_Name));
+	D(("|%s| in OpenWindow patch",FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckScreen ())
-  {
-    Win = CallOpenWindow (NW, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Win = CallOpenWindow (NW, IntuitionBase);
+	if (MMCheckScreen ())
+	{
+		Win = CallOpenWindow (NW, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Win = CallOpenWindow (NW, IntuitionBase);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  if (Win)
-    RegisterGlyphs ((struct Window *) Win, NW, NULL);
+	if (Win)
+		RegisterGlyphs ((struct Window *) Win, NW, NULL);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  return (Win);
+	return (Win);
 }
 
 ULONG __asm __saveds
-MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
-                     REG(a1) struct TagItem * TI)
+MMOpenWindowTagList (
+	REG(a0) struct NewWindow * NW,
+	REG(a1) struct TagItem * TI)
 {
-  ULONG Win;
+	ULONG Win;
 
-  D(("|%s| in OpenWindowTagList patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckScreen ())
-  {
-    Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
+	D(("|%s| in OpenWindowTagList patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckScreen ())
+	{
+		Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  if (Win && (FindTask(NULL) != ThisTask))
-    RegisterGlyphs ((struct Window *) Win, NW, TI);
+	if (Win && (FindTask(NULL) != ThisTask))
+		RegisterGlyphs ((struct Window *) Win, NW, TI);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  return (Win);
+	return (Win);
 }
 
 ULONG __asm __saveds
 MMClearMenuStrip (REG(a0) struct Window * W)
 {
-  ULONG Res;
+	ULONG Res;
 
-  D(("|%s| in ClearMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckWindow (W))
-  {
-    Res = CallClearMenuStrip (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-    return (Res);
-  }
-  else
-  {
-    return (CallClearMenuStrip (W, IntuitionBase));
-  }
+	D(("|%s| in ClearMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckWindow (W))
+	{
+		Res = CallClearMenuStrip (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+		return (Res);
+	}
+	else
+	{
+		return (CallClearMenuStrip (W, IntuitionBase));
+	}
 }
 
 ULONG __asm __saveds
-MMSetMenuStrip (REG(a0) struct Window * W,
-                REG(a1) struct Menu * MI)
+MMSetMenuStrip (
+	REG(a0) struct Window * W,
+	REG(a1) struct Menu * MI)
 {
-  ULONG Res;
+	ULONG Res;
 
-  D(("|%s| in SetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckWindow (W))
-  {
-    Res = CallSetMenuStrip (W, MI, IntuitionBase);
-    ClearRemember (W);
-    ReleaseSemaphore (MenuActSemaphore);
-    return (Res);
-  }
-  else
-  {
-    Res = CallSetMenuStrip (W, MI, IntuitionBase);
-    ClearRemember (W);
-    return (Res);
-  }
+	D(("|%s| in SetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckWindow (W))
+	{
+		Res = CallSetMenuStrip (W, MI, IntuitionBase);
+		ClearRemember (W);
+		ReleaseSemaphore (MenuActSemaphore);
+		return (Res);
+	}
+	else
+	{
+		Res = CallSetMenuStrip (W, MI, IntuitionBase);
+		ClearRemember (W);
+		return (Res);
+	}
 }
 
 ULONG __asm __saveds
-MMResetMenuStrip (REG(a0) struct Window * W,
-                  REG(a1) struct Menu * MI)
+MMResetMenuStrip (
+	REG(a0) struct Window * W,
+	REG(a1) struct Menu * MI)
 {
-  ULONG Res;
+	ULONG Res;
 
-  D(("|%s| in ResetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckWindow (W))
-  {
-    Res = CallResetMenuStrip (W, MI, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-    return (Res);
-  }
-  else
-  {
-    Res = CallResetMenuStrip (W, MI, IntuitionBase);
-    return (Res);
-  }
+	D(("|%s| in ResetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckWindow (W))
+	{
+		Res = CallResetMenuStrip (W, MI, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+		return (Res);
+	}
+	else
+	{
+		Res = CallResetMenuStrip (W, MI, IntuitionBase);
+		return (Res);
+	}
 }
 
 ULONG __asm __saveds
 MMCloseWindow (REG(a0) struct Window * W)
 {
-  ULONG Res;
-  BOOL CallSelf;
+	ULONG Res;
+	BOOL CallSelf;
 
-  CallSelf = (FindTask(NULL) == ThisTask);
+	CallSelf = (FindTask(NULL) == ThisTask);
 
-  D(("%s| in CloseWindow patch", FindTask (NULL)->tc_Node.ln_Name));
+	D(("%s| in CloseWindow patch", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckScreen ())
-  {
-    ClearRemember (W);
-    Res = CallCloseWindow (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-  {
-    if(!CallSelf)
-      ClearRemember (W);
-    Res = CallCloseWindow (W, IntuitionBase);
-  }
+	if (MMCheckScreen ())
+	{
+		ClearRemember (W);
+		Res = CallCloseWindow (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+	{
+		if(!CallSelf)
+			ClearRemember (W);
+		Res = CallCloseWindow (W, IntuitionBase);
+	}
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  if(!CallSelf)
-    DiscardWindowGlyphs (W);
+	if(!CallSelf)
+		DiscardWindowGlyphs (W);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  return (Res);
+	return (Res);
 }
 
 ULONG __asm __saveds
 MMActivateWindow (REG(a0) struct Window * W)
 {
-  ULONG Result;
+	ULONG Result;
 
-  D(("|%s| in ActivateWindow patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (AttemptSemaphore (MenuActSemaphore))
-  {
-    Result = CallActivateWindow (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-    return (Result);
-  }
-  else
-    return (FALSE);
+	D(("|%s| in ActivateWindow patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (AttemptSemaphore (MenuActSemaphore))
+	{
+		Result = CallActivateWindow (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+		return (Result);
+	}
+	else
+		return (FALSE);
 }
 
 ULONG __asm __saveds
 MMWindowToFront (REG(a0) struct Window * W)
 {
-  ULONG Result;
+	ULONG Result;
 
-  /* Bug-Kompatibilität :( */
-  if(!RealWindow(W))
-    return(FALSE);
+	/* Bug-Kompatibilität :( */
+	if(!RealWindow(W))
+		return(FALSE);
 
-  D(("|%s| in WindowToFront patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckParentScreen (W, TRUE))
-  {
-    Result = CallWindowToFront (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallWindowToFront (W, IntuitionBase);
+	D(("|%s| in WindowToFront patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckParentScreen (W, TRUE))
+	{
+		Result = CallWindowToFront (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallWindowToFront (W, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
 MMWindowToBack (REG(a0) struct Window * W)
 {
-  ULONG Result;
+	ULONG Result;
 
-  D(("|%s| in WindowToBack patch", FindTask (NULL)->tc_Node.ln_Name));
+	D(("|%s| in WindowToBack patch", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W, TRUE))
-  {
-    Result = CallWindowToBack (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallWindowToBack (W, IntuitionBase);
+	if (MMCheckParentScreen (W, TRUE))
+	{
+		Result = CallWindowToBack (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallWindowToBack (W, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
-MMModifyIDCMP (REG(a0) struct Window * window,
-               REG(d0) ULONG flags)
+MMModifyIDCMP (
+	REG(a0) struct Window * window,
+	REG(d0) ULONG flags)
 {
-  ULONG Result;
+	ULONG Result;
 
-  D(("|%s| in ModifyIDCMP patch",FindTask (NULL)->tc_Node.ln_Name));
+	D(("|%s| in ModifyIDCMP patch",FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckWindow (window))
-  {
-    Result = CallModifyIDCMP (window, flags, IntuitionBase);
+	if (MMCheckWindow (window))
+	{
+		Result = CallModifyIDCMP (window, flags, IntuitionBase);
 
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallModifyIDCMP (window, flags, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallModifyIDCMP (window, flags, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
-MMOffMenu (REG(a0) struct Window * window,
-               REG(d0) ULONG number)
+MMOffMenu (
+	REG(a0) struct Window * window,
+	REG(d0) ULONG number)
 {
-  ULONG Result;
+	ULONG Result;
 
-  D(("%s| in OffMenu patch", FindTask (NULL)->tc_Node.ln_Name));
+	D(("%s| in OffMenu patch", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckWindow (window))
-  {
-    Result = CallOffMenu (window, number, IntuitionBase);
+	if (MMCheckWindow (window))
+	{
+		Result = CallOffMenu (window, number, IntuitionBase);
 
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallOffMenu (window, number, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallOffMenu (window, number, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
-MMOnMenu (REG(a0) struct Window * window,
-               REG(d0) ULONG number)
+MMOnMenu (
+	REG(a0) struct Window * window,
+	REG(d0) ULONG number)
 {
-  ULONG Result;
+	ULONG Result;
 
-  D(("|%s| in OnMenu patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckWindow (window))
-  {
-    Result = CallOnMenu (window, number, IntuitionBase);
+	D(("|%s| in OnMenu patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckWindow (window))
+	{
+		Result = CallOnMenu (window, number, IntuitionBase);
 
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallOnMenu (window, number, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallOnMenu (window, number, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 struct RastPort *__asm __saveds
 MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
 {
-  D(("|%s| in ObtainGIRPort patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (!AktPrefs.mmp_NonBlocking && GInfo)  /* GInfo kann tatsächlich (!) NULL sein. */
-  {
-    SafeObtainSemaphoreShared (GetPointerSemaphore);
+	D(("|%s| in ObtainGIRPort patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (!AktPrefs.mmp_NonBlocking && GInfo)  /* GInfo kann tatsächlich (!) NULL sein. */
+	{
+		SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-    if (MenScr == GInfo->gi_Screen)
-    {
-      struct RastPort *Result;
+		if (MenScr == GInfo->gi_Screen)
+		{
+			struct RastPort *Result;
 
-      ReleaseSemaphore (GetPointerSemaphore);
+			ReleaseSemaphore (GetPointerSemaphore);
 
-      if (AttemptSemaphore (MenuActSemaphore))
-      {
-        Result = CallObtainGIRPort (GInfo, IntuitionBase);
+			if (AttemptSemaphore (MenuActSemaphore))
+			{
+				Result = CallObtainGIRPort (GInfo, IntuitionBase);
 
-        ReleaseSemaphore (MenuActSemaphore);
-      }
-      else
-        Result = NULL;
+				ReleaseSemaphore (MenuActSemaphore);
+			}
+			else
+				Result = NULL;
 
-      return (Result);
-    }
+			return (Result);
+		}
 
-    ReleaseSemaphore (GetPointerSemaphore);
-  }
+		ReleaseSemaphore (GetPointerSemaphore);
+	}
 
-  return (CallObtainGIRPort (GInfo, IntuitionBase));
+	return (CallObtainGIRPort (GInfo, IntuitionBase));
 }
 
 ULONG __asm __saveds
 MMRefreshWindowFrame (REG(a0) struct Window * W)
 {
-  ULONG Result;
+	ULONG Result;
 
-  /* Bug-Kompatibilität :( */
-  if(!RealWindow(W))
-    return(FALSE);
+	/* Bug-Kompatibilität :( */
+	if(!RealWindow(W))
+		return(FALSE);
 
-  D(("|%s| in RefreshWindowFrame patch", FindTask (NULL)->tc_Node.ln_Name));
-  if (MMCheckParentScreen (W, FALSE))
-  {
-    Result = CallRefreshWindowFrame (W, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallRefreshWindowFrame (W, IntuitionBase);
+	D(("|%s| in RefreshWindowFrame patch", FindTask (NULL)->tc_Node.ln_Name));
+	if (MMCheckParentScreen (W, FALSE))
+	{
+		Result = CallRefreshWindowFrame (W, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallRefreshWindowFrame (W, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
-MMSetWindowTitles (REG(a0) struct Window * W, REG(a1) STRPTR WindowTitle, REG(a2) STRPTR ScreenTitle)
+MMSetWindowTitles (
+	REG(a0) struct Window * W,
+	REG(a1) STRPTR WindowTitle,
+	REG(a2) STRPTR ScreenTitle)
 {
-  ULONG Result;
+	ULONG Result;
 
-  /* Bug-Kompatibilität :( */
-  if(!RealWindow(W))
-    return(FALSE);
+	/* Bug-Kompatibilität :( */
+	if(!RealWindow(W))
+		return(FALSE);
 
-  D(("|%s| in SetWindowTitles patch", FindTask (NULL)->tc_Node.ln_Name));
+	D(("|%s| in SetWindowTitles patch", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W, FALSE))
-  {
-    Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-  }
-  else
-    Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
+	if (MMCheckParentScreen (W, FALSE))
+	{
+		Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
 
-  return (Result);
+	return (Result);
 }
 
 ULONG __asm __saveds
@@ -460,7 +469,9 @@ MMOpenScreen (REG(a0) struct NewScreen *NS)
 }
 
 ULONG __asm __saveds
-MMOpenScreenTagList (REG(a0) struct NewScreen *NS, REG(a1) struct TagItem *TI)
+MMOpenScreenTagList (
+	REG(a0) struct NewScreen *NS,
+	REG(a1) struct TagItem *TI)
 {
 	ULONG Scr;
 
@@ -528,7 +539,10 @@ MMScreenToBack (REG(a0) struct Screen *S)
 }
 
 ULONG __asm __saveds
-MMScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved)
+MMScreenDepth (
+	REG(a0) struct Screen *S,
+	REG(d0) ULONG flags,
+	REG(a1) reserved)
 {
 	ULONG rc;
 
@@ -545,13 +559,15 @@ MMScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved)
 }
 
 LONG __asm __saveds
-MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
+MMLendMenus (
+	REG(a0) struct Window *FromWindow,
+	REG(a1) struct Window *ToWindow)
 {
-  D(("|%s| in LendMenus patch", FindTask (NULL)->tc_Node.ln_Name));
+	D(("|%s| in LendMenus patch", FindTask (NULL)->tc_Node.ln_Name));
 
-  RegisterLending(FromWindow,ToWindow);
+	RegisterLending(FromWindow,ToWindow);
 
-  return (CallLendMenus (FromWindow, ToWindow, IntuitionBase));
+	return (CallLendMenus (FromWindow, ToWindow, IntuitionBase));
 }
 
 /*****************************************************************************************/
@@ -559,30 +575,30 @@ MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 VOID
 CreateBitMapFromImage (struct Image * Image, struct BitMap * BitMap)
 {
-  PLANEPTR Data;
-  ULONG Modulo;
-  LONG i, Mask;
+	PLANEPTR Data;
+	ULONG Modulo;
+	LONG i, Mask;
 
-  memset(BitMap,0,sizeof(*BitMap));
-  InitBitMap (BitMap, Image->Depth, Image->Width, Image->Height);
+	memset(BitMap,0,sizeof(*BitMap));
+	InitBitMap (BitMap, Image->Depth, Image->Width, Image->Height);
 
-  Modulo = BitMap->BytesPerRow * BitMap->Rows;
-  Data = (PLANEPTR) Image->ImageData;
+	Modulo = BitMap->BytesPerRow * BitMap->Rows;
+	Data = (PLANEPTR) Image->ImageData;
 
-  for (i = 0, Mask = 1; i < BitMap->Depth; i++, Mask += Mask)
-  {
-    if (Image->PlanePick & Mask)
-    {
-      BitMap->Planes[i] = Data;
+	for (i = 0, Mask = 1; i < BitMap->Depth; i++, Mask += Mask)
+	{
+		if (Image->PlanePick & Mask)
+		{
+			BitMap->Planes[i] = Data;
 
-      Data += Modulo;
-    }
-    else
-    {
-      if (Image->PlaneOnOff & Mask)
-        BitMap->Planes[i] = (PLANEPTR) ~ 0;
-    }
-  }
+			Data += Modulo;
+		}
+		else
+		{
+			if (Image->PlaneOnOff & Mask)
+				BitMap->Planes[i] = (PLANEPTR) ~ 0;
+		}
+	}
 }
 
 VOID
@@ -594,93 +610,128 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 	RemapBitMap(Src,Dst,Mapping,Width);
 }
 
-BOOL
-MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
-                   UWORD Depth, UBYTE * RemapArray)
+VOID
+MakeRemappedImage(
+	BOOL *			good,
+	struct Image **	DestImage,
+	struct Image *	SrcImage,
+	UWORD			Depth,
+	UBYTE *			RemapArray)
 {
-  if (Depth > 8)
-    Depth = 8;
+	if(NOT (*good))
+		return;
 
-  if (*DestImage = (struct Image *) AllocVecPooled (sizeof (struct Image), MEMF_ANY | MEMF_CLEAR))
-  {
-    (*DestImage)->LeftEdge = SrcImage->LeftEdge;
-    (*DestImage)->TopEdge = SrcImage->TopEdge;
-    (*DestImage)->Width = SrcImage->Width;
-    (*DestImage)->Height = SrcImage->Height;
-    (*DestImage)->Depth = Depth;
+	if (Depth > 8)
+		Depth = 8;
 
-    if (SrcImage->PlanePick || SrcImage->Depth == -1)
-    {
-      struct BitMap Dst;
+	(*DestImage) = (struct Image *) AllocVecPooled (2 * sizeof (struct Image), MEMF_ANY | MEMF_CLEAR);
+	if ((*DestImage) != NULL)
+	{
+		struct Image * image;
+		struct Image * mask;
 
-      (*DestImage)->PlanePick = (1L << Depth) - 1;
+		image	= (*DestImage);
+		mask	= image + 1;
 
-      memset(&Dst,0,sizeof(Dst));
-      InitBitMap (&Dst, Depth, SrcImage->Width, SrcImage->Height);
+		image->LeftEdge = SrcImage->LeftEdge;
+		image->TopEdge = SrcImage->TopEdge;
+		image->Width = SrcImage->Width;
+		image->Height = SrcImage->Height;
+		image->Depth = Depth;
+		image->NextImage = (struct Image *)IMAGE_MAGIC;
 
-      if ((*DestImage)->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP))
-      {
-        UBYTE Mask;
+		(*mask) = (*image);
+		mask->Depth = 1;
+		mask->PlanePick = 1;
 
-        CreateBitMapFromImage (*DestImage, &Dst);
+		if (SrcImage->PlanePick || SrcImage->Depth == -1)
+		{
+			struct BitMap Dst;
 
-        if(SrcImage->Depth == -1)
-          Mask = 0xFF;
-        else
-          Mask = (1L<<SrcImage->Depth)-1;
+			image->PlanePick = (1L << Depth) - 1;
 
-        if (SrcImage->Depth == -1 || ((SrcImage->PlanePick & Mask) != Mask))
-        {
-          struct RastPort TempRPort;
+			memset(&Dst,0,sizeof(Dst));
+			InitBitMap (&Dst, Depth, SrcImage->Width, SrcImage->Height);
 
-          InitRastPort (&TempRPort);
+			image->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP);
+			mask->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows, MEMF_CHIP);
+			if (image->ImageData != NULL && mask->ImageData != NULL)
+			{
+				STATIC UBYTE MaskRemapArray[16] =
+				{
+					1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1
+				};
 
-          if (TempRPort.BitMap = allocBitMap (Depth, SrcImage->Width, SrcImage->Height, NULL, TRUE))
-          {
-            DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
+				UBYTE Mask;
 
-            RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+				CreateBitMapFromImage (image, &Dst);
 
-            disposeBitMap (TempRPort.BitMap, TRUE);
+				if(SrcImage->Depth == -1)
+					Mask = 0xFF;
+				else
+					Mask = (1L<<SrcImage->Depth)-1;
 
-            return (TRUE);
-          }
-        }
-        else
-        {
-          struct BitMap Src;
+				if (SrcImage->Depth == -1 || ((SrcImage->PlanePick & Mask) != Mask))
+				{
+					struct RastPort TempRPort;
 
-          CreateBitMapFromImage (SrcImage, &Src);
+					InitRastPort (&TempRPort);
 
-          RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+					if (TempRPort.BitMap = allocBitMap (Depth, SrcImage->Width, SrcImage->Height, NULL, TRUE))
+					{
+						DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
 
-          return (TRUE);
-        }
-      }
-    }
-    else
-    {
-      (*DestImage)->PlaneOnOff = RemapArray[SrcImage->PlaneOnOff];
+						RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
 
-      return (TRUE);
-    }
+						CreateBitMapFromImage (mask, &Dst);
+						RecolourBitMap (TempRPort.BitMap, &Dst, MaskRemapArray, 1, SrcImage->Width, SrcImage->Height);
 
-    FreeRemappedImage (*DestImage);
-    *DestImage = NULL;
-  }
+						disposeBitMap (TempRPort.BitMap, TRUE);
 
-  return (FALSE);
+						return;
+					}
+				}
+				else
+				{
+					struct BitMap Src;
+
+					CreateBitMapFromImage (SrcImage, &Src);
+
+					RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+
+					CreateBitMapFromImage (mask, &Dst);
+					RecolourBitMap (&Src, &Dst, MaskRemapArray, 1, SrcImage->Width, SrcImage->Height);
+
+					return;
+				}
+			}
+		}
+		else
+		{
+			image->PlaneOnOff = RemapArray[SrcImage->PlaneOnOff];
+
+			return;
+		}
+
+		FreeRemappedImage (*DestImage);
+		(*DestImage) = NULL;
+	}
+
+	(*good) = FALSE;
 }
 
 VOID
-FreeRemappedImage (struct Image * Image)
+FreeRemappedImage(struct Image * Image)
 {
-  if (Image)
-  {
-    WaitBlit ();
-    FreeVec (Image->ImageData);
-    FreeVecPooled (Image);
-  }
+	if(Image != NULL)
+	{
+		WaitBlit();
+
+		FreeVec(Image[0].ImageData);
+		FreeVec(Image[1].ImageData);
+
+		FreeVecPooled(Image);
+	}
 }
 
 VOID
@@ -723,293 +774,299 @@ ShowRequest(STRPTR Text,...)
 BOOL
 CheckReply (struct Message * Msg)
 {
-  if (Msg->mn_Node.ln_Type == NT_REPLYMSG)
-  {
-    FreeVecPooled (Msg);
-    return (TRUE);
-  }
-  else
-    return (FALSE);
+	if (Msg->mn_Node.ln_Type == NT_REPLYMSG)
+	{
+		FreeVecPooled (Msg);
+		return (TRUE);
+	}
+	else
+		return (FALSE);
 }
 
 BOOL
 CheckEnde (void)
 {
-  if (IMsgReplyCount > 0)
-  {
-    ShowRequest (GetString(MSG_CANNOT_UNINSTALL_TXT));
+	if (IMsgReplyCount > 0)
+	{
+		ShowRequest (GetString(MSG_CANNOT_UNINSTALL_TXT));
 
-    return (FALSE);
-  }
+		return (FALSE);
+	}
 
-  if (LibPatches)
-  {
-    RemovePatches ();
-    LibPatches = FALSE;
-  }
+	if (LibPatches)
+	{
+		RemovePatches ();
+		LibPatches = FALSE;
+	}
 
-  return (TRUE);
+	return (TRUE);
 }
 
 /*****************************************************************************************/
 
 struct FatBitMap
 {
-  UWORD         Width;
-  UWORD         Height;
-  struct BitMap BitMap;
+	UWORD         Width;
+	UWORD         Height;
+	struct BitMap BitMap;
 };
 
 void
 disposeBitMap (struct BitMap *BitMap, BOOL IsChipMem)
 {
-  WaitBlit ();
+	WaitBlit ();
 
-  if (V39 && !IsChipMem)
-    FreeBitMap (BitMap);
-  else
-  {
-    if(BitMap != NULL)
-    {
-      struct FatBitMap * fat;
-      LONG i;
+	if (V39 && !IsChipMem)
+		FreeBitMap (BitMap);
+	else
+	{
+		if(BitMap != NULL)
+		{
+			struct FatBitMap * fat;
+			LONG i;
 
-      fat = (struct FatBitMap *)(((ULONG)BitMap) - offsetof(struct FatBitMap,BitMap));
+			fat = (struct FatBitMap *)(((ULONG)BitMap) - offsetof(struct FatBitMap,BitMap));
 
-      for(i = 0 ; i < BitMap->Depth ; i++)
-      {
-        if(BitMap->Planes[i] != NULL)
-          FreeRaster(BitMap->Planes[i], fat->Width, fat->Height);
-      }
+			for(i = 0 ; i < BitMap->Depth ; i++)
+			{
+				if(BitMap->Planes[i] != NULL)
+					FreeRaster(BitMap->Planes[i], fat->Width, fat->Height);
+			}
 
-      FreeVecPooled(fat);
-    }
-  }
+			FreeVecPooled(fat);
+		}
+	}
 }
 
 struct BitMap *
 allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem)
 {
-  struct BitMap *BitMap;
-  BOOL Error;
-  LONG z1;
+	struct BitMap *BitMap;
+	BOOL Error;
+	LONG z1;
 
-  Error = FALSE;
+	Error = FALSE;
 
-  if (V39 && !WantChipMem)
-    return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
-  else
-  {
-    struct FatBitMap *fat;
-    LONG Extra;
+	if (V39 && !WantChipMem)
+		return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
+	else
+	{
+		struct FatBitMap *fat;
+		LONG Extra;
 
-    if(Depth > 8)
-      Extra = sizeof(PLANEPTR) * (Depth - 8);
-    else
-      Extra = 0;
+		if(Depth > 8)
+			Extra = sizeof(PLANEPTR) * (Depth - 8);
+		else
+			Extra = 0;
 
-    fat = AllocVecPooled (sizeof (*fat) + Extra, MEMF_ANY|MEMF_CLEAR);
-    if(fat != NULL)
-    {
-      BitMap = &fat->BitMap;
+		fat = AllocVecPooled (sizeof (*fat) + Extra, MEMF_ANY|MEMF_CLEAR);
+		if(fat != NULL)
+		{
+			BitMap = &fat->BitMap;
 
-      fat->Width  = Width;
-      fat->Height = Height;
-    }
-    else
-    {
-      BitMap = NULL;
-    }
+			fat->Width  = Width;
+			fat->Height = Height;
+		}
+		else
+		{
+			BitMap = NULL;
+		}
 
-    if (BitMap != NULL)
-    {
-      InitBitMap (BitMap, Depth, Width, Height);
+		if (BitMap != NULL)
+		{
+			InitBitMap (BitMap, Depth, Width, Height);
 
-      for (z1 = 0; z1 < Depth; z1++)
-      {
-        if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
-        {
-          Error = TRUE;
-          break;
-        }
-      }
+			for (z1 = 0; z1 < Depth; z1++)
+			{
+				if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
+				{
+					Error = TRUE;
+					break;
+				}
+			}
 
-      if (Error)
-      {
-        disposeBitMap (BitMap, TRUE);
-        return (NULL);
-      }
+			if (Error)
+			{
+				disposeBitMap (BitMap, TRUE);
+				return (NULL);
+			}
 
-      return (BitMap);
-    }
-  }
+			return (BitMap);
+		}
+	}
 
-  return (NULL);
+	return (NULL);
 }
 
 /*****************************************************************************************/
 
 void
-FreeRPort (struct BitMap *BitMap,
-           struct Layer_Info *LayerInfo,
-           struct Layer *Layer,
-           struct BackgroundCover ** BackgroundCoverPtr)
+FreeRPort (
+	struct BitMap *BitMap,
+	struct Layer_Info *LayerInfo,
+	struct Layer *Layer,
+	struct BackgroundCover ** BackgroundCoverPtr)
 {
-  if (Layer)
-    DeleteLayer (NULL, Layer);
+	if (Layer)
+		DeleteLayer (NULL, Layer);
 
-  if (LayerInfo)
-    DisposeLayerInfo (LayerInfo);
+	if (LayerInfo)
+		DisposeLayerInfo (LayerInfo);
 
-  disposeBitMap (BitMap, FALSE);
+	disposeBitMap (BitMap, FALSE);
 
-  DeleteBackgroundCover((*BackgroundCoverPtr));
-  (*BackgroundCoverPtr) = NULL;
+	DeleteBackgroundCover((*BackgroundCoverPtr));
+	(*BackgroundCoverPtr) = NULL;
 }
 
 STATIC ULONG
 Dummy (VOID)
 {
-  return (0);
+	return (0);
 }
 
 STATIC struct Hook DummyHook =
 {
-  {NULL}, (HOOKFUNC) Dummy
+	{NULL}, (HOOKFUNC) Dummy
 };
 
 struct Hook *
 GetNOPFillHook ()
 {
-  if (LayersBase->lib_Version >= 39)
-    return (LAYERS_NOBACKFILL);
-  else
-    return (&DummyHook);
+	if (LayersBase->lib_Version >= 39)
+		return (LAYERS_NOBACKFILL);
+	else
+		return (&DummyHook);
 }
 
 BOOL
-InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
-              struct RastPort ** RastPortPtr,
-              struct BitMap ** BitMapPtr,
-              struct Layer_Info ** LayerInfoPtr,
-              struct Layer ** LayerPtr,
-              struct ClipRect ** ClipRectPtr,
-              struct BackgroundCover ** BackgroundCoverPtr,
-              LONG Level)
+InstallRPort (
+	LONG Left,
+	LONG Top,
+	LONG Depth,
+	LONG Width,
+	LONG Height,
+	struct RastPort ** RastPortPtr,
+	struct BitMap ** BitMapPtr,
+	struct Layer_Info ** LayerInfoPtr,
+	struct Layer ** LayerPtr,
+	struct ClipRect ** ClipRectPtr,
+	struct BackgroundCover ** BackgroundCoverPtr,
+	LONG Level)
 {
-  struct BitMap *Friend;
-  struct BitMap *BitMap;
-  struct Layer_Info *LayerInfo;
-  struct Layer *Layer;
-  struct ClipRect * ClipRect;
-  LONG OriginalHeight,OriginalWidth,ShadowSize;
-  LONG Black;
-  BOOL success = FALSE;
+	struct BitMap *Friend;
+	struct BitMap *BitMap;
+	struct Layer_Info *LayerInfo;
+	struct Layer *Layer;
+	struct ClipRect * ClipRect;
+	LONG OriginalHeight,OriginalWidth,ShadowSize;
+	LONG Black;
+	BOOL success = FALSE;
 
-  if(V39 && MenXENBlack)
-    Black = MenXENBlack;
-  else
-  {
-    Black = MenDarkEdge;
-    if(Black == MenLightEdge)
-      Black = 0;
-  }
+	if(V39 && MenXENBlack)
+		Black = MenXENBlack;
+	else
+	{
+		Black = MenDarkEdge;
+		if(Black == MenLightEdge)
+			Black = 0;
+	}
 
-  Friend = MenScr->RastPort.BitMap;
+	Friend = MenScr->RastPort.BitMap;
 
-  if(Look3D && AktPrefs.mmp_CastShadows && Black != 0)
-  {
-    ShadowSize = SHADOW_SIZE + Level * 2;
+	if(Look3D && AktPrefs.mmp_CastShadows && Black != 0)
+	{
+		ShadowSize = SHADOW_SIZE + Level * 2;
 
-    OriginalWidth  = Width;
-    OriginalHeight = Height;
+		OriginalWidth  = Width;
+		OriginalHeight = Height;
 
-    Width  += ShadowSize;
-    Height += ShadowSize;
+		Width  += ShadowSize;
+		Height += ShadowSize;
 
-    if(Left + Width > MenScr->Width)
-      Width = MenScr->Width - Left;
+		if(Left + Width > MenScr->Width)
+			Width = MenScr->Width - Left;
 
-    if(Top + Height > MenScr->Height)
-      Height = MenScr->Height - Top;
-  }
-  else
-  {
-    ShadowSize = 0;
-  }
+		if(Top + Height > MenScr->Height)
+			Height = MenScr->Height - Top;
+	}
+	else
+	{
+		ShadowSize = 0;
+	}
 
-  (*BitMapPtr) = NULL;
-  (*RastPortPtr) = NULL;
-  (*LayerPtr) = NULL;
-  (*LayerInfoPtr) = NULL;
-  (*ClipRectPtr) = NULL;
-  (*BackgroundCoverPtr) = NULL;
+	(*BitMapPtr) = NULL;
+	(*RastPortPtr) = NULL;
+	(*LayerPtr) = NULL;
+	(*LayerInfoPtr) = NULL;
+	(*ClipRectPtr) = NULL;
+	(*BackgroundCoverPtr) = NULL;
 
-  BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE);
-  if (BitMap != NULL)
-  {
-    ClipRect = GetClipRect(BitMap,Left,Top,Left + Width - 1,Top + Height - 1);
-    if(ClipRect != NULL)
-    {
-      LayerInfo = NewLayerInfo ();
-      if (LayerInfo != NULL)
-      {
-        Layer = CreateUpfrontHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
-        if (Layer != NULL)
-        {
-          struct BackgroundCover *bgc;
+	BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE);
+	if (BitMap != NULL)
+	{
+		ClipRect = GetClipRect(BitMap,Left,Top,Left + Width - 1,Top + Height - 1);
+		if(ClipRect != NULL)
+		{
+			LayerInfo = NewLayerInfo ();
+			if (LayerInfo != NULL)
+			{
+				Layer = CreateUpfrontHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
+				if (Layer != NULL)
+				{
+					struct BackgroundCover *bgc;
 
-          bgc = CreateBackgroundCover(Friend,Left,Top,OriginalWidth,OriginalHeight);
+					bgc = CreateBackgroundCover(Friend,Left,Top,OriginalWidth,OriginalHeight);
 
-          (*BitMapPtr) = BitMap;
-          (*RastPortPtr) = Layer->rp;
-          (*LayerPtr) = Layer;
-          (*LayerInfoPtr) = LayerInfo;
-          (*ClipRectPtr) = ClipRect;
-          (*BackgroundCoverPtr) = bgc;
+					(*BitMapPtr) = BitMap;
+					(*RastPortPtr) = Layer->rp;
+					(*LayerPtr) = Layer;
+					(*LayerInfoPtr) = LayerInfo;
+					(*ClipRectPtr) = ClipRect;
+					(*BackgroundCoverPtr) = bgc;
 
-          if(ShadowSize > 0 && (OriginalWidth < Width || OriginalHeight < Height))
-          {
-            struct RastPort *RPort;
+					if(ShadowSize > 0 && (OriginalWidth < Width || OriginalHeight < Height))
+					{
+						struct RastPort *RPort;
 
-            RPort = Layer->rp;
+						RPort = Layer->rp;
 
-            SetAfPt (RPort, Crosshatch, 1);
+						SetAfPt (RPort, Crosshatch, 1);
 
-            SetPens(RPort, Black, 0,JAM1);
+						SetPens(RPort, Black, 0,JAM1);
 
-            if(OriginalWidth < Width)
-              BltBitMap(Friend,Left + OriginalWidth,Top,BitMap,OriginalWidth,0,Width - OriginalWidth,Height,MINTERM_COPY,~0,NULL);
+						if(OriginalWidth < Width)
+							BltBitMap(Friend,Left + OriginalWidth,Top,BitMap,OriginalWidth,0,Width - OriginalWidth,Height,MINTERM_COPY,~0,NULL);
 
-            if(OriginalHeight < Height)
-              BltBitMap(Friend,Left,Top + OriginalHeight,BitMap,0,OriginalHeight,Width,Height - OriginalHeight,MINTERM_COPY,~0,NULL);
+						if(OriginalHeight < Height)
+							BltBitMap(Friend,Left,Top + OriginalHeight,BitMap,0,OriginalHeight,Width,Height - OriginalHeight,MINTERM_COPY,~0,NULL);
 
-            if(OriginalWidth < Width)
-              DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1, RIGHT_PART);
+						if(OriginalWidth < Width)
+							DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1, RIGHT_PART);
 
-            if(OriginalHeight < Height)
-              DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1, BOTTOM_PART);
+						if(OriginalHeight < Height)
+							DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1, BOTTOM_PART);
 
-            SetAfPt (RPort, NULL, 0);
-          }
+						SetAfPt (RPort, NULL, 0);
+					}
 
-          success = TRUE;
-        }
-        else
-        {
-          DisposeLayerInfo (LayerInfo);
-        }
-      }
+					success = TRUE;
+				}
+				else
+				{
+					DisposeLayerInfo (LayerInfo);
+				}
+			}
 
-      if(NO success)
-        FreeVec(ClipRect);
-    }
+			if(NO success)
+				FreeVec(ClipRect);
+		}
 
-    if(NO success)
-      disposeBitMap (BitMap, FALSE);
-  }
+		if(NO success)
+			disposeBitMap (BitMap, FALSE);
+	}
 
-  return (success);
+	return (success);
 }
 
 void
@@ -1040,474 +1097,507 @@ SwapRPortClipRect(struct RastPort *RPort,struct ClipRect *ClipRect)
 }
 
 struct ClipRect *
-GetClipRect (struct BitMap *BitMap,
-             LONG x1, LONG y1, LONG x2, LONG y2)
+GetClipRect (
+	struct BitMap *BitMap,
+	LONG x1,
+	LONG y1,
+	LONG x2,
+	LONG y2)
 {
-  struct ClipRect *CRect;
+	struct ClipRect *CRect;
 
-  if (CRect = AllocVecPooled (sizeof (struct ClipRect), MEMF_CLEAR))
-  {
-    CRect->BitMap = BitMap;
-    CRect->bounds.MinX = x1;
-    CRect->bounds.MinY = y1;
-    CRect->bounds.MaxX = x2;
-    CRect->bounds.MaxY = y2;
-  }
-  return (CRect);
+	if (CRect = AllocVecPooled (sizeof (struct ClipRect), MEMF_CLEAR))
+	{
+		CRect->BitMap = BitMap;
+		CRect->bounds.MinX = x1;
+		CRect->bounds.MinY = y1;
+		CRect->bounds.MaxX = x2;
+		CRect->bounds.MaxY = y2;
+	}
+	return (CRect);
 }
 
 void
 CheckDispClipVisible (WORD MinX, WORD MinY, WORD MaxX, WORD MaxY)
 {
-  WORD x1, y1, x2, y2;
+	WORD x1, y1, x2, y2;
 
-  x1 = -MenScr->LeftEdge;
-  y1 = -MenScr->TopEdge;
+	x1 = -MenScr->LeftEdge;
+	y1 = -MenScr->TopEdge;
 
-  x2 = MenDispClip.MaxX + x1;
-  y2 = MenDispClip.MaxY + y1;
+	x2 = MenDispClip.MaxX + x1;
+	y2 = MenDispClip.MaxY + y1;
 
-  if (MinX < x1 || MinY < y1 || MaxX > x2 || MaxY > y2)
-  {
-    x1 = MinX + (MaxX - MinX) / 2 - MenDispClip.MaxX / 2;
-    if (x1 < 0)
-      x1 = 0;
+	if (MinX < x1 || MinY < y1 || MaxX > x2 || MaxY > y2)
+	{
+		x1 = MinX + (MaxX - MinX) / 2 - MenDispClip.MaxX / 2;
+		if (x1 < 0)
+			x1 = 0;
 
-    y1 = MinY + (MaxY - MinY) / 2 - MenDispClip.MaxY / 2;
-    if (y1 < 0)
-      y1 = 0;
+		y1 = MinY + (MaxY - MinY) / 2 - MenDispClip.MaxY / 2;
+		if (y1 < 0)
+			y1 = 0;
 
-    MoveScreen (MenScr, -MenScr->LeftEdge - x1, -MenScr->TopEdge - y1);
-  }
+		MoveScreen (MenScr, -MenScr->LeftEdge - x1, -MenScr->TopEdge - y1);
+	}
 }
 
 void
 Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
-            BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
+						BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
 {
-  if (Width <= 0 || Height <= 0)
-    return;
+	if (Width <= 0 || Height <= 0)
+		return;
 
-  if (Upward)
-    SetFgPen (rp, MenLightEdge);
+	if (Upward)
+		SetFgPen (rp, MenLightEdge);
 
-  else
-    SetFgPen (rp, MenDarkEdge);
+	else
+		SetFgPen (rp, MenDarkEdge);
 
-  /* Nur zur Kompatibilität... */
-  if(Look3D)
-    HiRes = FALSE;
+	/* Nur zur Kompatibilität... */
+	if(Look3D)
+		HiRes = FALSE;
 
-  if (HiRes && (!LookMC))
-  {
-    //      2<------1-
-    //      |4
-    //      ||
-    //      ||
-    //      |v
-    //      v5
-    //      3
+	if (HiRes && (!LookMC))
+	{
+		//      2<------1-
+		//      |4
+		//      ||
+		//      ||
+		//      |v
+		//      v5
+		//      3
 
-    DrawLinePairs (rp, 3, x + Width - 2, y,
-                   x, y,
-                   x, y + Height - 1);
+		DrawLinePairs (rp, 3, x + Width - 2, y,
+		                      x, y,
+		                      x, y + Height - 1);
 
-    DrawLine (rp, x + 1, y + 1,
-              x + 1, y + Height - 2);
+		DrawLine (rp, x + 1, y + 1,
+		              x + 1, y + Height - 2);
 
-    if (DoubleBorder)
-    {
-      //      2<------1-
-      //      |4    96
-      //      ||    ||
-      //      ||    ||
-      //      ||    v|
-      //      |v    av
-      //      v58<---7
-      //      3
+		if (DoubleBorder)
+		{
+			//      2<------1-
+			//      |4    96
+			//      ||    ||
+			//      ||    ||
+			//      ||    v|
+			//      |v    av
+			//      v58<---7
+			//      3
 
-      DrawLinePairs (rp, 3, x + Width - 3, y + 1,
-                     x + Width - 3, y + Height - 2,
-                     x + 3, y + Height - 2);
+			DrawLinePairs (rp, 3, x + Width - 3, y + 1,
+			                      x + Width - 3, y + Height - 2,
+			                      x + 3, y + Height - 2);
 
-      DrawLine (rp, x + Width - 4, y + 2,
-                x + Width - 4, y + Height - 2);
-    }
-  }
-  else
-  {
-    //      2<----1
-    //      |
-    //      |
-    //      |
-    //      |
-    //      v
-    //      3
+			DrawLine (rp, x + Width - 4, y + 2,
+			              x + Width - 4, y + Height - 2);
+		}
+	}
+	else
+	{
+		//      2<----1
+		//      |
+		//      |
+		//      |
+		//      |
+		//      v
+		//      3
 
-    DrawLinePairs (rp, 3, x + Width - 1, y,
-                   x, y,
-                   x, y + Height - 1);
+		DrawLinePairs (rp, 3, x + Width - 1, y,
+		                      x, y,
+		                      x, y + Height - 1);
 
-    if (DoubleBorder)
-    {
-      //      2<----1
-      //      |    4
-      //      |    |
-      //      |    |
-      //      |    v
-      //      v6<--5
-      //      3
+		if (DoubleBorder)
+		{
+			//      2<----1
+			//      |    4
+			//      |    |
+			//      |    |
+			//      |    v
+			//      v6<--5
+			//      3
 
-      DrawLinePairs (rp, 3, x + Width - 2, y + 1,
-                     x + Width - 2, y + Height - 2,
-                     x + 1, y + Height - 2);
-    }
-  }
+			DrawLinePairs (rp, 3, x + Width - 2, y + 1,
+			                      x + Width - 2, y + Height - 2,
+			                      x + 1, y + Height - 2);
+		}
+	}
 
-  if (Upward)
-    SetFgPen (rp, MenDarkEdge);
+	if (Upward)
+		SetFgPen (rp, MenDarkEdge);
 
-  else
-    SetFgPen (rp, MenLightEdge);
+	else
+		SetFgPen (rp, MenLightEdge);
 
-  if (HiRes && (!LookMC))
-  {
-    //                 3
-    //                5^
-    //                ^|
-    //                ||
-    //                ||
-    //                4|
-    //      -1-------->2
+	if (HiRes && (!LookMC))
+	{
+		//                 3
+		//                5^
+		//                ^|
+		//                ||
+		//                ||
+		//                4|
+		//      -1-------->2
 
-    DrawLinePairs (rp, 3, x + 1, y + Height - 1,
-                   x + Width - 1, y + Height - 1,
-                   x + Width - 1, y);
+		DrawLinePairs (rp, 3, x + 1, y + Height - 1,
+		                      x + Width - 1, y + Height - 1,
+		                      x + Width - 1, y);
 
-    DrawLine (rp, x + Width - 2, y + Height - 2,
-              x + Width - 2, y + 1);
+		DrawLine (rp, x + Width - 2, y + Height - 2,
+		              x + Width - 2, y + 1);
 
-    if (DoubleBorder)
-    {
-      //                 3
-      //        7---->8 5^
-      //        ^a      ^|
-      //        |^      ||
-      //        ||      ||
-      //        |9      ||
-      //        6       4|
-      //      -1-------->2
+		if (DoubleBorder)
+		{
+			//                 3
+			//        7---->8 5^
+			//        ^a      ^|
+			//        |^      ||
+			//        ||      ||
+			//        |9      ||
+			//        6       4|
+			//      -1-------->2
 
-      DrawLinePairs (rp, 3, x + 2, y + Height - 2,
-                     x + 2, y + 1,
-                     x + Width - 4, y + 1);
+			DrawLinePairs (rp, 3, x + 2, y + Height - 2,
+			                      x + 2, y + 1,
+			                      x + Width - 4, y + 1);
 
-      DrawLine (rp, x + 3, y + Height - 3,
-                x + 3, y + 2);
-    }
-  }
-  else
-  {
-    //                 |
-    //                 3
-    //                 ^
-    //                 |
-    //                 |
-    //                 |
-    //      -1-------->2
+			DrawLine (rp, x + 3, y + Height - 3,
+			              x + 3, y + 2);
+		}
+	}
+	else
+	{
+		//                 |
+		//                 3
+		//                 ^
+		//                 |
+		//                 |
+		//                 |
+		//      -1-------->2
 
-    DrawLinePairs (rp, 3, x + 1, y + Height - 1,
-                   x + Width - 1, y + Height - 1,
-                   x + Width - 1, y + 1);
+		DrawLinePairs (rp, 3, x + 1, y + Height - 1,
+		                      x + Width - 1, y + Height - 1,
+		                      x + Width - 1, y + 1);
 
-    if (DoubleBorder)
-    {
-      //                 |
-      //       5------->63
-      //       ^         ^
-      //       |         |
-      //       |         |
-      //       4         |
-      //      -1-------->2
+		if (DoubleBorder)
+		{
+			//                 |
+			//       5------->63
+			//       ^         ^
+			//       |         |
+			//       |         |
+			//       4         |
+			//      -1-------->2
 
-      DrawLinePairs (rp, 3, x + 1, y + Height - 2,
-                     x + 1, y + 1,
-                     x + Width - 2, y + 1);
-    }
-  }
+			DrawLinePairs (rp, 3, x + 1, y + Height - 2,
+			                      x + 1, y + 1,
+			                      x + Width - 2, y + 1);
+		}
+	}
 
-  if (LookMC && !DoubleBorder)
-  {
-    SetFgPen (rp, MenSectGrey);
-    WritePixel (rp, x, y + Height - 1);
-    WritePixel (rp, x + Width - 1, y);
-  }
+	if (LookMC && !DoubleBorder)
+	{
+		SetFgPen (rp, MenSectGrey);
+		WritePixel (rp, x, y + Height - 1);
+		WritePixel (rp, x + Width - 1, y);
+	}
 }
 
 void
-DrawSmooth3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
-                  BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
+DrawSmooth3DRect (
+	struct RastPort *rp,
+	LONG x,
+	LONG y,
+	LONG Width,
+	LONG Height,
+	BOOL Upward,
+	BOOL HiRes,
+	BOOL DoubleBorder)
 {
-  Draw3DRect (rp,x,y,Width,Height,Upward,HiRes,DoubleBorder);
+	Draw3DRect (rp,x,y,Width,Height,Upward,HiRes,DoubleBorder);
 
-  if (LookMC && !DoubleBorder)
-  {
-    if(Upward)
-      SetFgPen (rp, MenStdGrey0);
-    else
-      SetFgPen (rp, MenStdGrey2);
+	if (LookMC && !DoubleBorder)
+	{
+		if(Upward)
+			SetFgPen (rp, MenStdGrey0);
+		else
+			SetFgPen (rp, MenStdGrey2);
 
-    DrawLinePairs(rp, 3,
-      x+2,y+Height-2,
-      x+Width-2,y+Height-2,
-      x+Width-2,y+2);
+		DrawLinePairs(rp, 3,
+			x+2,y+Height-2,
+			x+Width-2,y+Height-2,
+			x+Width-2,y+2);
 
-    if(Upward)
-      SetFgPen (rp, MenStdGrey2);
-    else
-      SetFgPen (rp, MenStdGrey0);
-      
-    DrawLinePairs(rp, 3,
-      x+Width-3,y+1,
-      x+1,y+1,
-      x+1,y+Height-3);
-  }
+		if(Upward)
+			SetFgPen (rp, MenStdGrey2);
+		else
+			SetFgPen (rp, MenStdGrey0);
+			
+		DrawLinePairs(rp, 3,
+			x+Width-3,y+1,
+			x+1,y+1,
+			x+1,y+Height-3);
+	}
 }
 
 void
 DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
-  if (Width <= 0 || Height <= 0)
-    return;
+	if (Width <= 0 || Height <= 0)
+		return;
 
-  SetFgPen (rp, MenBackGround);
+	SetFgPen (rp, MenBackGround);
 
-  //      1-------->2
-  //      ^         |
-  //      |         |
-  //      |         |
-  //      |         v
-  //      4<--------3
+	//      1-------->2
+	//      ^         |
+	//      |         |
+	//      |         |
+	//      |         v
+	//      4<--------3
 
-  DrawLinePairs (rp, 5, x, y,
-                 x + Width - 1, y,
-                 x + Width - 1, y + Height - 1,
-                 x, y + Height - 1,
-                 x, y);
+	DrawLinePairs (rp, 5, x, y,
+	                      x + Width - 1, y,
+	                      x + Width - 1, y + Height - 1,
+	                      x, y + Height - 1,
+	                      x, y);
 }
 
 void
 GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
-  static UWORD GhostPattern[] = {0x1111, 0x4444};
-  static UWORD CrosshatchPattern[] = {0x5555, 0xAAAA};
+	static UWORD GhostPattern[] = {0x1111, 0x4444};
+	static UWORD CrosshatchPattern[] = {0x5555, 0xAAAA};
 
-  UWORD *Pattern;
+	UWORD *Pattern;
 
-  if (Width <= 0 || Height <= 0)
-    return;
+	if (Width <= 0 || Height <= 0)
+		return;
 
-  if(Look3D)
-    Pattern = CrosshatchPattern;
-  else
-    Pattern = GhostPattern;
+	if(Look3D)
+		Pattern = CrosshatchPattern;
+	else
+		Pattern = GhostPattern;
 
-  SetAfPt (rp, Pattern, 1);
+	SetAfPt (rp, Pattern, 1);
 
-  // Hier gibt es ein Konsistenzproblem. Das Ghosting der Menüs,
-  // wie es Intuition durchführt, ist an sich schon inkonsistent
-  // mit dem von Gadgets. Macht man es wie Intuition, muß man
-  // hier den Pen MenBackGround nehmen. Versucht man es konsistent
-  // zu halten, sollte man eigentlich MenDarkEdge nehmen.
-  //    -olsen
+	// Hier gibt es ein Konsistenzproblem. Das Ghosting der Menüs,
+	// wie es Intuition durchführt, ist an sich schon inkonsistent
+	// mit dem von Gadgets. Macht man es wie Intuition, muß man
+	// hier den Pen MenBackGround nehmen. Versucht man es konsistent
+	// zu halten, sollte man eigentlich MenDarkEdge nehmen.
+	//    -olsen
 
-  SetPens(rp, MenBackGround, 0, JAM1);
-  RectFill(rp, x, y, x + Width - 1, y + Height - 1);
+	SetPens(rp, MenBackGround, 0, JAM1);
+	RectFill(rp, x, y, x + Width - 1, y + Height - 1);
 
-  SetAfPt (rp, NULL, 0);
-  SetFgPen (rp, MenTextCol);
+	SetAfPt (rp, NULL, 0);
+	SetFgPen (rp, MenTextCol);
 }
 
 void
 CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
-  if (Width > 0 && Height > 0)
-  {
-    SetDrawMask (rp, MenComplMsk);
+	if (Width > 0 && Height > 0)
+	{
+		SetDrawMask (rp, MenComplMsk);
 
-    SetPens (rp, MenComplMsk, 0, COMPLEMENT);
+		SetPens (rp, MenComplMsk, 0, COMPLEMENT);
 
-    RectFill (rp, x, y, x + Width - 1, y + Height - 1);
+		RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 
-    SetDrawMask (rp, ~0);
+		SetDrawMask (rp, ~0);
 
-    SetDrMd (rp, JAM1);
-  }
+		SetDrMd (rp, JAM1);
+	}
 }
 
-BOOL
+VOID
 HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover * bgc)
 {
-  BOOL trueColour = FALSE;
-
-  if (Width > 0 && Height > 0)
-  {
-    if(Highlighted)
-      trueColour = HighlightBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
-    else
-      FillBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
-  }
-
-  return(trueColour);
+	if (Width > 0 && Height > 0)
+	{
+		if(Highlighted)
+			HighlightBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
+		else
+			FillBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
+	}
 }
 
 BOOL
 MoveMouse (LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr)
 {
-  struct InputEvent *MyNewEvent;
-  struct IEPointerPixel *MyNewPPixel;
-  BOOL success = FALSE;
+	struct InputEvent *MyNewEvent;
+	struct IEPointerPixel *MyNewPPixel;
+	BOOL success = FALSE;
 
-  if (MyNewPPixel = AllocVecPooled (sizeof (struct IEPointerPixel), MEMF_PUBLIC | MEMF_CLEAR))
-  {
-    if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
-    {
-      MyNewPPixel->iepp_Screen = Scr;
-      MyNewPPixel->iepp_Position.X = max(0,NewX);
-      MyNewPPixel->iepp_Position.Y = max(0,NewY);
-      MyNewEvent->ie_Class = IECLASS_NEWPOINTERPOS;
-      MyNewEvent->ie_SubClass = IESUBCLASS_PIXEL;
-      MyNewEvent->ie_Code = IECODE_NOBUTTON;
-      MyNewEvent->ie_EventAddress = (APTR) MyNewPPixel;
+	if (MyNewPPixel = AllocVecPooled (sizeof (struct IEPointerPixel), MEMF_PUBLIC | MEMF_CLEAR))
+	{
+		if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
+		{
+			MyNewPPixel->iepp_Screen = Scr;
+			MyNewPPixel->iepp_Position.X = max(0,NewX);
+			MyNewPPixel->iepp_Position.Y = max(0,NewY);
+			MyNewEvent->ie_Class = IECLASS_NEWPOINTERPOS;
+			MyNewEvent->ie_SubClass = IESUBCLASS_PIXEL;
+			MyNewEvent->ie_Code = IECODE_NOBUTTON;
+			MyNewEvent->ie_EventAddress = (APTR) MyNewPPixel;
 
-      InputIO->io_Command = IND_WRITEEVENT;
-      InputIO->io_Data = (APTR) MyNewEvent;
-      InputIO->io_Length = sizeof (struct InputEvent);
-      DoIO ((struct IORequest *) InputIO);
+			InputIO->io_Command = IND_WRITEEVENT;
+			InputIO->io_Data = (APTR) MyNewEvent;
+			InputIO->io_Length = sizeof (struct InputEvent);
+			DoIO ((struct IORequest *) InputIO);
 
-      if (AddEvent)
-      {
-        CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
-        MyNewEvent->ie_NextEvent = NULL;
+			if (AddEvent)
+			{
+				CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
+				MyNewEvent->ie_NextEvent = NULL;
 
-        InputIO->io_Data = (APTR) MyNewEvent;
-        InputIO->io_Length = sizeof (struct InputEvent);
-        InputIO->io_Command = IND_WRITEEVENT;
-        DoIO ((struct IORequest *) InputIO);
-      }
+				InputIO->io_Data = (APTR) MyNewEvent;
+				InputIO->io_Length = sizeof (struct InputEvent);
+				InputIO->io_Command = IND_WRITEEVENT;
+				DoIO ((struct IORequest *) InputIO);
+			}
 
-      success = TRUE;
+			success = TRUE;
 
-      FreeVecPooled (MyNewEvent);
-    }
+			FreeVecPooled (MyNewEvent);
+		}
 
-    FreeVecPooled (MyNewPPixel);
-  }
+		FreeVecPooled (MyNewPPixel);
+	}
 
-  return (success);
+	return (success);
 }
 
 VOID
 SPrintf (STRPTR buffer, STRPTR formatString,...)
 {
-  va_list varArgs;
+	va_list varArgs;
 
-  va_start (varArgs, formatString);
-  RawDoFmt (formatString, varArgs, (VOID (*)())(VOID (*))"\x16\xC0\x4E\x75", buffer);
-  va_end (varArgs);
+	va_start (varArgs, formatString);
+	RawDoFmt (formatString, varArgs, (VOID (*)())(VOID (*))"\x16\xC0\x4E\x75", buffer);
+	va_end (varArgs);
 }
 
 VOID
 SetPens (struct RastPort * RPort, ULONG FgPen, ULONG BgPen, ULONG DrawMode)
 {
-  if (V39)
-    SetABPenDrMd (RPort, FgPen, BgPen, DrawMode);
-  else
-  {
-    if (FgPen != RPort->FgPen)
-      SetAPen (RPort, FgPen);
+	if (V39)
+		SetABPenDrMd (RPort, FgPen, BgPen, DrawMode);
+	else
+	{
+		if (FgPen != RPort->FgPen)
+			SetAPen (RPort, FgPen);
 
-    if (BgPen != RPort->BgPen)
-      SetAPen (RPort, BgPen);
+		if (BgPen != RPort->BgPen)
+			SetAPen (RPort, BgPen);
 
-    if (DrawMode != RPort->DrawMode)
-      SetDrMd (RPort, DrawMode);
-  }
+		if (DrawMode != RPort->DrawMode)
+			SetDrMd (RPort, DrawMode);
+	}
+}
+
+LONG
+GetDrawMode(struct RastPort *rp)
+{
+	LONG old;
+
+	if (V39)
+		old = GetDrMd (rp);
+	else
+		old = rp->DrawMode;
+
+	return(old);
+}
+
+LONG
+GetFgPen(struct RastPort * rp)
+{
+	LONG old;
+
+	if (V39)
+		old = GetAPen (rp);
+	else
+		old = rp->FgPen;
+
+	return(old);
 }
 
 VOID
 SetFgPen (struct RastPort *rp, LONG pen)
 {
-  LONG old;
+	LONG old;
 
-  if (V39)
-    old = GetAPen (rp);
-  else
-    old = rp->FgPen;
+	if (V39)
+		old = GetAPen (rp);
+	else
+		old = rp->FgPen;
 
-  if (old != pen)
-    SetAPen (rp, pen);
+	if (old != pen)
+		SetAPen (rp, pen);
 }
 
 VOID
 SetDrawMode (struct RastPort *rp, LONG mode)
 {
-  LONG old;
+	LONG old;
 
-  if (V39)
-    old = GetDrMd (rp);
-  else
-    old = rp->DrawMode;
+	if (V39)
+		old = GetDrMd (rp);
+	else
+		old = rp->DrawMode;
 
-  if (old != mode)
-    SetDrMd (rp, mode);
+	if (old != mode)
+		SetDrMd (rp, mode);
 }
 
 VOID
 SetDrawMask (struct RastPort *rp, LONG mask)
 {
-  if (V39)
-    SetWriteMask (rp, mask);
-  else
-    rp->Mask = mask;
+	if (V39)
+		SetWriteMask (rp, mask);
+	else
+		rp->Mask = mask;
 }
 
 ULONG
 GetBitMapDepth (struct BitMap *BitMap)
 {
-  if (V39)
-    return (GetBitMapAttr (BitMap, BMA_DEPTH));
-  else
-    return (BitMap->Depth);
+	if (V39)
+		return (GetBitMapAttr (BitMap, BMA_DEPTH));
+	else
+		return (BitMap->Depth);
 }
 
 LONG
 findchar (char *Text, char Zeichen)
 {
-  LONG z1;
+	LONG z1;
 
-  z1 = 0;
-  while (*Text && (*Text++ != Zeichen))
-    z1++;
-  if (*Text)
-    return (z1);
-  else
-    return (-1);
+	z1 = 0;
+	while (*Text && (*Text++ != Zeichen))
+		z1++;
+	if (*Text)
+		return (z1);
+	else
+		return (-1);
 }
 
 VOID
 SafeObtainSemaphoreShared (struct SignalSemaphore * Semaphore)
 {
-  if (SysBase->lib_Version >= 39)
-    ObtainSemaphoreShared (Semaphore);
-  else
-  {
-    if (!AttemptSemaphoreShared (Semaphore))
-    {
-      if (!AttemptSemaphore (Semaphore))
-        ObtainSemaphoreShared (Semaphore);
-    }
-  }
+	if (SysBase->lib_Version >= 39)
+		ObtainSemaphoreShared (Semaphore);
+	else
+	{
+		if (!AttemptSemaphoreShared (Semaphore))
+		{
+			if (!AttemptSemaphore (Semaphore))
+				ObtainSemaphoreShared (Semaphore);
+		}
+	}
 }
 
 /******************************************************************************/
@@ -1515,49 +1605,49 @@ SafeObtainSemaphoreShared (struct SignalSemaphore * Semaphore)
 VOID
 DrawLine (struct RastPort *rp, LONG x0, LONG y0, LONG x1, LONG y1)
 {
-  if (x0 == x1 || y0 == y1)
-  {
-    if (x0 > x1)
-      x0 ^= x1, x1 ^= x0, x0 ^= x1;
+	if (x0 == x1 || y0 == y1)
+	{
+		if (x0 > x1)
+			x0 ^= x1, x1 ^= x0, x0 ^= x1;
 
-    if (y0 > y1)
-      y0 ^= y1, y1 ^= y0, y0 ^= y1;
+		if (y0 > y1)
+			y0 ^= y1, y1 ^= y0, y0 ^= y1;
 
-    RectFill (rp, x0, y0, x1, y1);
-  }
-  else
-  {
-    Move (rp, x0, y0);
-    Draw (rp, x1, y1);
-  }
+		RectFill (rp, x0, y0, x1, y1);
+	}
+	else
+	{
+		Move (rp, x0, y0);
+		Draw (rp, x1, y1);
+	}
 }
 
 VOID
 DrawLinePairs (struct RastPort *rp, LONG totalPairs, LONG left, LONG top,...)
 {
-  LONG x0, y0, x1, y1;
-  LONG *pairs;
-  va_list args;
+	LONG x0, y0, x1, y1;
+	LONG *pairs;
+	va_list args;
 
-  x0 = left;
-  y0 = top;
+	x0 = left;
+	y0 = top;
 
-  va_start (args, top);
+	va_start (args, top);
 
-  pairs = (LONG *) args;
+	pairs = (LONG *) args;
 
-  while (--totalPairs > 0)
-  {
-    x1 = *pairs++;
-    y1 = *pairs++;
+	while (--totalPairs > 0)
+	{
+		x1 = *pairs++;
+		y1 = *pairs++;
 
-    DrawLine (rp, x0, y0, x1, y1);
+		DrawLine (rp, x0, y0, x1, y1);
 
-    x0 = x1;
-    y0 = y1;
-  }
+		x0 = x1;
+		y0 = y1;
+	}
 
-  va_end (args);
+	va_end (args);
 }
 
 /******************************************************************************/
@@ -1565,14 +1655,14 @@ DrawLinePairs (struct RastPort *rp, LONG totalPairs, LONG left, LONG top,...)
 VOID
 PlaceText (struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len)
 {
-  if (Len < 0)
-    Len = strlen (String);
+	if (Len < 0)
+		Len = strlen (String);
 
-  if (Len > 0)
-  {
-    Move (RPort, Left, Top);
-    Text (RPort, String, Len);
-  }
+	if (Len > 0)
+	{
+		Move (RPort, Left, Top);
+		Text (RPort, String, Len);
+	}
 }
 
 /******************************************************************************/
@@ -1620,22 +1710,22 @@ AllocateShadowBuffer(LONG width,LONG height)
 VOID
 FillBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,struct BackgroundCover * bgc)
 {
-  SetPens (rp, MenBackGround, 0, JAM1);
+	SetPens (rp, MenBackGround, 0, JAM1);
 
-  SHOWVALUE(minX);
-  SHOWVALUE(minY);
+	SHOWVALUE(minX);
+	SHOWVALUE(minY);
 
-  if(bgc != NULL)
-  {
-    SHOWVALUE(bgc->bgc_Left);
-    SHOWVALUE(bgc->bgc_Top);
+	if(bgc != NULL)
+	{
+		SHOWVALUE(bgc->bgc_Left);
+		SHOWVALUE(bgc->bgc_Top);
 
-    BltBitMapRastPort(bgc->bgc_BitMap,minX - bgc->bgc_Left,minY - bgc->bgc_Top,rp,minX,minY,maxX-minX+1,maxY-minY+1,MINTERM_COPY);
-  }
-  else
-  {
-    RectFill (rp, minX, minY, maxX, maxY);
-  }
+		BltBitMapRastPort(bgc->bgc_BitMap,minX - bgc->bgc_Left,minY - bgc->bgc_Top,rp,minX,minY,maxX-minX+1,maxY-minY+1,MINTERM_COPY);
+	}
+	else
+	{
+		RectFill (rp, minX, minY, maxX, maxY);
+	}
 }
 
 /******************************************************************************/
@@ -1784,7 +1874,7 @@ CreateBackgroundCover(
 {
 	struct BackgroundCover * bgc = NULL;
 
-	if(AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	if(GlobalPopUp && AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
 	{
 		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
 		if(bgc != NULL)
@@ -1888,11 +1978,10 @@ DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,LONG par
 
 /******************************************************************************/
 
-BOOL
+VOID
 HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,struct BackgroundCover * bgc)
 {
 	BOOL done = FALSE;
-	BOOL trueColour = FALSE;
 
 	if(bgc != NULL)
 	{
@@ -1909,8 +1998,6 @@ HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY
 
 			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 
-			trueColour = TRUE;
-
 			done = TRUE;
 		}
 	}
@@ -1920,6 +2007,4 @@ HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY
 		SetPens (rp, MenFillCol, 0, JAM1);
 		RectFill (rp, minX, minY, maxX, maxY);
 	}
-
-	return(trueColour);
 }

@@ -18,6 +18,12 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   struct InputEvent *NewEvent;
   BOOL lending = FALSE;
 
+  /* Zum Zeichnen des Hintergrundes müssen wir das vormerken.
+   * Diese Flag entscheidet, ob der Transparenzmodus wirklich
+   * aktiv werden darf.
+   */
+  GlobalPopUp = PopUp;
+
   /* Zugriff auf MenWin, MenScr und MenStrip sperren. */
   ObtainSemaphore (GetPointerSemaphore);
 

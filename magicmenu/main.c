@@ -1,7 +1,7 @@
 /*
 **   $Id$
 **
-**   :ts=8
+**   :ts=4
 */
 
 #ifndef _GLOBAL_H
@@ -36,109 +36,109 @@ long __stack = 8192;
 
 struct Path
 {
-  BPTR path_Next;               /* Pointer to next entry */
-  BPTR path_Lock;               /* The drawer in question; may be NULL */
+	BPTR path_Next;	/* Pointer to next entry */
+	BPTR path_Lock;	/* The drawer in question; may be NULL */
 };
 
 BPTR
 ClonePath (BPTR StartPath)
 {
-  struct Path *First, *Last, *List, *New;
+	struct Path *First, *Last, *List, *New;
 
-  for (List = BADDR (StartPath), First = Last = NULL; List; List = BADDR (List->path_Next))
-  {
-    if (List->path_Lock)
-    {
-      if (New = AllocVec (sizeof (struct Path), MEMF_ANY))
-      {
-        if (New->path_Lock = DupLock (List->path_Lock))
-        {
-          New->path_Next = NULL;
+	for (List = BADDR (StartPath), First = Last = NULL; List; List = BADDR (List->path_Next))
+	{
+		if (List->path_Lock)
+		{
+			if (New = AllocVec (sizeof (struct Path), MEMF_ANY))
+			{
+				if (New->path_Lock = DupLock (List->path_Lock))
+				{
+					New->path_Next = NULL;
 
-          if (Last)
-            Last->path_Next = MKBADDR (New);
+					if (Last)
+						Last->path_Next = MKBADDR (New);
 
-          if (!First)
-            First = New;
+					if (!First)
+						First = New;
 
-          Last = New;
-        }
-        else
-        {
-          FreeVec (New);
-          break;
-        }
-      }
-      else
-        break;
-    }
-  }
+					Last = New;
+				}
+				else
+				{
+					FreeVec (New);
+					break;
+				}
+			}
+			else
+				break;
+		}
+	}
 
-  return (MKBADDR (First));
+	return (MKBADDR (First));
 }
 
 VOID
 AttachCLI (struct WBStartup * Startup)
 {
-  struct CommandLineInterface *DestCLI;
+	struct CommandLineInterface *DestCLI;
 
-  /* Note: FreeDosObject can't free it, but the DOS */
-  /*       process termination code can. */
+	/* Note: FreeDosObject can't free it, but the DOS */
+	/*       process termination code can. */
 
-  if (DestCLI = AllocDosObject (DOS_CLI, NULL))
-  {
-    struct MsgPort *ReplyPort;
-    struct Process *Dest;
+	if (DestCLI = AllocDosObject (DOS_CLI, NULL))
+	{
+		struct MsgPort *ReplyPort;
+		struct Process *Dest;
 
-    DestCLI->cli_DefaultStack = 4096 / sizeof (ULONG);
+		DestCLI->cli_DefaultStack = 4096 / sizeof (ULONG);
 
-    Dest = (struct Process *) FindTask (NULL);
+		Dest = (struct Process *) FindTask (NULL);
 
-    Dest->pr_CLI = MKBADDR (DestCLI);
-    Dest->pr_Flags |= PRF_FREECLI;  /* Mark for cleanup */
+		Dest->pr_CLI = MKBADDR (DestCLI);
+		Dest->pr_Flags |= PRF_FREECLI;  /* Mark for cleanup */
 
-    Forbid ();
+		Forbid ();
 
-    ReplyPort = Startup->sm_Message.mn_ReplyPort;
+		ReplyPort = Startup->sm_Message.mn_ReplyPort;
 
-    /* Does the reply port data point somewhere sensible? */
+		/* Does the reply port data point somewhere sensible? */
 
-    if (ReplyPort && (ReplyPort->mp_Flags & PF_ACTION) == PA_SIGNAL && TypeOfMem (ReplyPort->mp_SigTask))
-    {
-      struct Process *Father;
+		if (ReplyPort && (ReplyPort->mp_Flags & PF_ACTION) == PA_SIGNAL && TypeOfMem (ReplyPort->mp_SigTask))
+		{
+			struct Process *Father;
 
-      /* Get the address of the process that sent the startup message */
+			/* Get the address of the process that sent the startup message */
 
-      Father = (struct Process *) ReplyPort->mp_SigTask;
+			Father = (struct Process *) ReplyPort->mp_SigTask;
 
-      /* Just to be on the safe side... */
+			/* Just to be on the safe side... */
 
-      if (Father->pr_Task.tc_Node.ln_Type == NT_PROCESS)
-      {
-        struct CommandLineInterface *SourceCLI;
+			if (Father->pr_Task.tc_Node.ln_Type == NT_PROCESS)
+			{
+				struct CommandLineInterface *SourceCLI;
 
-        /* Is there a CLI attached? */
+				/* Is there a CLI attached? */
 
-        if (SourceCLI = BADDR (Father->pr_CLI))
-        {
-          STRPTR Prompt;
+				if (SourceCLI = BADDR (Father->pr_CLI))
+				{
+					STRPTR Prompt;
 
-          /* Clone the other CLI data. */
+					/* Clone the other CLI data. */
 
-          if (Prompt = (STRPTR) BADDR (SourceCLI->cli_Prompt))
-            SetPrompt (&Prompt[1]);
+					if (Prompt = (STRPTR) BADDR (SourceCLI->cli_Prompt))
+						SetPrompt (&Prompt[1]);
 
-          if (SourceCLI->cli_DefaultStack > DestCLI->cli_DefaultStack)
-            DestCLI->cli_DefaultStack = SourceCLI->cli_DefaultStack;
+					if (SourceCLI->cli_DefaultStack > DestCLI->cli_DefaultStack)
+						DestCLI->cli_DefaultStack = SourceCLI->cli_DefaultStack;
 
-          if (SourceCLI->cli_CommandDir)
-            DestCLI->cli_CommandDir = ClonePath (SourceCLI->cli_CommandDir);
-        }
-      }
-    }
+					if (SourceCLI->cli_CommandDir)
+						DestCLI->cli_CommandDir = ClonePath (SourceCLI->cli_CommandDir);
+				}
+			}
+		}
 
-    Permit ();
-  }
+		Permit ();
+	}
 }
 
 /******************************************************************************/
@@ -149,43 +149,43 @@ AttachCLI (struct WBStartup * Startup)
 STRPTR
 GetString (ULONG ID)
 {
-  STRPTR Builtin;
+	STRPTR Builtin;
 
-  if (ID < NUM_ELEMENTS (CatCompArray) && CatCompArray[ID].cca_ID == ID)
-    Builtin = CatCompArray[ID].cca_Str;
-  else
-  {
-    LONG Left, Mid, Right;
+	if (ID < NUM_ELEMENTS (CatCompArray) && CatCompArray[ID].cca_ID == ID)
+		Builtin = CatCompArray[ID].cca_Str;
+	else
+	{
+		LONG Left, Mid, Right;
 
-    Left = 0;
-    Right = NUM_ELEMENTS (CatCompArray) - 1;
+		Left = 0;
+		Right = NUM_ELEMENTS (CatCompArray) - 1;
 
-    do
-    {
-      Mid = (Left + Right) / 2;
+		do
+		{
+			Mid = (Left + Right) / 2;
 
-      if (ID < CatCompArray[Mid].cca_ID)
-        Right = Mid - 1;
-      else
-        Left = Mid + 1;
-    }
-    while (ID != CatCompArray[Mid].cca_ID && Left <= Right);
+			if (ID < CatCompArray[Mid].cca_ID)
+				Right = Mid - 1;
+			else
+				Left = Mid + 1;
+		}
+		while (ID != CatCompArray[Mid].cca_ID && Left <= Right);
 
-    if (ID == CatCompArray[Mid].cca_ID)
-      Builtin = CatCompArray[Mid].cca_Str;
-    else
-      Builtin = "";
-  }
+		if (ID == CatCompArray[Mid].cca_ID)
+			Builtin = CatCompArray[Mid].cca_Str;
+		else
+			Builtin = "";
+	}
 
-  if (Catalog)
-  {
-    STRPTR String = GetCatalogStr (Catalog, ID, Builtin);
+	if (Catalog)
+	{
+		STRPTR String = GetCatalogStr (Catalog, ID, Builtin);
 
-    if (String[0])
-      return (String);
-  }
+		if (String[0])
+			return (String);
+	}
 
-  return (Builtin);
+	return (Builtin);
 }
 
 /******************************************************************************/
@@ -193,24 +193,24 @@ GetString (ULONG ID)
 VOID
 Activate (VOID)
 {
-  if (!CxChanged)
-  {
-    if(NOT AktPrefs.mmp_VerifyPatches || AllPatchesOnTop())
-    {
-      ActivateCxObj (Broker, TRUE);
-      MagicActive = TRUE;
-    }
-  }
+	if (!CxChanged)
+	{
+		if(NOT AktPrefs.mmp_VerifyPatches || AllPatchesOnTop())
+		{
+			ActivateCxObj (Broker, TRUE);
+			MagicActive = TRUE;
+		}
+	}
 }
 
 VOID
 Deactivate (VOID)
 {
-  if (!CxChanged)
-  {
-    ActivateCxObj (Broker, FALSE);
-    MagicActive = FALSE;
-  }
+	if (!CxChanged)
+	{
+		ActivateCxObj (Broker, FALSE);
+		MagicActive = FALSE;
+	}
 }
 
 /******************************************************************************/
@@ -218,1761 +218,1761 @@ Deactivate (VOID)
 VOID
 FreeMenuRemember (struct MenuRemember *Remember)
 {
-  struct MenuRmb *MenRmb, *NextMenu;
-  struct ItemRmb *ItemRmb, *NextItem;
+	struct MenuRmb *MenRmb, *NextMenu;
+	struct ItemRmb *ItemRmb, *NextItem;
 
-  MenRmb = Remember->FirstMenu;
+	MenRmb = Remember->FirstMenu;
 
-  while (MenRmb)
-  {
-    ItemRmb = MenRmb->FirstItem;
+	while (MenRmb)
+	{
+		ItemRmb = MenRmb->FirstItem;
 
-    while (ItemRmb)
-    {
-      NextItem = ItemRmb->NextItem;
-      FreeVecPooled (ItemRmb);
-      ItemRmb = NextItem;
-    }
+		while (ItemRmb)
+		{
+			NextItem = ItemRmb->NextItem;
+			FreeVecPooled (ItemRmb);
+			ItemRmb = NextItem;
+		}
 
-    NextMenu = MenRmb->NextMenu;
-    FreeVecPooled (MenRmb);
-    MenRmb = NextMenu;
-  }
+		NextMenu = MenRmb->NextMenu;
+		FreeVecPooled (MenRmb);
+		MenRmb = NextMenu;
+	}
 
-  FreeVecPooled (Remember);
+	FreeVecPooled (Remember);
 }
 
 struct MenuRemember *
 MakeMenuRemember (struct Window *Win)
 {
-  struct MenuItem *ZwItem;
-  LONG NW, NH, N1, N2;
-  struct IntuiText *IntTxt;
-  BOOL ScrHiRes, HasCheck;
-  struct MenuRemember *NewRemember;
-  struct MenuRmb *NewMenRmb;
-  struct ItemRmb *NewItemRmb;
-  struct Menu *LookMenu;
-  struct MenuItem *LookItem;
-  struct TextAttr MenTextAttr;
-  struct Screen *MenScr;
-  struct Image *IntImg;
-  long Length;
+	struct MenuItem *ZwItem;
+	LONG NW, NH, N1, N2;
+	struct IntuiText *IntTxt;
+	BOOL ScrHiRes, HasCheck;
+	struct MenuRemember *NewRemember;
+	struct MenuRmb *NewMenRmb;
+	struct ItemRmb *NewItemRmb;
+	struct Menu *LookMenu;
+	struct MenuItem *LookItem;
+	struct TextAttr MenTextAttr;
+	struct Screen *MenScr;
+	struct Image *IntImg;
+	long Length;
 
-  if (Win->MenuStrip == NULL)
-    return (NULL);
+	if (Win->MenuStrip == NULL)
+		return (NULL);
 
-  if (!(NewRemember = AllocVecPooled (sizeof (struct MenuRemember), MEMF_CLEAR)))
-      return (NULL);
+	if (!(NewRemember = AllocVecPooled (sizeof (struct MenuRemember), MEMF_CLEAR)))
+			return (NULL);
 
-  MenScr = Win->WScreen;
+	MenScr = Win->WScreen;
 
-  AskFont (MenScr->BarLayer->rp, &MenTextAttr);
+	AskFont (MenScr->BarLayer->rp, &MenTextAttr);
 
-  ScrHiRes = (MenScr->Flags & SCREENHIRES) != NULL;
+	ScrHiRes = (MenScr->Flags & SCREENHIRES) != NULL;
 
-  NewRemember->MenWindow = Win;
-  NewRemember->MenuStrip = Win->MenuStrip;
+	NewRemember->MenWindow = Win;
+	NewRemember->MenuStrip = Win->MenuStrip;
 
-  NewRemember->AktMenuNum = MENUNULL;
-  NewRemember->AktMenu = NULL;
+	NewRemember->AktMenuNum = MENUNULL;
+	NewRemember->AktMenu = NULL;
 
-  LookMenu = Win->MenuStrip;
-  while (LookMenu)
-  {
-    if (!(NewMenRmb = AllocVecPooled (sizeof (struct MenuRmb), MEMF_CLEAR)))
-    {
-      FreeMenuRemember (NewRemember);
-      return (NULL);
-    }
+	LookMenu = Win->MenuStrip;
+	while (LookMenu)
+	{
+		if (!(NewMenRmb = AllocVecPooled (sizeof (struct MenuRmb), MEMF_CLEAR)))
+		{
+			FreeMenuRemember (NewRemember);
+			return (NULL);
+		}
 
-    NewMenRmb->Menu = LookMenu;
-    NewMenRmb->AktItemNum = 0;
-    NewMenRmb->AktItem = 0;
+		NewMenRmb->Menu = LookMenu;
+		NewMenRmb->AktItemNum = 0;
+		NewMenRmb->AktItem = 0;
 
-    NewMenRmb->Height = 0;
-    NewMenRmb->Width = 0;
-    NewMenRmb->ZwTop = 0x7fff;
-    NewMenRmb->ZwLeft = 0x7fff;
-    NewMenRmb->CmdOffs = 0;
+		NewMenRmb->Height = 0;
+		NewMenRmb->Width = 0;
+		NewMenRmb->ZwTop = 0x7fff;
+		NewMenRmb->ZwLeft = 0x7fff;
+		NewMenRmb->CmdOffs = 0;
 
-    HasCheck = FALSE;
+		HasCheck = FALSE;
 
-    ZwItem = LookMenu->FirstItem;
+		ZwItem = LookMenu->FirstItem;
 
-    while (ZwItem)
-    {
-      if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
-        HasCheck = TRUE;
+		while (ZwItem)
+		{
+			if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
+				HasCheck = TRUE;
 
-      CommandText.ITextFont = &MenTextAttr;
+			CommandText.ITextFont = &MenTextAttr;
 
-      NW = ZwItem->LeftEdge + ZwItem->Width;
-      NH = ZwItem->TopEdge + ZwItem->Height;
+			NW = ZwItem->LeftEdge + ZwItem->Width;
+			NH = ZwItem->TopEdge + ZwItem->Height;
 
-      if (ZwItem->Flags & ITEMTEXT)
-      {
-        IntTxt = (struct IntuiText *) ZwItem->ItemFill;
+			if (ZwItem->Flags & ITEMTEXT)
+			{
+				IntTxt = (struct IntuiText *) ZwItem->ItemFill;
 
-        while (IntTxt)
-        {
-          if (IntTxt->ITextFont == NULL)
-          {
-            IntTxt->ITextFont = &MenTextAttr;
-            N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-            N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-            IntTxt->ITextFont = NULL;
-          }
-          else
-          {
-            N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-            N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-            CommandText.ITextFont = IntTxt->ITextFont;
-          }
+				while (IntTxt)
+				{
+					if (IntTxt->ITextFont == NULL)
+					{
+						IntTxt->ITextFont = &MenTextAttr;
+						N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+						N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+						IntTxt->ITextFont = NULL;
+					}
+					else
+					{
+						N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+						N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+						CommandText.ITextFont = IntTxt->ITextFont;
+					}
 
-          if (N1 > NW)
-            NW = N1;
+					if (N1 > NW)
+						NW = N1;
 
-          if (N2 > NH)
-            NH = N2;
+					if (N2 > NH)
+						NH = N2;
 
-          IntTxt = IntTxt->NextText;
-        }
-      }
-      else
-      {
-        IntImg = (struct Image *) ZwItem->ItemFill;
-        while (IntImg)
-        {
-          N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
-          if (N1 > NW)
-            NW = N1;
+					IntTxt = IntTxt->NextText;
+				}
+			}
+			else
+			{
+				IntImg = (struct Image *) ZwItem->ItemFill;
+				while (IntImg)
+				{
+					N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
+					if (N1 > NW)
+						NW = N1;
 
-          N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
-          if (N1 > NH)
-            NH = N1;
+					N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
+					if (N1 > NH)
+						NH = N1;
 
-          IntImg = IntImg->NextImage;
-        }
-      }
+					IntImg = IntImg->NextImage;
+				}
+			}
 
-      if (NW > NewMenRmb->Width)
-        NewMenRmb->Width = NW;
-      if (NH > NewMenRmb->Height)
-        NewMenRmb->Height = NH;
+			if (NW > NewMenRmb->Width)
+				NewMenRmb->Width = NW;
+			if (NH > NewMenRmb->Height)
+				NewMenRmb->Height = NH;
 
-      if (ZwItem->LeftEdge < NewMenRmb->ZwLeft)
-        NewMenRmb->ZwLeft = ZwItem->LeftEdge;
-      if (ZwItem->TopEdge < NewMenRmb->ZwTop)
-        NewMenRmb->ZwTop = ZwItem->TopEdge;
+			if (ZwItem->LeftEdge < NewMenRmb->ZwLeft)
+				NewMenRmb->ZwLeft = ZwItem->LeftEdge;
+			if (ZwItem->TopEdge < NewMenRmb->ZwTop)
+				NewMenRmb->ZwTop = ZwItem->TopEdge;
 
-      if (ZwItem->Flags & COMMSEQ)
-      {
-        CommText[0] = ZwItem->Command;
-        CommText[1] = 0;
+			if (ZwItem->Flags & COMMSEQ)
+			{
+				CommText[0] = ZwItem->Command;
+				CommText[1] = 0;
 
-        Length = IntuiTextLength (&CommandText);
-        if (Length > NewMenRmb->CmdOffs)
-          NewMenRmb->CmdOffs = Length;
-      }
+				Length = IntuiTextLength (&CommandText);
+				if (Length > NewMenRmb->CmdOffs)
+					NewMenRmb->CmdOffs = Length;
+			}
 
-      ZwItem = ZwItem->NextItem;
-    }
+			ZwItem = ZwItem->NextItem;
+		}
 
-    NewMenRmb->Height -= NewMenRmb->ZwTop;
-    NewMenRmb->Width -= NewMenRmb->ZwLeft;
+		NewMenRmb->Height -= NewMenRmb->ZwTop;
+		NewMenRmb->Width -= NewMenRmb->ZwLeft;
 
-    NewMenRmb->NextMenu = NewRemember->FirstMenu;
-    NewRemember->FirstMenu = NewMenRmb;
+		NewMenRmb->NextMenu = NewRemember->FirstMenu;
+		NewRemember->FirstMenu = NewMenRmb;
 
-    if (NewMenRmb->Height != 0 && NewMenRmb->Width != 0)
-    {
-      if (ScrHiRes)
-      {
-        NewMenRmb->Height += 6;
-        NewMenRmb->Width += 10;
-        NewMenRmb->LeftBorder = 5;
-        NewMenRmb->TopBorder = 3;
-      }
-      else
-      {
-        NewMenRmb->Height += 6;
-        NewMenRmb->Width += 6;
-        NewMenRmb->TopBorder = 3;
-        NewMenRmb->LeftBorder = 3;
-      }
+		if (NewMenRmb->Height != 0 && NewMenRmb->Width != 0)
+		{
+			if (ScrHiRes)
+			{
+				NewMenRmb->Height += 6;
+				NewMenRmb->Width += 10;
+				NewMenRmb->LeftBorder = 5;
+				NewMenRmb->TopBorder = 3;
+			}
+			else
+			{
+				NewMenRmb->Height += 6;
+				NewMenRmb->Width += 6;
+				NewMenRmb->TopBorder = 3;
+				NewMenRmb->LeftBorder = 3;
+			}
 
-      NewMenRmb->TopOffs = NewMenRmb->TopBorder - NewMenRmb->ZwTop;
-      NewMenRmb->LeftOffs = NewMenRmb->LeftBorder - NewMenRmb->ZwLeft;
+			NewMenRmb->TopOffs = NewMenRmb->TopBorder - NewMenRmb->ZwTop;
+			NewMenRmb->LeftOffs = NewMenRmb->LeftBorder - NewMenRmb->ZwLeft;
 
-      LookItem = LookMenu->FirstItem;
+			LookItem = LookMenu->FirstItem;
 
-      while (LookItem)
-      {
-        if (!(NewItemRmb = AllocVecPooled (sizeof (struct ItemRmb), MEMF_CLEAR)))
-        {
-          FreeMenuRemember (NewRemember);
-          return (NULL);
-        }
+			while (LookItem)
+			{
+				if (!(NewItemRmb = AllocVecPooled (sizeof (struct ItemRmb), MEMF_CLEAR)))
+				{
+					FreeMenuRemember (NewRemember);
+					return (NULL);
+				}
 
-        NewItemRmb->Item = LookItem;
-        NewItemRmb->AktSubItemNum = 0;
-        NewItemRmb->AktSubItem = NULL;
+				NewItemRmb->Item = LookItem;
+				NewItemRmb->AktSubItemNum = 0;
+				NewItemRmb->AktSubItem = NULL;
 
-        NewItemRmb->Height = 0;
-        NewItemRmb->Width = 0;
-        NewItemRmb->ZwTop = 0x7fff;
-        NewItemRmb->ZwLeft = 0x7fff;
-        NewItemRmb->CmdOffs = 0;
+				NewItemRmb->Height = 0;
+				NewItemRmb->Width = 0;
+				NewItemRmb->ZwTop = 0x7fff;
+				NewItemRmb->ZwLeft = 0x7fff;
+				NewItemRmb->CmdOffs = 0;
 
-        ZwItem = LookItem->SubItem;
+				ZwItem = LookItem->SubItem;
 
-        HasCheck = FALSE;
+				HasCheck = FALSE;
 
-        while (ZwItem)
-        {
-          if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
-            HasCheck = TRUE;
+				while (ZwItem)
+				{
+					if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
+						HasCheck = TRUE;
 
-          CommandText.ITextFont = &MenTextAttr;
+					CommandText.ITextFont = &MenTextAttr;
 
-          NW = ZwItem->LeftEdge + ZwItem->Width;
-          NH = ZwItem->TopEdge + ZwItem->Height;
+					NW = ZwItem->LeftEdge + ZwItem->Width;
+					NH = ZwItem->TopEdge + ZwItem->Height;
 
-          if (ZwItem->Flags & ITEMTEXT)
-          {
-            IntTxt = (struct IntuiText *) ZwItem->ItemFill;
-            while (IntTxt)
-            {
-              if (IntTxt->ITextFont == NULL)
-              {
-                IntTxt->ITextFont = &MenTextAttr;
-                N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-                N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-                IntTxt->ITextFont = NULL;
-              }
-              else
-              {
-                N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-                N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-                CommandText.ITextFont = IntTxt->ITextFont;
-              }
+					if (ZwItem->Flags & ITEMTEXT)
+					{
+						IntTxt = (struct IntuiText *) ZwItem->ItemFill;
+						while (IntTxt)
+						{
+							if (IntTxt->ITextFont == NULL)
+							{
+								IntTxt->ITextFont = &MenTextAttr;
+								N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+								N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+								IntTxt->ITextFont = NULL;
+							}
+							else
+							{
+								N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+								N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+								CommandText.ITextFont = IntTxt->ITextFont;
+							}
 
-              if (N1 > NW)
-                NW = N1;
+							if (N1 > NW)
+								NW = N1;
 
-              if (N2 > NH)
-                NH = N2;
+							if (N2 > NH)
+								NH = N2;
 
-              IntTxt = IntTxt->NextText;
-            }
-          }
-          else
-          {
-            IntImg = (struct Image *) ZwItem->ItemFill;
-            while (IntImg)
-            {
-              N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
-              if (N1 > NW)
-                NW = N1;
+							IntTxt = IntTxt->NextText;
+						}
+					}
+					else
+					{
+						IntImg = (struct Image *) ZwItem->ItemFill;
+						while (IntImg)
+						{
+							N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
+							if (N1 > NW)
+								NW = N1;
 
-              N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
-              if (N1 > NH)
-                NH = N1;
+							N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
+							if (N1 > NH)
+								NH = N1;
 
-              IntImg = IntImg->NextImage;
-            }
-          }
+							IntImg = IntImg->NextImage;
+						}
+					}
 
-          if (NW > NewItemRmb->Width)
-            NewItemRmb->Width = NW;
-          if (NH > NewItemRmb->Height)
-            NewItemRmb->Height = NH;
+					if (NW > NewItemRmb->Width)
+						NewItemRmb->Width = NW;
+					if (NH > NewItemRmb->Height)
+						NewItemRmb->Height = NH;
 
-          if (ZwItem->LeftEdge < NewItemRmb->ZwLeft)
-            NewItemRmb->ZwLeft = ZwItem->LeftEdge;
-          if (ZwItem->TopEdge < NewItemRmb->ZwTop)
-            NewItemRmb->ZwTop = ZwItem->TopEdge;
+					if (ZwItem->LeftEdge < NewItemRmb->ZwLeft)
+						NewItemRmb->ZwLeft = ZwItem->LeftEdge;
+					if (ZwItem->TopEdge < NewItemRmb->ZwTop)
+						NewItemRmb->ZwTop = ZwItem->TopEdge;
 
-          if (ZwItem->Flags & COMMSEQ)
-          {
-            CommText[0] = ZwItem->Command;
-            CommText[1] = 0;
+					if (ZwItem->Flags & COMMSEQ)
+					{
+						CommText[0] = ZwItem->Command;
+						CommText[1] = 0;
 
-            Length = IntuiTextLength (&CommandText);
-            if (Length > NewItemRmb->CmdOffs)
-              NewItemRmb->CmdOffs = Length;
-          }
+						Length = IntuiTextLength (&CommandText);
+						if (Length > NewItemRmb->CmdOffs)
+							NewItemRmb->CmdOffs = Length;
+					}
 
-          ZwItem = ZwItem->NextItem;
-        }
+					ZwItem = ZwItem->NextItem;
+				}
 
-        NewItemRmb->Height -= NewItemRmb->ZwTop;
-        NewItemRmb->Width -= NewItemRmb->ZwLeft;
+				NewItemRmb->Height -= NewItemRmb->ZwTop;
+				NewItemRmb->Width -= NewItemRmb->ZwLeft;
 
-        if (NewItemRmb->Height != NULL && NewItemRmb->Width != NULL)
-        {
-          if (ScrHiRes)
-          {
-            NewItemRmb->Height += 6;
-            NewItemRmb->Width += 10;
-            NewItemRmb->LeftBorder = 5;
-            NewItemRmb->TopBorder = 3;
-          }
-          else
-          {
-            NewItemRmb->Height += 6;
-            NewItemRmb->Width += 6;
-            NewItemRmb->TopBorder = 3;
-            NewItemRmb->LeftBorder = 3;
-          }
+				if (NewItemRmb->Height != NULL && NewItemRmb->Width != NULL)
+				{
+					if (ScrHiRes)
+					{
+						NewItemRmb->Height += 6;
+						NewItemRmb->Width += 10;
+						NewItemRmb->LeftBorder = 5;
+						NewItemRmb->TopBorder = 3;
+					}
+					else
+					{
+						NewItemRmb->Height += 6;
+						NewItemRmb->Width += 6;
+						NewItemRmb->TopBorder = 3;
+						NewItemRmb->LeftBorder = 3;
+					}
 
-          NewItemRmb->TopOffs = NewItemRmb->TopBorder - NewItemRmb->ZwTop;
-          NewItemRmb->LeftOffs = NewItemRmb->LeftBorder - NewItemRmb->ZwLeft;
+					NewItemRmb->TopOffs = NewItemRmb->TopBorder - NewItemRmb->ZwTop;
+					NewItemRmb->LeftOffs = NewItemRmb->LeftBorder - NewItemRmb->ZwLeft;
 
-        }
+				}
 
-        NewItemRmb->NextItem = NewMenRmb->FirstItem;
-        NewMenRmb->FirstItem = NewItemRmb;
+				NewItemRmb->NextItem = NewMenRmb->FirstItem;
+				NewMenRmb->FirstItem = NewItemRmb;
 
-        LookItem = LookItem->NextItem;
-      }
+				LookItem = LookItem->NextItem;
+			}
 
-    }
+		}
 
-    LookMenu = LookMenu->NextMenu;
-  }
+		LookMenu = LookMenu->NextMenu;
+	}
 
-  return (NewRemember);
+	return (NewRemember);
 
 }
 
 VOID
 FreeGlobalRemember (VOID)
 {
-  struct MenuRemember *NextRemember;
+	struct MenuRemember *NextRemember;
 
-  ObtainSemaphore (RememberSemaphore);
+	ObtainSemaphore (RememberSemaphore);
 
-  while (GlobalRemember)
-  {
-    NextRemember = GlobalRemember->NextRemember;
-    FreeMenuRemember (GlobalRemember);
-    GlobalRemember = NextRemember;
-  }
+	while (GlobalRemember)
+	{
+		NextRemember = GlobalRemember->NextRemember;
+		FreeMenuRemember (GlobalRemember);
+		GlobalRemember = NextRemember;
+	}
 
-  ReleaseSemaphore (RememberSemaphore);
+	ReleaseSemaphore (RememberSemaphore);
 }
 
 BOOL
 MakeGlobalRemember (VOID)
 {
-  struct Screen *Scr;
-  struct Window *Win;
-  struct MenuRemember *NewMenuRemember;
-  long ILock;
+	struct Screen *Scr;
+	struct Window *Win;
+	struct MenuRemember *NewMenuRemember;
+	long ILock;
 
-  ILock = LockIBase (NULL);
+	ILock = LockIBase (NULL);
 
-  ObtainSemaphore (RememberSemaphore);
+	ObtainSemaphore (RememberSemaphore);
 
-  Scr = IntuitionBase->FirstScreen;
+	Scr = IntuitionBase->FirstScreen;
 
-  while (Scr)
-  {
-    Win = Scr->FirstWindow;
+	while (Scr)
+	{
+		Win = Scr->FirstWindow;
 
-    while (Win)
-    {
-      if (Win->MenuStrip)
-      {
-        if (!(NewMenuRemember = MakeMenuRemember (Win)))
-        {
-          FreeGlobalRemember ();
-          ReleaseSemaphore (RememberSemaphore);
-          UnlockIBase (ILock);
-          return (FALSE);
-        }
-        NewMenuRemember->NextRemember = GlobalRemember;
-        GlobalRemember = NewMenuRemember;
-      }
-      Win = Win->NextWindow;
-    }
-    Scr = Scr->NextScreen;
-  }
+		while (Win)
+		{
+			if (Win->MenuStrip)
+			{
+				if (!(NewMenuRemember = MakeMenuRemember (Win)))
+				{
+					FreeGlobalRemember ();
+					ReleaseSemaphore (RememberSemaphore);
+					UnlockIBase (ILock);
+					return (FALSE);
+				}
+				NewMenuRemember->NextRemember = GlobalRemember;
+				GlobalRemember = NewMenuRemember;
+			}
+			Win = Win->NextWindow;
+		}
+		Scr = Scr->NextScreen;
+	}
 
-  ReleaseSemaphore (RememberSemaphore);
+	ReleaseSemaphore (RememberSemaphore);
 
-  UnlockIBase (ILock);
+	UnlockIBase (ILock);
 
-  return (TRUE);
+	return (TRUE);
 }
 
 VOID
 ClearRemember (struct Window * Win)
 {
-  struct MenuRemember *LookRemember;
-  struct MenuRemember *LastRemember;
-  struct MenuRemember *NextRemember;
+	struct MenuRemember *LookRemember;
+	struct MenuRemember *LastRemember;
+	struct MenuRemember *NextRemember;
 
-  ObtainSemaphore (RememberSemaphore);
+	ObtainSemaphore (RememberSemaphore);
 
-  LookRemember = GlobalRemember;
-  LastRemember = NULL;
-  while (LookRemember)
-  {
-    NextRemember = LookRemember->NextRemember;
-    if (LookRemember->MenWindow == Win)
-    {
-      if (LastRemember)
-        LastRemember->NextRemember = LookRemember->NextRemember;
-      else
-        GlobalRemember = LookRemember->NextRemember;
+	LookRemember = GlobalRemember;
+	LastRemember = NULL;
+	while (LookRemember)
+	{
+		NextRemember = LookRemember->NextRemember;
+		if (LookRemember->MenWindow == Win)
+		{
+			if (LastRemember)
+				LastRemember->NextRemember = LookRemember->NextRemember;
+			else
+				GlobalRemember = LookRemember->NextRemember;
 
-      FreeMenuRemember (LookRemember);
-    }
-    else
-      LastRemember = LookRemember;
+			FreeMenuRemember (LookRemember);
+		}
+		else
+			LastRemember = LookRemember;
 
-    LookRemember = NextRemember;
-  }
+		LookRemember = NextRemember;
+	}
 
-  ReleaseSemaphore (RememberSemaphore);
+	ReleaseSemaphore (RememberSemaphore);
 }
 
 BOOL
 UpdateRemember (struct Window *Window)
 {
-  struct MenuRemember *NewRemember;
-  struct MenuRmb *LookMenRmb;
-  struct ItemRmb *LookItemRmb;
+	struct MenuRemember *NewRemember;
+	struct MenuRmb *LookMenRmb;
+	struct ItemRmb *LookItemRmb;
 
-  ObtainSemaphore (RememberSemaphore);
+	ObtainSemaphore (RememberSemaphore);
 
-  ClearRemember (Window);
+	ClearRemember (Window);
 
-  if (!(NewRemember = MakeMenuRemember (Window)))
-    return (FALSE);
+	if (!(NewRemember = MakeMenuRemember (Window)))
+		return (FALSE);
 
-  NewRemember->NextRemember = GlobalRemember;
-  GlobalRemember = NewRemember;
+	NewRemember->NextRemember = GlobalRemember;
+	GlobalRemember = NewRemember;
 
-  AktMenuRemember = NewRemember;
+	AktMenuRemember = NewRemember;
 
-  if (AktMenu)
-  {
-    LookMenRmb = NewRemember->FirstMenu;
-    AktMenRmb = NULL;
-    while (LookMenRmb && (AktMenRmb == NULL))
-    {
-      if (LookMenRmb->Menu == AktMenu)
-        AktMenRmb = LookMenRmb;
-      LookMenRmb = LookMenRmb->NextMenu;
-    }
-    if (!AktMenRmb)
-    {
-      ReleaseSemaphore (RememberSemaphore);
-      return (FALSE);
-    }
+	if (AktMenu)
+	{
+		LookMenRmb = NewRemember->FirstMenu;
+		AktMenRmb = NULL;
+		while (LookMenRmb && (AktMenRmb == NULL))
+		{
+			if (LookMenRmb->Menu == AktMenu)
+				AktMenRmb = LookMenRmb;
+			LookMenRmb = LookMenRmb->NextMenu;
+		}
+		if (!AktMenRmb)
+		{
+			ReleaseSemaphore (RememberSemaphore);
+			return (FALSE);
+		}
 
-    if (AktItem)
-    {
-      LookItemRmb = AktMenRmb->FirstItem;
-      AktItemRmb = NULL;
-      while (LookItemRmb && (AktItemRmb == NULL))
-      {
-        if (LookItemRmb->Item == AktItem)
-          AktItemRmb = LookItemRmb;
-        LookItemRmb = LookItemRmb->NextItem;
-      }
-      if (!AktItemRmb)
-      {
-        ReleaseSemaphore (RememberSemaphore);
-        return (FALSE);
-      }
-    }
-  }
-  ReleaseSemaphore (RememberSemaphore);
-  return (TRUE);
+		if (AktItem)
+		{
+			LookItemRmb = AktMenRmb->FirstItem;
+			AktItemRmb = NULL;
+			while (LookItemRmb && (AktItemRmb == NULL))
+			{
+				if (LookItemRmb->Item == AktItem)
+					AktItemRmb = LookItemRmb;
+				LookItemRmb = LookItemRmb->NextItem;
+			}
+			if (!AktItemRmb)
+			{
+				ReleaseSemaphore (RememberSemaphore);
+				return (FALSE);
+			}
+		}
+	}
+	ReleaseSemaphore (RememberSemaphore);
+	return (TRUE);
 }
 
 VOID
 SetRemember (struct Window * Win)
 {
-  struct MenuRemember *NewRemember;
+	struct MenuRemember *NewRemember;
 
-  ObtainSemaphore (RememberSemaphore);
+	ObtainSemaphore (RememberSemaphore);
 
-  if (Win->MenuStrip)
-  {
-    ClearRemember (Win);
+	if (Win->MenuStrip)
+	{
+		ClearRemember (Win);
 
-    NewRemember = MakeMenuRemember (Win);
-    NewRemember->NextRemember = GlobalRemember;
-    GlobalRemember = NewRemember;
-  }
+		NewRemember = MakeMenuRemember (Win);
+		NewRemember->NextRemember = GlobalRemember;
+		GlobalRemember = NewRemember;
+	}
 
-  ReleaseSemaphore (RememberSemaphore);
+	ReleaseSemaphore (RememberSemaphore);
 }
 
 VOID
 ResetMenu (struct Menu *Menu, BOOL MenNull)
 {
-  struct Menu *ZwMenu;
-  struct MenuItem *ZwItem, *ZwSubItem;
+	struct Menu *ZwMenu;
+	struct MenuItem *ZwItem, *ZwSubItem;
 
-  ZwMenu = Menu;
-  while (ZwMenu)
-  {
-    ZwItem = ZwMenu->FirstItem;
-    while (ZwItem)
-    {
-      ZwSubItem = ZwItem->SubItem;
-      while (ZwSubItem)
-      {
-        ZwSubItem->Flags &= ~(ISDRAWN | HIGHITEM | MENUTOGGLED);
-        if (MenNull)
-          ZwSubItem->NextSelect = MENUNULL;
-        ZwSubItem = ZwSubItem->NextItem;
-      }
+	ZwMenu = Menu;
+	while (ZwMenu)
+	{
+		ZwItem = ZwMenu->FirstItem;
+		while (ZwItem)
+		{
+			ZwSubItem = ZwItem->SubItem;
+			while (ZwSubItem)
+			{
+				ZwSubItem->Flags &= ~(ISDRAWN | HIGHITEM | MENUTOGGLED);
+				if (MenNull)
+					ZwSubItem->NextSelect = MENUNULL;
+				ZwSubItem = ZwSubItem->NextItem;
+			}
 
-      ZwItem->Flags &= ~(ISDRAWN | HIGHITEM | MENUTOGGLED);
-      if (MenNull)
-        ZwItem->NextSelect = MENUNULL;
-      ZwItem = ZwItem->NextItem;
-    }
+			ZwItem->Flags &= ~(ISDRAWN | HIGHITEM | MENUTOGGLED);
+			if (MenNull)
+				ZwItem->NextSelect = MENUNULL;
+			ZwItem = ZwItem->NextItem;
+		}
 
-    ZwMenu->Flags &= ~MIDRAWN;
-    ZwMenu = ZwMenu->NextMenu;
-  }
+		ZwMenu->Flags &= ~MIDRAWN;
+		ZwMenu = ZwMenu->NextMenu;
+	}
 }
 
 VOID
 CleanUpMenu (VOID)
 {
-  CleanUpMenuSubBox ();
-  CleanUpMenuBox ();
-  CleanUpMenuStrip ();
+	CleanUpMenuSubBox ();
+	CleanUpMenuBox ();
+	CleanUpMenuStrip ();
 
-  if (LayersLocked)
-  {
-    UnlockLayers (&MenScr->LayerInfo);
-    UnlockLayerInfo (&MenScr->LayerInfo);
-    LayersLocked = FALSE;
-  }
+	if (LayersLocked)
+	{
+		UnlockLayers (&MenScr->LayerInfo);
+		UnlockLayerInfo (&MenScr->LayerInfo);
+		LayersLocked = FALSE;
+	}
 
-  MenWin->Flags &= ~WFLG_MENUSTATE;
+	MenWin->Flags &= ~WFLG_MENUSTATE;
 
-  ResetBrokerSetup ();
+	ResetBrokerSetup ();
 }
 
 BOOL
 MenuSelected (BOOL LastSelect)
 {
-  struct MenuItem *SelItem, *ZwItem;
-  BOOL SubItem;
-  ULONG MExcl;
-  LONG t, l, h, w;
+	struct MenuItem *SelItem, *ZwItem;
+	BOOL SubItem;
+	ULONG MExcl;
+	LONG t, l, h, w;
 
-  SelItem = NULL;
+	SelItem = NULL;
 
-  if (AktSubItem)
-  {
-    SelItem = AktSubItem;
-    SubItem = TRUE;
-  }
-  else if (AktItem && (!AktItem->SubItem))
-  {
-    SelItem = AktItem;
-    SubItem = FALSE;
-  }
-  else
-  {
-    SubItem = FALSE;
-  }
+	if (AktSubItem)
+	{
+		SelItem = AktSubItem;
+		SubItem = TRUE;
+	}
+	else if (AktItem && (!AktItem->SubItem))
+	{
+		SelItem = AktItem;
+		SubItem = FALSE;
+	}
+	else
+	{
+		SubItem = FALSE;
+	}
 
-  if (!SelItem)
-    return (FALSE);
+	if (!SelItem)
+		return (FALSE);
 
-  if (!(SelItem->Flags & ITEMENABLED))
-    return (FALSE);
+	if (!(SelItem->Flags & ITEMENABLED))
+		return (FALSE);
 
-  if (SubItem && SubBoxGhosted)
-    return (FALSE);
+	if (SubItem && SubBoxGhosted)
+		return (FALSE);
 
-  if (BoxGhosted)
-    return (FALSE);
+	if (BoxGhosted)
+		return (FALSE);
 
-  if (SelItem->Flags & CHECKIT)
-  {
-    if (SelItem->MutualExclude)
-    {
-      if (!(SelItem->Flags & CHECKED))
-      {
-        MExcl = SelItem->MutualExclude;
+	if (SelItem->Flags & CHECKIT)
+	{
+		if (SelItem->MutualExclude)
+		{
+			if (!(SelItem->Flags & CHECKED))
+			{
+				MExcl = SelItem->MutualExclude;
 
-        SelItem->Flags |= CHECKED;
+				SelItem->Flags |= CHECKED;
 
-        if (SubItem)
-        {
-          ZwItem = SubBoxItems;
-          DrawNormSubItem (SelItem);
-          DrawHiSubItem (SelItem);
-        }
-        else
-        {
-          ZwItem = BoxItems;
-          DrawNormItem (SelItem);
-          DrawHiItem (SelItem);
-        }
+				if (SubItem)
+				{
+					ZwItem = SubBoxItems;
+					DrawNormSubItem (SelItem);
+					DrawHiSubItem (SelItem);
+				}
+				else
+				{
+					ZwItem = BoxItems;
+					DrawNormItem (SelItem);
+					DrawHiItem (SelItem);
+				}
 
-        while (ZwItem)
-        {
-          if (ZwItem != SelItem && (MExcl & 0x1) && (ZwItem->Flags & CHECKIT) && (ZwItem->Flags & CHECKED))
-          {
-            ZwItem->Flags &= ~CHECKED;
+				while (ZwItem)
+				{
+					if (ZwItem != SelItem && (MExcl & 0x1) && (ZwItem->Flags & CHECKIT) && (ZwItem->Flags & CHECKED))
+					{
+						ZwItem->Flags &= ~CHECKED;
 
-            if (SubItem)
-            {
-              if (GetSubItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w, FALSE);
-            }
-            else
-            {
-              if (GetItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w, FALSE);
-            }
-          }
+						if (SubItem)
+						{
+							if (GetSubItemContCoor (ZwItem, &t, &l, &w, &h))
+								DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
+						}
+						else
+						{
+							if (GetItemContCoor (ZwItem, &t, &l, &w, &h))
+								DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
+						}
+					}
 
-          MExcl = MExcl >> 1;
-          ZwItem = ZwItem->NextItem;
-        }
-      }
-      else if (SelItem->Flags & MENUTOGGLE)
-      {
-        SelItem->Flags &= ~CHECKED;
+					MExcl = MExcl >> 1;
+					ZwItem = ZwItem->NextItem;
+				}
+			}
+			else if (SelItem->Flags & MENUTOGGLE)
+			{
+				SelItem->Flags &= ~CHECKED;
 
-        if (SubItem)
-        {
-          DrawNormSubItem (SelItem);
-          DrawHiSubItem (SelItem);
-        }
-        else
-        {
-          DrawNormItem (SelItem);
-          DrawHiItem (SelItem);
-        }
-      }
-    }
-    else if ((!LastSelect) || (!(SelItem->Flags & MENUTOGGLED)))
-    {
-      SelItem->Flags ^= CHECKED;
+				if (SubItem)
+				{
+					DrawNormSubItem (SelItem);
+					DrawHiSubItem (SelItem);
+				}
+				else
+				{
+					DrawNormItem (SelItem);
+					DrawHiItem (SelItem);
+				}
+			}
+		}
+		else if ((!LastSelect) || (!(SelItem->Flags & MENUTOGGLED)))
+		{
+			SelItem->Flags ^= CHECKED;
 
-      if (SubItem)
-      {
-        DrawNormSubItem (SelItem);
-        DrawHiSubItem (SelItem);
-      }
-      else
-      {
-        DrawNormItem (SelItem);
-        DrawHiItem (SelItem);
-      }
-    }
-  }
+			if (SubItem)
+			{
+				DrawNormSubItem (SelItem);
+				DrawHiSubItem (SelItem);
+			}
+			else
+			{
+				DrawNormItem (SelItem);
+				DrawHiItem (SelItem);
+			}
+		}
+	}
 
-  if (SelItem->Flags & MENUTOGGLED)
-    return (TRUE);
+	if (SelItem->Flags & MENUTOGGLED)
+		return (TRUE);
 
-  SelItem->Flags |= MENUTOGGLED;
+	SelItem->Flags |= MENUTOGGLED;
 
-  SelItem->NextSelect = MENUNULL;
+	SelItem->NextSelect = MENUNULL;
 
-  if (!FirstSelectedMenu)
-  {
-    FirstSelectedMenu = SelItem;
-    FirstMenuNum = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
-  }
+	if (!FirstSelectedMenu)
+	{
+		FirstSelectedMenu = SelItem;
+		FirstMenuNum = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
+	}
 
-  if (LastSelectedMenu)
-    LastSelectedMenu->NextSelect = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
+	if (LastSelectedMenu)
+		LastSelectedMenu->NextSelect = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
 
-  LastSelectedMenu = SelItem;
+	LastSelectedMenu = SelItem;
 
-  return (TRUE);
+	return (TRUE);
 }
 
 BOOL
 CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
 {
-  ULONG MsgID, MsgType;
-  APTR MsgData;
-  struct InputEvent Event;
-  BOOL Shift, Ende, IsSingle, OutOfBounds;
-  short ZwNum;
-  char CharBuf[12], ASCIIChar;
-  struct MenuItem *SavItem, *SavSubItem;
-  struct Menu *SavMenu;
-  UWORD SavMenuNum, SavItemNum, SavSubItemNum;
-  ULONG CurrSecs, CurrMics;
+	ULONG MsgID, MsgType;
+	APTR MsgData;
+	struct InputEvent Event;
+	BOOL Shift, Ende, IsSingle, OutOfBounds;
+	short ZwNum;
+	char CharBuf[12], ASCIIChar;
+	struct MenuItem *SavItem, *SavSubItem;
+	struct Menu *SavMenu;
+	UWORD SavMenuNum, SavItemNum, SavSubItemNum;
+	ULONG CurrSecs, CurrMics;
 
-  *Cancel = FALSE;
-  Ende = FALSE;
+	*Cancel = FALSE;
+	Ende = FALSE;
 
-  if (CheckReply ((struct Message *) Msg))
-    return (FALSE);
+	if (CheckReply ((struct Message *) Msg))
+		return (FALSE);
 
-  MsgID = CxMsgID (Msg);
-  MsgType = CxMsgType (Msg);
-  MsgData = CxMsgData (Msg);
-  Event = *((struct InputEvent *) MsgData);
-  ReplyMsg ((struct Message *) Msg);
+	MsgID = CxMsgID (Msg);
+	MsgType = CxMsgType (Msg);
+	MsgData = CxMsgData (Msg);
+	Event = *((struct InputEvent *) MsgData);
+	ReplyMsg ((struct Message *) Msg);
 
-  if (MsgType == CXM_IEVENT)
-  {
-    switch (MsgID)
-    {
-    case EVT_KEYBOARD:
-      Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
-      if (Event.ie_Code == HELP && (MenWin->IDCMPFlags & IDCMP_MENUHELP) != NULL)
-      {
-        Ende = HelpPressed = TRUE;
-        FirstMenuNum = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
-        break;
-      }
+	if (MsgType == CXM_IEVENT)
+	{
+		switch (MsgID)
+		{
+		case EVT_KEYBOARD:
+			Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
+			if (Event.ie_Code == HELP && (MenWin->IDCMPFlags & IDCMP_MENUHELP) != NULL)
+			{
+				Ende = HelpPressed = TRUE;
+				FirstMenuNum = FULLMENUNUM (MenuNum, ItemNum, SubItemNum);
+				break;
+			}
 
-      if (Event.ie_Code == CTRL && ((StripPopUp && AktPrefs.mmp_PULook != LOOK_2D) || (!StripPopUp && AktPrefs.mmp_PDLook != LOOK_2D)))
-      {
-        SavSubItem = AktSubItem;
-        SavSubItemNum = SubItemNum;
-        SavItem = AktItem;
-        SavItemNum = ItemNum;
-        SavMenu = AktMenu;
-        SavMenuNum = MenuNum;
+			if (Event.ie_Code == CTRL && ((StripPopUp && AktPrefs.mmp_PULook != LOOK_2D) || (!StripPopUp && AktPrefs.mmp_PDLook != LOOK_2D)))
+			{
+				SavSubItem = AktSubItem;
+				SavSubItemNum = SubItemNum;
+				SavItem = AktItem;
+				SavItemNum = ItemNum;
+				SavMenu = AktMenu;
+				SavMenuNum = MenuNum;
 
-        CleanUpMenuSubBox ();
-        CleanUpMenuBox ();
-        CleanUpMenuStrip ();
-        Ende = !DrawMenuStrip (StripPopUp, (Look3D == LOOK_3D) ? LOOK_2D :
-         (StripPopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook, FALSE);
-        if (SavMenu)
-        {
-          DrawHiMenu (AktMenu = SavMenu);
-          MenuNum = SavMenuNum;
-          DrawMenuBox (AktMenu, FALSE);
+				CleanUpMenuSubBox ();
+				CleanUpMenuBox ();
+				CleanUpMenuStrip ();
+				Ende = !DrawMenuStrip (StripPopUp, (Look3D == LOOK_3D) ? LOOK_2D :
+				 (StripPopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook, FALSE);
+				if (SavMenu)
+				{
+					DrawHiMenu (AktMenu = SavMenu);
+					MenuNum = SavMenuNum;
+					DrawMenuBox (AktMenu, FALSE);
 
-          if (SavItem)
-          {
-            DrawHiItem (AktItem = SavItem);
-            ItemNum = SavItemNum;
-            SavItem->Flags |= HIGHITEM;
-            DrawMenuSubBox (AktMenu, SavItem, FALSE);
+					if (SavItem)
+					{
+						DrawHiItem (AktItem = SavItem);
+						ItemNum = SavItemNum;
+						SavItem->Flags |= HIGHITEM;
+						DrawMenuSubBox (AktMenu, SavItem, FALSE);
 
-            if (SavSubItem)
-            {
-              DrawHiSubItem (AktSubItem = SavSubItem);
-              AktSubItem->Flags |= HIGHITEM;
-              SubItemNum = SavSubItemNum;
-            }
-          }
-        }
-      }
+						if (SavSubItem)
+						{
+							DrawHiSubItem (AktSubItem = SavSubItem);
+							AktSubItem->Flags |= HIGHITEM;
+							SubItemNum = SavSubItemNum;
+						}
+					}
+				}
+			}
 
-      if ((!StripPopUp) && (MenuMode == MODE_KEYBOARD))
-      {
-        MenuMode = MODE_KEYBOARD;
-        if (MenuSubBoxSwapped)
-        {
-          switch (Event.ie_Code)
-          {
-          case KEYCODE_RETURN:
-          case KEYCODE_ENTER:
-            Ende = (MenuSelected (!Shift) && (!Shift));
-            break;
+			if ((!StripPopUp) && (MenuMode == MODE_KEYBOARD))
+			{
+				MenuMode = MODE_KEYBOARD;
+				if (MenuSubBoxSwapped)
+				{
+					switch (Event.ie_Code)
+					{
+					case KEYCODE_RETURN:
+					case KEYCODE_ENTER:
+						Ende = (MenuSelected (!Shift) && (!Shift));
+						break;
 
-          case ESC:
-            if(Shift)
-              *Cancel = Ende = TRUE;
-            else
-              CleanUpMenuSubBox ();
-            break;
+					case ESC:
+						if(Shift)
+							*Cancel = Ende = TRUE;
+						else
+							CleanUpMenuSubBox ();
+						break;
 
-          case CRSLEFT:
-            CleanUpMenuSubBox ();
-            CleanUpMenuBox ();
-            if (Shift)
-              SelectNextMenu (-1);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectPrevMenu (MenuNum) == ZwNum)
-                SelectPrevMenu (0x7f);
-            }
-            DrawMenuBox (AktMenu, TRUE);
-            break;
+					case CRSLEFT:
+						CleanUpMenuSubBox ();
+						CleanUpMenuBox ();
+						if (Shift)
+							SelectNextMenu (-1);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectPrevMenu (MenuNum) == ZwNum)
+								SelectPrevMenu (0x7f);
+						}
+						DrawMenuBox (AktMenu, TRUE);
+						break;
 
-          case CRSRIGHT:
-            CleanUpMenuSubBox ();
-            CleanUpMenuBox ();
-            if (Shift)
-              SelectPrevMenu (0x7f);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectNextMenu (MenuNum) == ZwNum)
-                SelectNextMenu (-1);
-            }
-            DrawMenuBox (AktMenu, TRUE);
-            break;
+					case CRSRIGHT:
+						CleanUpMenuSubBox ();
+						CleanUpMenuBox ();
+						if (Shift)
+							SelectPrevMenu (0x7f);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectNextMenu (MenuNum) == ZwNum)
+								SelectNextMenu (-1);
+						}
+						DrawMenuBox (AktMenu, TRUE);
+						break;
 
-          case CRSUP:
-            if (Shift)
-              SelectNextSubItem (-1);
-            else
-            {
-              ZwNum = SubItemNum;
-              if (SelectPrevSubItem (SubItemNum) == ZwNum)
-                SelectPrevSubItem (0x7f);
-            }
-            break;
-          case CRSDOWN:
-            if (Shift)
-              SelectPrevSubItem (0x7f);
-            else
-            {
-              ZwNum = SubItemNum;
-              if (SelectNextSubItem (SubItemNum) == ZwNum)
-                SelectNextSubItem (-1);
-            }
-            break;
+					case CRSUP:
+						if (Shift)
+							SelectNextSubItem (-1);
+						else
+						{
+							ZwNum = SubItemNum;
+							if (SelectPrevSubItem (SubItemNum) == ZwNum)
+								SelectPrevSubItem (0x7f);
+						}
+						break;
+					case CRSDOWN:
+						if (Shift)
+							SelectPrevSubItem (0x7f);
+						else
+						{
+							ZwNum = SubItemNum;
+							if (SelectNextSubItem (SubItemNum) == ZwNum)
+								SelectNextSubItem (-1);
+						}
+						break;
 
-          default:
-            if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
-            {
-              ASCIIChar = CharBuf[0];
-              if (FindSubItemChar (ASCIIChar, &IsSingle) && IsSingle)
-                Ende = (MenuSelected (!Shift) && (!Shift));
-            }
-            break;
-          }
-        }
-        else if (MenuBoxSwapped)
-        {
-          switch (Event.ie_Code)
-          {
-          case KEYCODE_RETURN:
-          case KEYCODE_ENTER:
-            if (AktItem->SubItem)
-              DrawMenuSubBox (AktMenu, AktItem, TRUE);
-            else
-              Ende = (MenuSelected (!Shift) && (!Shift));
-            break;
+					default:
+						if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
+						{
+							ASCIIChar = CharBuf[0];
+							if (FindSubItemChar (ASCIIChar, &IsSingle) && IsSingle)
+								Ende = (MenuSelected (!Shift) && (!Shift));
+						}
+						break;
+					}
+				}
+				else if (MenuBoxSwapped)
+				{
+					switch (Event.ie_Code)
+					{
+					case KEYCODE_RETURN:
+					case KEYCODE_ENTER:
+						if (AktItem->SubItem)
+							DrawMenuSubBox (AktMenu, AktItem, TRUE);
+						else
+							Ende = (MenuSelected (!Shift) && (!Shift));
+						break;
 
-          case ESC:
-            CleanUpMenuBox ();
-            break;
+					case ESC:
+						CleanUpMenuBox ();
+						break;
 
-          case CRSLEFT:
-            CleanUpMenuBox ();
-            if (Shift)
-              SelectNextMenu (-1);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectPrevMenu (MenuNum) == ZwNum)
-                SelectPrevMenu (0x7f);
-            }
-            DrawMenuBox (AktMenu, TRUE);
-            break;
+					case CRSLEFT:
+						CleanUpMenuBox ();
+						if (Shift)
+							SelectNextMenu (-1);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectPrevMenu (MenuNum) == ZwNum)
+								SelectPrevMenu (0x7f);
+						}
+						DrawMenuBox (AktMenu, TRUE);
+						break;
 
-          case CRSRIGHT:
-            CleanUpMenuBox ();
-            if (Shift)
-              SelectPrevMenu (0x7f);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectNextMenu (MenuNum) == ZwNum)
-                SelectNextMenu (-1);
-            }
-            DrawMenuBox (AktMenu, TRUE);
-            break;
+					case CRSRIGHT:
+						CleanUpMenuBox ();
+						if (Shift)
+							SelectPrevMenu (0x7f);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectNextMenu (MenuNum) == ZwNum)
+								SelectNextMenu (-1);
+						}
+						DrawMenuBox (AktMenu, TRUE);
+						break;
 
-          case CRSUP:
-            if (Shift)
-              SelectNextItem (-1);
-            else
-            {
-              ZwNum = ItemNum;
-              if (SelectPrevItem (ItemNum) == ZwNum)
-                SelectPrevItem (0x7f);
-            }
-            break;
+					case CRSUP:
+						if (Shift)
+							SelectNextItem (-1);
+						else
+						{
+							ZwNum = ItemNum;
+							if (SelectPrevItem (ItemNum) == ZwNum)
+								SelectPrevItem (0x7f);
+						}
+						break;
 
-          case CRSDOWN:
-            if (Shift)
-              SelectPrevItem (0x7f);
-            else
-            {
-              ZwNum = ItemNum;
-              if (SelectNextItem (ItemNum) == ZwNum)
-                SelectNextItem (-1);
-            }
-            break;
-          default:
-            if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
-            {
-              ASCIIChar = CharBuf[0];
-              if (FindItemChar (ASCIIChar, &IsSingle) && IsSingle)
-              {
-                if (AktItem->SubItem)
-                  DrawMenuSubBox (AktMenu, AktItem, TRUE);
-                else
-                  Ende = (MenuSelected (!Shift) && (!Shift));
-              }
-            }
-            break;
-          }
-        }
-        else
-        {
-          switch (Event.ie_Code)
-          {
-          case KEYCODE_RETURN:
-          case KEYCODE_ENTER:
-          case CRSDOWN:
-            DrawMenuBox (AktMenu, TRUE);
-            break;
+					case CRSDOWN:
+						if (Shift)
+							SelectPrevItem (0x7f);
+						else
+						{
+							ZwNum = ItemNum;
+							if (SelectNextItem (ItemNum) == ZwNum)
+								SelectNextItem (-1);
+						}
+						break;
+					default:
+						if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
+						{
+							ASCIIChar = CharBuf[0];
+							if (FindItemChar (ASCIIChar, &IsSingle) && IsSingle)
+							{
+								if (AktItem->SubItem)
+									DrawMenuSubBox (AktMenu, AktItem, TRUE);
+								else
+									Ende = (MenuSelected (!Shift) && (!Shift));
+							}
+						}
+						break;
+					}
+				}
+				else
+				{
+					switch (Event.ie_Code)
+					{
+					case KEYCODE_RETURN:
+					case KEYCODE_ENTER:
+					case CRSDOWN:
+						DrawMenuBox (AktMenu, TRUE);
+						break;
 
-          case ESC:
-            Ende = TRUE;
-            *Cancel = TRUE;
-            break;
+					case ESC:
+						Ende = TRUE;
+						*Cancel = TRUE;
+						break;
 
-          case CRSLEFT:
-            if (Shift)
-              SelectNextMenu (-1);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectPrevMenu (MenuNum) == ZwNum)
-                SelectPrevMenu (0x7f);
-            }
-            break;
+					case CRSLEFT:
+						if (Shift)
+							SelectNextMenu (-1);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectPrevMenu (MenuNum) == ZwNum)
+								SelectPrevMenu (0x7f);
+						}
+						break;
 
-          case CRSRIGHT:
-            if (Shift)
-              SelectPrevMenu (0x7f);
-            else
-            {
-              ZwNum = MenuNum;
-              if (SelectNextMenu (MenuNum) == ZwNum)
-                SelectNextMenu (-1);
-            }
-            break;
-          default:
-            if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
-            {
-              ASCIIChar = CharBuf[0];
-              if (FindMenuChar (ASCIIChar, &IsSingle) && IsSingle)
-                DrawMenuBox (AktMenu, TRUE);
-            }
-            break;
-          }
-        }
-      }
-      else
-        Ende = *Cancel = (Event.ie_Code == ESC);
-      break;
+					case CRSRIGHT:
+						if (Shift)
+							SelectPrevMenu (0x7f);
+						else
+						{
+							ZwNum = MenuNum;
+							if (SelectNextMenu (MenuNum) == ZwNum)
+								SelectNextMenu (-1);
+						}
+						break;
+					default:
+						if (MapRawKey (&Event, CharBuf, 10, NULL) == 1)
+						{
+							ASCIIChar = CharBuf[0];
+							if (FindMenuChar (ASCIIChar, &IsSingle) && IsSingle)
+								DrawMenuBox (AktMenu, TRUE);
+						}
+						break;
+					}
+				}
+			}
+			else
+				Ende = *Cancel = (Event.ie_Code == ESC);
+			break;
 
-    case EVT_MOUSEMENU:
-      if ((Event.ie_Code == IECODE_RBUTTON) && (MenWin->DMRequest != NULL))
-      {
-        CurrentTime (&CurrSecs, &CurrMics);
-        if (DoubleClick (DMROldSecs, DMROldMics, CurrSecs, CurrMics))
-        {
-          GlobalDMRequest = TRUE;
-          Ende = TRUE;
-          *Cancel = TRUE;
-          break;
-        }
-      }
-      Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
-      if (SelectSpecial)
-      {
-        OutOfBounds = LookMouse (MenScr->MouseX, MenScr->MouseY, FALSE);
-        if (Event.ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
-        {
-          SelectSpecial = FALSE;
-          Ende = (OutOfBounds || MenuSelected (TRUE));
-          *Cancel = OutOfBounds;
-        }
-        else
-        {
-          if (Event.ie_Code == IECODE_LBUTTON)
-            MenuSelected (FALSE);
-        }
-      }
-      else if (MenuMode == MODE_STD)
-      {
-        Ende = (Event.ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX));
+		case EVT_MOUSEMENU:
+			if ((Event.ie_Code == IECODE_RBUTTON) && (MenWin->DMRequest != NULL))
+			{
+				CurrentTime (&CurrSecs, &CurrMics);
+				if (DoubleClick (DMROldSecs, DMROldMics, CurrSecs, CurrMics))
+				{
+					GlobalDMRequest = TRUE;
+					Ende = TRUE;
+					*Cancel = TRUE;
+					break;
+				}
+			}
+			Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
+			if (SelectSpecial)
+			{
+				OutOfBounds = LookMouse (MenScr->MouseX, MenScr->MouseY, FALSE);
+				if (Event.ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX))
+				{
+					SelectSpecial = FALSE;
+					Ende = (OutOfBounds || MenuSelected (TRUE));
+					*Cancel = OutOfBounds;
+				}
+				else
+				{
+					if (Event.ie_Code == IECODE_LBUTTON)
+						MenuSelected (FALSE);
+				}
+			}
+			else if (MenuMode == MODE_STD)
+			{
+				Ende = (Event.ie_Code == (IECODE_RBUTTON | IECODE_UP_PREFIX));
 
-        LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
-        if (Event.ie_Code == IECODE_LBUTTON)
-          MenuSelected (FALSE);
+				LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
+				if (Event.ie_Code == IECODE_LBUTTON)
+					MenuSelected (FALSE);
 
-        if (Ende)
-          MenuSelected (TRUE);
-      }
-      else if (MenuMode == MODE_STICKY)
-      {
-        Ende = (Event.ie_Code == IECODE_RBUTTON);
+				if (Ende)
+					MenuSelected (TRUE);
+			}
+			else if (MenuMode == MODE_STICKY)
+			{
+				Ende = (Event.ie_Code == IECODE_RBUTTON);
 
-        OutOfBounds = LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
-        if (Event.ie_Code == IECODE_LBUTTON)
-          Ende = OutOfBounds || (MenuSelected (!Shift) && (!Shift));
-        else if (Ende)
-          MenuSelected (TRUE);
-      }
-      else if (MenuMode == MODE_SELECT || MenuMode == MODE_KEYBOARD)
-      {
-        Ende = *Cancel = (Event.ie_Code == IECODE_RBUTTON);
+				OutOfBounds = LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
+				if (Event.ie_Code == IECODE_LBUTTON)
+					Ende = OutOfBounds || (MenuSelected (!Shift) && (!Shift));
+				else if (Ende)
+					MenuSelected (TRUE);
+			}
+			else if (MenuMode == MODE_SELECT || MenuMode == MODE_KEYBOARD)
+			{
+				Ende = *Cancel = (Event.ie_Code == IECODE_RBUTTON);
 
-        if (!Ende && (Event.ie_Code & IECODE_LBUTTON))
-        {
-          MenuMode = MODE_SELECT;
-          if (Event.ie_Code == IECODE_LBUTTON)
-            Ende = LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
-          else
-            Ende = (MenuSelected (!Shift) && (!Shift) && (Event.ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX)));
-        }
-      }
-      break;
+				if (!Ende && (Event.ie_Code & IECODE_LBUTTON))
+				{
+					MenuMode = MODE_SELECT;
+					if (Event.ie_Code == IECODE_LBUTTON)
+						Ende = LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
+					else
+						Ende = (MenuSelected (!Shift) && (!Shift) && (Event.ie_Code == (IECODE_LBUTTON | IECODE_UP_PREFIX)));
+				}
+			}
+			break;
 
-    case EVT_MOUSEMOVE:
+		case EVT_MOUSEMOVE:
 
-      Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
+			Shift = (NULL != (Event.ie_Qualifier & (IEQUALIFIER_RSHIFT | IEQUALIFIER_LSHIFT)));
 
-      if ((MenuMode != MODE_SELECT || SelectSpecial) && MenuMode != MODE_KEYBOARD)
-        LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
+			if ((MenuMode != MODE_SELECT || SelectSpecial) && MenuMode != MODE_KEYBOARD)
+				LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
 
-      if (MenuMode == MODE_STD)
-      {
-        Ende = (!(Event.ie_Qualifier & IEQUALIFIER_RBUTTON));
+			if (MenuMode == MODE_STD)
+			{
+				Ende = (!(Event.ie_Qualifier & IEQUALIFIER_RBUTTON));
 
-        if (Ende || (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON) != NULL)
-          MenuSelected (TRUE);
-      }
+				if (Ende || (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON) != NULL)
+					MenuSelected (TRUE);
+			}
 
-      if (MenuMode == MODE_STICKY)
-      {
-        if (!Shift && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON))
-          Ende = MenuSelected (TRUE);
-        else if (Ende || (Shift && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON)))
-          MenuSelected (TRUE);
-      }
+			if (MenuMode == MODE_STICKY)
+			{
+				if (!Shift && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON))
+					Ende = MenuSelected (TRUE);
+				else if (Ende || (Shift && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON)))
+					MenuSelected (TRUE);
+			}
 
-      if (MenuMode == MODE_SELECT && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON))
-        LookMouse (MenScr->MouseX, MenScr->MouseY, FALSE);
+			if (MenuMode == MODE_SELECT && (Event.ie_Qualifier & IEQUALIFIER_LEFTBUTTON))
+				LookMouse (MenScr->MouseX, MenScr->MouseY, FALSE);
 
-      break;
+			break;
 
-    case EVT_KBDMENU:
-      Ende = TRUE;
-      *Cancel = TRUE;
-      break;
-    default:
-      break;
-    }
-  }
+		case EVT_KBDMENU:
+			Ende = TRUE;
+			*Cancel = TRUE;
+			break;
+		default:
+			break;
+		}
+	}
 
-  return (Ende);
+	return (Ende);
 }
 
 VOID
 ProcessIntuiMenu (VOID)
 {
-  ULONG SigMask, Signals;
-  BOOL Ende;
-  BOOL Cancel;
-  ULONG TickCounter;
-  ULONG TimeMask;
-  BOOL Poll, Ticking;
-  LONG LastX,LastY,NewX,NewY,DeltaX,DeltaY;
+	ULONG SigMask, Signals;
+	BOOL Ende;
+	BOOL Cancel;
+	ULONG TickCounter;
+	ULONG TimeMask;
+	BOOL Poll, Ticking;
+	LONG LastX,LastY,NewX,NewY,DeltaX,DeltaY;
 
-  Ende = FALSE;
-  Cancel = FALSE;
-  Ticking = TRUE;
+	Ende = FALSE;
+	Cancel = FALSE;
+	Ticking = TRUE;
 
-  TimeMask = PORTMASK (TimerPort);
-  SigMask = CxSignalMask | TickSigMask | TimeMask;
+	TimeMask = PORTMASK (TimerPort);
+	SigMask = CxSignalMask | TickSigMask | TimeMask;
 
-  TickCounter = 0;
+	TickCounter = 0;
 
-  LastX = LastY = 0;
+	LastX = LastY = 0;
 
-  StartTimeRequest (TimerIO, 0, MILLION / 4);
+	StartTimeRequest (TimerIO, 0, MILLION / 4);
 
-  Poll = FALSE;
+	Poll = FALSE;
 
-  while (!Ende)
-  {
-    if (Poll)
-      Signals = SetSignal (0, SigMask) & SigMask;
-    else
-      Signals = Wait (SigMask);
+	while (!Ende)
+	{
+		if (Poll)
+			Signals = SetSignal (0, SigMask) & SigMask;
+		else
+			Signals = Wait (SigMask);
 
-    if (Signals & TimeMask)
-    {
-      WaitIO (TimerIO);
+		if (Signals & TimeMask)
+		{
+			WaitIO (TimerIO);
 
-      if (TickCounter++ > 2)
-      {
-        Cancel = TRUE;
+			if (TickCounter++ > 2)
+			{
+				Cancel = TRUE;
 
-        Ticking = FALSE;
+				Ticking = FALSE;
 
-        break;
-      }
-      else
-      {
-        StartTimeRequest (TimerIO, 0, MILLION / 4);
-      }
-    }
+				break;
+			}
+			else
+			{
+				StartTimeRequest (TimerIO, 0, MILLION / 4);
+			}
+		}
 
-    if (Signals & TickSigMask)
-    {
-      TickCounter = 0;
+		if (Signals & TickSigMask)
+		{
+			TickCounter = 0;
 
-      if(AktPrefs.mmp_Delayed)
-      {
-        NewX = MenScr->MouseX;
-        NewY = MenScr->MouseY;
+			if(AktPrefs.mmp_Delayed)
+			{
+				NewX = MenScr->MouseX;
+				NewY = MenScr->MouseY;
 
-        DeltaX = abs(LastX - NewX);
-        DeltaY = abs(LastY - NewY);
+				DeltaX = abs(LastX - NewX);
+				DeltaY = abs(LastY - NewY);
 
-        LastX = NewX;
-        LastY = NewY;
+				LastX = NewX;
+				LastY = NewY;
 
-/*      if(DeltaX < 3 && DeltaY < 3)*/
+/*				if(DeltaX < 3 && DeltaY < 3)*/
 
-        if(StripPopUp)
-        {
-          if(DeltaY < 3)
-            Shoot();
-        }
-        else
-        {
-          if(DeltaX < 3 && DeltaY < 3)
-            Shoot();
-        }
-      }
-    }
+				if(StripPopUp)
+				{
+					if(DeltaY < 3)
+						Shoot();
+				}
+				else
+				{
+					if(DeltaX < 3 && DeltaY < 3)
+						Shoot();
+				}
+			}
+		}
 
-    if ((Signals & CxSignalMask) || Poll)
-    {
-      struct Message *Msg;
+		if ((Signals & CxSignalMask) || Poll)
+		{
+			struct Message *Msg;
 
-      if (Msg = GetMsg (CxMsgPort))
-      {
-        TickCounter = 0;
+			if (Msg = GetMsg (CxMsgPort))
+			{
+				TickCounter = 0;
 
-        Ende = CheckCxMsgAct ((CxMsg *) Msg, &Cancel);
-        Poll = TRUE;
-      }
-      else
-        Poll = FALSE;
-    }
-  }
+				Ende = CheckCxMsgAct ((CxMsg *) Msg, &Cancel);
+				Poll = TRUE;
+			}
+			else
+				Poll = FALSE;
+		}
+	}
 
-  if (Ticking)
-    StopTimeRequest (TimerIO);
+	if (Ticking)
+		StopTimeRequest (TimerIO);
 
-  if (Cancel)
-  {
-    FirstSelectedMenu = NULL;
-    LastSelectedMenu = NULL;
-    FirstMenuNum = MENUNULL;
-  }
+	if (Cancel)
+	{
+		FirstSelectedMenu = NULL;
+		LastSelectedMenu = NULL;
+		FirstMenuNum = MENUNULL;
+	}
 }
 
 VOID
 EndIntuiMenu (BOOL ReleaseMenuAct)
 {
-  ObtainSemaphore (GetPointerSemaphore);
+	ObtainSemaphore (GetPointerSemaphore);
 
-  MenScr = NULL;
-  MenWin = NULL;
-  MenStrip = NULL;
+	MenScr = NULL;
+	MenWin = NULL;
+	MenStrip = NULL;
 
-  ReleaseSemaphore (GetPointerSemaphore);
+	ReleaseSemaphore (GetPointerSemaphore);
 
-  if (ReleaseMenuAct)
-    ReleaseSemaphore (MenuActSemaphore);
+	if (ReleaseMenuAct)
+		ReleaseSemaphore (MenuActSemaphore);
 }
 
 BOOL
 CheckCxMsg (CxMsg * Msg)
 {
-  BOOL Ende;
-  ULONG MsgID, MsgType;
-  APTR MsgData;
-  ULONG MyLock;
-  BOOL Ok;
+	BOOL Ende;
+	ULONG MsgID, MsgType;
+	APTR MsgData;
+	ULONG MyLock;
+	BOOL Ok;
 
-  ULONG CurrSecs, CurrMics;
+	ULONG CurrSecs, CurrMics;
 
-  static WORD MenSaveMouseX = -1;
-  static WORD MenSaveMouseY = -1;
+	static WORD MenSaveMouseX = -1;
+	static WORD MenSaveMouseY = -1;
 
-  struct InputEvent *MyNewEvent;
+	struct InputEvent *MyNewEvent;
 
-  struct ViewPortExtra *VPExtra;
-  struct ColorMap *cm;
+	struct ViewPortExtra *VPExtra;
+	struct ColorMap *cm;
 
-  static struct InputEvent Event;
-  static BOOL IgnoreMouse = FALSE;
-  static BOOL DoWait = FALSE;
-  static struct Screen *OldMenScr = NULL;
+	static struct InputEvent Event;
+	static BOOL IgnoreMouse = FALSE;
+	static BOOL DoWait = FALSE;
+	static struct Screen *OldMenScr = NULL;
 
-  static WORD OrigLeftEdge = 0;
-  static WORD OrigTopEdge = 0;
+	static WORD OrigLeftEdge = 0;
+	static WORD OrigTopEdge = 0;
 
-  static struct TagItem ti[] =
-  {VTAG_VIEWPORTEXTRA_GET, NULL,
-   VTAG_END_CM, NULL};
+	static struct TagItem ti[] =
+	{VTAG_VIEWPORTEXTRA_GET, NULL,
+	 VTAG_END_CM, NULL};
 
 
-  if (CheckReply ((struct Message *) Msg))
-    return (FALSE);
+	if (CheckReply ((struct Message *) Msg))
+		return (FALSE);
 
-  Ende = FALSE;
+	Ende = FALSE;
 
-  MsgID = CxMsgID (Msg);
-  MsgType = CxMsgType (Msg);
-  MsgData = CxMsgData (Msg);
-  if (MsgType == CXM_IEVENT)
-  {
-    Event = *((struct InputEvent *) MsgData);
-  }
+	MsgID = CxMsgID (Msg);
+	MsgType = CxMsgType (Msg);
+	MsgData = CxMsgData (Msg);
+	if (MsgType == CXM_IEVENT)
+	{
+		Event = *((struct InputEvent *) MsgData);
+	}
 
-  ReplyMsg ((struct Message *) Msg);
+	ReplyMsg ((struct Message *) Msg);
 
-  MyLock = LockIBase (0);
-  if (IntuitionBase->ActiveWindow)
-    MenScr = IntuitionBase->ActiveWindow->WScreen;
-  else
-    MenScr = NULL;
+	MyLock = LockIBase (0);
+	if (IntuitionBase->ActiveWindow)
+		MenScr = IntuitionBase->ActiveWindow->WScreen;
+	else
+		MenScr = NULL;
 
-  UnlockIBase (MyLock);
+	UnlockIBase (MyLock);
 
-  if (OldMenScr != MenScr)
-  {
-    IgnoreMouse = DoWait = FALSE;
-  }
+	if (OldMenScr != MenScr)
+	{
+		IgnoreMouse = DoWait = FALSE;
+	}
 
-  GlobalDMRequest = FALSE;
+	GlobalDMRequest = FALSE;
 
-  switch (MsgType)
-  {
-  case CXM_IEVENT:
-    switch (MsgID)
-    {
-    case EVT_KBDMENU:
-      if (AktPrefs.mmp_KCEnabled && (MenScr != NULL))
-      {
-        if (!IgnoreMouse)
-        {
-          OrigTopEdge = MenScr->TopEdge;
-          OrigLeftEdge = MenScr->LeftEdge;
-        }
-        cm = MenScr->ViewPort.ColorMap;
-        ti[0].ti_Tag = VTAG_VIEWPORTEXTRA_GET;
-        ti[0].ti_Data = NULL;
-        ti[1].ti_Tag = VTAG_END_CM;
-        if (VideoControl (cm, ti) == NULL)
-        {
-          VPExtra = (struct ViewPortExtra *) ti[0].ti_Data;
-          MenDispClip = VPExtra->DisplayClip;
-          if (!IgnoreMouse)
-            MoveScreen (MenScr, (OrigLeftEdge < 0) ? (-OrigLeftEdge) : 0,
-                        (OrigTopEdge < 0) ? (-OrigTopEdge) : 0);
-        }
-        else
-        {
-          MenDispClip.MinX = 0;
-          MenDispClip.MinY = 0;
-          MenDispClip.MaxX = MenScr->Width - 1;
-          MenDispClip.MaxY = MenScr->Height - 1;
-        }
+	switch (MsgType)
+	{
+	case CXM_IEVENT:
+		switch (MsgID)
+		{
+		case EVT_KBDMENU:
+			if (AktPrefs.mmp_KCEnabled && (MenScr != NULL))
+			{
+				if (!IgnoreMouse)
+				{
+					OrigTopEdge = MenScr->TopEdge;
+					OrigLeftEdge = MenScr->LeftEdge;
+				}
+				cm = MenScr->ViewPort.ColorMap;
+				ti[0].ti_Tag = VTAG_VIEWPORTEXTRA_GET;
+				ti[0].ti_Data = NULL;
+				ti[1].ti_Tag = VTAG_END_CM;
+				if (VideoControl (cm, ti) == NULL)
+				{
+					VPExtra = (struct ViewPortExtra *) ti[0].ti_Data;
+					MenDispClip = VPExtra->DisplayClip;
+					if (!IgnoreMouse)
+						MoveScreen (MenScr, (OrigLeftEdge < 0) ? (-OrigLeftEdge) : 0,
+										(OrigTopEdge < 0) ? (-OrigTopEdge) : 0);
+				}
+				else
+				{
+					MenDispClip.MinX = 0;
+					MenDispClip.MinY = 0;
+					MenDispClip.MaxX = MenScr->Width - 1;
+					MenDispClip.MaxY = MenScr->Height - 1;
+				}
 
-        if (AktPrefs.mmp_KCGoTop && MenScr->MouseY > MenScr->BarHeight)
-        {
-          MenSaveMouseX = MenScr->MouseX;
-          MenSaveMouseY = MenScr->MouseY;
-          MoveMouse (MenDispClip.MaxX - 16 - MenScr->LeftEdge, MenScr->BarHeight - 1, TRUE, &Event, MenScr);
-          DoWait = TRUE;
-          IgnoreMouse = TRUE;
-          OldMenScr = MenScr;
+				if (AktPrefs.mmp_KCGoTop && MenScr->MouseY > MenScr->BarHeight)
+				{
+					MenSaveMouseX = MenScr->MouseX;
+					MenSaveMouseY = MenScr->MouseY;
+					MoveMouse (MenDispClip.MaxX - 16 - MenScr->LeftEdge, MenScr->BarHeight - 1, TRUE, &Event, MenScr);
+					DoWait = TRUE;
+					IgnoreMouse = TRUE;
+					OldMenScr = MenScr;
 
-        }
-        else
-        {
-          if (DoWait)
-            Delay (1);
-          DoWait = FALSE;
-          OldMenScr = MenScr;
-          if (DoIntuiMenu (MODE_KEYBOARD, FALSE, TRUE))
-            IgnoreMouse = FALSE;
-          else
-            IgnoreMouse = TRUE;
+				}
+				else
+				{
+					if (DoWait)
+						Delay (1);
+					DoWait = FALSE;
+					OldMenScr = MenScr;
+					if (DoIntuiMenu (MODE_KEYBOARD, FALSE, TRUE))
+						IgnoreMouse = FALSE;
+					else
+						IgnoreMouse = TRUE;
 
-          if (MenSaveMouseX != -1)
-          {
-            MoveMouse (MenSaveMouseX, MenSaveMouseY, FALSE, NULL, OldMenScr);
-            MenSaveMouseX = -1;
-          }
+					if (MenSaveMouseX != -1)
+					{
+						MoveMouse (MenSaveMouseX, MenSaveMouseY, FALSE, NULL, OldMenScr);
+						MenSaveMouseX = -1;
+					}
 
-          MoveScreen (OldMenScr, OrigLeftEdge - (WORD) OldMenScr->LeftEdge,
-                      OrigTopEdge - (WORD) OldMenScr->TopEdge);
+					MoveScreen (OldMenScr, OrigLeftEdge - (WORD) OldMenScr->LeftEdge,
+										OrigTopEdge - (WORD) OldMenScr->TopEdge);
 
-        }
-      }
-      break;
+				}
+			}
+			break;
 
-    case EVT_MOUSEMENU:
+		case EVT_MOUSEMENU:
 
-      if (GlobalDMRCount > 0)
-      {
-        GlobalDMRCount--;
-        break;
-      }
+			if (GlobalDMRCount > 0)
+			{
+				GlobalDMRCount--;
+				break;
+			}
 
-      if ((IgnoreMouse || ActivateCxObj (MouseTransl, TRUE)) && MenScr != NULL)
-      {
-        if (!IgnoreMouse)
-        {
-          CurrentTime (&CurrSecs, &CurrMics);
+			if ((IgnoreMouse || ActivateCxObj (MouseTransl, TRUE)) && MenScr != NULL)
+			{
+				if (!IgnoreMouse)
+				{
+					CurrentTime (&CurrSecs, &CurrMics);
 
-          if (GlobalLastWinDMREnable && DoubleClick (DMROldSecs, DMROldMics, CurrSecs, CurrMics))
-          {
-            GlobalDMRequest = TRUE;
-          }
-          else
-          {
-            DMROldSecs = CurrSecs;
-            DMROldMics = CurrMics;
+					if (GlobalLastWinDMREnable && DoubleClick (DMROldSecs, DMROldMics, CurrSecs, CurrMics))
+					{
+						GlobalDMRequest = TRUE;
+					}
+					else
+					{
+						DMROldSecs = CurrSecs;
+						DMROldMics = CurrMics;
 
-            if ((AktPrefs.mmp_MenuType == MT_AUTO && MenScr->MouseY <= MenScr->BarHeight) || AktPrefs.mmp_MenuType == MT_PULLDOWN)
-              Ok = DoIntuiMenu (AktPrefs.mmp_PDMode, FALSE, FALSE);
-            else
-              Ok = DoIntuiMenu (AktPrefs.mmp_PUMode, TRUE, FALSE);
+						if ((AktPrefs.mmp_MenuType == MT_AUTO && MenScr->MouseY <= MenScr->BarHeight) || AktPrefs.mmp_MenuType == MT_PULLDOWN)
+							Ok = DoIntuiMenu (AktPrefs.mmp_PDMode, FALSE, FALSE);
+						else
+							Ok = DoIntuiMenu (AktPrefs.mmp_PUMode, TRUE, FALSE);
 
-            if ((!Ok) && (!GlobalDMRequest))
-            {
-              if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_CLEAR | MEMF_PUBLIC))
-              {
-                ActivateCxObj (MouseTransl, FALSE);
-                *MyNewEvent = Event;
-                MyNewEvent->ie_NextEvent = NULL;
+						if ((!Ok) && (!GlobalDMRequest))
+						{
+							if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_CLEAR | MEMF_PUBLIC))
+							{
+								ActivateCxObj (MouseTransl, FALSE);
+								*MyNewEvent = Event;
+								MyNewEvent->ie_NextEvent = NULL;
 
-                InputIO->io_Data = (APTR) MyNewEvent;
-                InputIO->io_Length = sizeof (struct InputEvent);
+								InputIO->io_Data = (APTR) MyNewEvent;
+								InputIO->io_Length = sizeof (struct InputEvent);
 
-                InputIO->io_Command = IND_WRITEEVENT;
-                DoIO ((struct IORequest *) InputIO);
-                FreeVecPooled (MyNewEvent);
-              }
-            }
-          }
+								InputIO->io_Command = IND_WRITEEVENT;
+								DoIO ((struct IORequest *) InputIO);
+								FreeVecPooled (MyNewEvent);
+							}
+						}
+					}
 
-          if (GlobalDMRequest)
-          {
-            GlobalDMRequest = FALSE;
-            if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_CLEAR | MEMF_PUBLIC))
-            {
-              ActivateCxObj (MouseTransl, FALSE);
-              GlobalDMRCount = 1;
-              *MyNewEvent = Event;
-              MyNewEvent->ie_NextEvent = NULL;
-              InputIO->io_Data = (APTR) MyNewEvent;
-              InputIO->io_Length = sizeof (struct InputEvent);
+					if (GlobalDMRequest)
+					{
+						GlobalDMRequest = FALSE;
+						if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_CLEAR | MEMF_PUBLIC))
+						{
+							ActivateCxObj (MouseTransl, FALSE);
+							GlobalDMRCount = 1;
+							*MyNewEvent = Event;
+							MyNewEvent->ie_NextEvent = NULL;
+							InputIO->io_Data = (APTR) MyNewEvent;
+							InputIO->io_Length = sizeof (struct InputEvent);
 
-              InputIO->io_Command = IND_WRITEEVENT;
-              DoIO ((struct IORequest *) InputIO);
+							InputIO->io_Command = IND_WRITEEVENT;
+							DoIO ((struct IORequest *) InputIO);
 
-              GetSysTime (&(MyNewEvent->ie_TimeStamp));
-              MyNewEvent->ie_Class = IECLASS_RAWMOUSE;
-              MyNewEvent->ie_Code = IECODE_RBUTTON | IECODE_UP_PREFIX;
-              MyNewEvent->ie_Qualifier = PeekQualifier ();
-              MyNewEvent->ie_NextEvent = NULL;
-              DoIO ((struct IORequest *) InputIO);
+							GetSysTime (&(MyNewEvent->ie_TimeStamp));
+							MyNewEvent->ie_Class = IECLASS_RAWMOUSE;
+							MyNewEvent->ie_Code = IECODE_RBUTTON | IECODE_UP_PREFIX;
+							MyNewEvent->ie_Qualifier = PeekQualifier ();
+							MyNewEvent->ie_NextEvent = NULL;
+							DoIO ((struct IORequest *) InputIO);
 
-              *MyNewEvent = Event;
-              GetSysTime (&(MyNewEvent->ie_TimeStamp));
-              MyNewEvent->ie_NextEvent = NULL;
-              DoIO ((struct IORequest *) InputIO);
+							*MyNewEvent = Event;
+							GetSysTime (&(MyNewEvent->ie_TimeStamp));
+							MyNewEvent->ie_NextEvent = NULL;
+							DoIO ((struct IORequest *) InputIO);
 
-              FreeVecPooled (MyNewEvent);
-            }
-          }
-        }
-        else
-        {
-          OldMenScr = MenScr;
-          DoIntuiMenu (MODE_KEYBOARD, FALSE, FALSE);
-          IgnoreMouse = FALSE;
-          MoveScreen (OldMenScr, OrigLeftEdge - (WORD) OldMenScr->LeftEdge,
-                      OrigTopEdge - (WORD) OldMenScr->TopEdge);
-        }
-      }
-      break;
-    case EVT_POPPREFS:
-      StartPrefs ();
-      break;
-    default:
-      break;
-    }
-    break;
-  case CXM_COMMAND:
-    switch (MsgID)
-    {
-    case CXCMD_DISABLE:
-      Deactivate ();
-      break;
-    case CXCMD_ENABLE:
-      Activate ();
-      break;
-    case CXCMD_KILL:
-      Ende = CheckEnde ();
-      break;
-    case CXCMD_UNIQUE:
-    case CXCMD_APPEAR:
-      StartPrefs ();
-      break;
-    case CXCMD_DISAPPEAR:
-      StopPrefs ();
-      break;
-    default:
-      break;
-    }
-    break;
-  }
+							FreeVecPooled (MyNewEvent);
+						}
+					}
+				}
+				else
+				{
+					OldMenScr = MenScr;
+					DoIntuiMenu (MODE_KEYBOARD, FALSE, FALSE);
+					IgnoreMouse = FALSE;
+					MoveScreen (OldMenScr, OrigLeftEdge - (WORD) OldMenScr->LeftEdge,
+										OrigTopEdge - (WORD) OldMenScr->TopEdge);
+				}
+			}
+			break;
+		case EVT_POPPREFS:
+			StartPrefs ();
+			break;
+		default:
+			break;
+		}
+		break;
+	case CXM_COMMAND:
+		switch (MsgID)
+		{
+		case CXCMD_DISABLE:
+			Deactivate ();
+			break;
+		case CXCMD_ENABLE:
+			Activate ();
+			break;
+		case CXCMD_KILL:
+			Ende = CheckEnde ();
+			break;
+		case CXCMD_UNIQUE:
+		case CXCMD_APPEAR:
+			StartPrefs ();
+			break;
+		case CXCMD_DISAPPEAR:
+			StopPrefs ();
+			break;
+		default:
+			break;
+		}
+		break;
+	}
 
-  if (DoGlobalQuit)
-    Ende = TRUE;
+	if (DoGlobalQuit)
+		Ende = TRUE;
 
-  return (Ende);
+	return (Ende);
 }
 
 BOOL
 CheckMMMsgPort (struct MMMessage * MMMsg)
 {
-  BOOL Ende;
+	BOOL Ende;
 
-  Ende = FALSE;
+	Ende = FALSE;
 
-  switch (MMMsg->Class)
-  {
-  case MMC_REMOVE:
-    ReplyMsg (MMMsg);
-    Ende = CheckEnde ();
-    break;
-  case MMC_NEWCONFIG:
+	switch (MMMsg->Class)
+	{
+	case MMC_REMOVE:
+		ReplyMsg (MMMsg);
+		Ende = CheckEnde ();
+		break;
+	case MMC_NEWCONFIG:
 
-    if(((struct MMPrefs *) MMMsg->Ptr1)->mmp_Magic != MMPREFS_MAGIC || ((struct MMPrefs *) MMMsg->Ptr1)->mmp_Version < MMPREFS_VERSION)
-    {
-      ReplyMsg (MMMsg);
-      break;
-    }
+		if(((struct MMPrefs *) MMMsg->Ptr1)->mmp_Magic != MMPREFS_MAGIC || ((struct MMPrefs *) MMMsg->Ptr1)->mmp_Version < MMPREFS_VERSION)
+		{
+			ReplyMsg (MMMsg);
+			break;
+		}
 
-    ActivateCxObj (Broker, FALSE);
+		ActivateCxObj (Broker, FALSE);
 
-    if (Stricmp (((struct MMPrefs *) MMMsg->Ptr1)->mmp_KCKeyStr, AktPrefs.mmp_KCKeyStr))
-    {
-      CxObj *NewKbdFilter;
+		if (Stricmp (((struct MMPrefs *) MMMsg->Ptr1)->mmp_KCKeyStr, AktPrefs.mmp_KCKeyStr))
+		{
+			CxObj *NewKbdFilter;
 
-      if (NewKbdFilter = HotKey (((struct MMPrefs *) MMMsg->Ptr1)->mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU))
-      {
-        RemoveCxObj (KbdFilter);
-        DeleteCxObj (KbdFilter);
-        AttachCxObj (Broker, KbdFilter = NewKbdFilter);
-      }
-    }
+			if (NewKbdFilter = HotKey (((struct MMPrefs *) MMMsg->Ptr1)->mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU))
+			{
+				RemoveCxObj (KbdFilter);
+				DeleteCxObj (KbdFilter);
+				AttachCxObj (Broker, KbdFilter = NewKbdFilter);
+			}
+		}
 
-    AktPrefs = *(struct MMPrefs *) MMMsg->Ptr1;
+		AktPrefs = *(struct MMPrefs *) MMMsg->Ptr1;
 
-    if (MMMsg->Ptr2)
-    {
-      STRPTR String;
+		if (MMMsg->Ptr2)
+		{
+			STRPTR String;
 
-      String = MMMsg->Ptr2;
+			String = MMMsg->Ptr2;
 
-      if (Stricmp (String, Cx_Popkey))
-      {
-        CxObj *NewPrefsFilter;
+			if (Stricmp (String, Cx_Popkey))
+			{
+				CxObj *NewPrefsFilter;
 
-        if (NewPrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS))
-        {
-          RemoveCxObj (PrefsFilter);
-          DeleteCxObj (PrefsFilter);
-          AttachCxObj (Broker, PrefsFilter = NewPrefsFilter);
-        }
-      }
-    }
+				if (NewPrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS))
+				{
+					RemoveCxObj (PrefsFilter);
+					DeleteCxObj (PrefsFilter);
+					AttachCxObj (Broker, PrefsFilter = NewPrefsFilter);
+				}
+			}
+		}
 
-    ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
+		ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
 
-    if(KbdFilter)
-      ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
+		if(KbdFilter)
+			ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
 
-    ActivateCxObj (Broker, TRUE);
+		ActivateCxObj (Broker, TRUE);
 
-    ReplyMsg (MMMsg);
-    break;
-  case MMC_GETCONFIG:
-    MMMsg->Ptr1 = &AktPrefs;
-    MMMsg->Arg1 = MagicActive;
-    MMMsg->Ptr2 = Cx_Popkey;
-    ReplyMsg (MMMsg);
-    break;
-  case MMC_ENABLE:
-    if (MMMsg->Arg1)
-      Activate ();
-    else
-      Deactivate ();
-    ReplyMsg (MMMsg);
-    break;
-  }
-  return (Ende);
+		ReplyMsg (MMMsg);
+		break;
+	case MMC_GETCONFIG:
+		MMMsg->Ptr1 = &AktPrefs;
+		MMMsg->Arg1 = MagicActive;
+		MMMsg->Ptr2 = Cx_Popkey;
+		ReplyMsg (MMMsg);
+		break;
+	case MMC_ENABLE:
+		if (MMMsg->Arg1)
+			Activate ();
+		else
+			Deactivate ();
+		ReplyMsg (MMMsg);
+		break;
+	}
+	return (Ende);
 }
 
 BOOL
 RealWindow (struct Window * ThisWindow)
 {
-  if (TypeOfMem (ThisWindow))
-  {
-    struct Screen *Screen;
+	if (TypeOfMem (ThisWindow))
+	{
+		struct Screen *Screen;
 
-    for (Screen = IntuitionBase->FirstScreen; Screen; Screen = Screen->NextScreen)
-    {
-      if (Screen == ThisWindow->WScreen)
-      {
-        struct Window *Window;
+		for (Screen = IntuitionBase->FirstScreen; Screen; Screen = Screen->NextScreen)
+		{
+			if (Screen == ThisWindow->WScreen)
+			{
+				struct Window *Window;
 
-        for (Window = Screen->FirstWindow; Window; Window = Window->NextWindow)
-        {
-          if (Window == ThisWindow)
-            return (TRUE);
-        }
+				for (Window = Screen->FirstWindow; Window; Window = Window->NextWindow)
+				{
+					if (Window == ThisWindow)
+						return (TRUE);
+				}
 
-        return (FALSE);
-      }
-    }
-  }
+				return (FALSE);
+			}
+		}
+	}
 
-  return (FALSE);
+	return (FALSE);
 }
 
 VOID
 ProcessCommodity (VOID)
 {
-  ULONG SigMask, SigRec, MMMsgPortMask, IMsgReplyMask;
-  BOOL Ende, DoWait;
-  struct Message *Msg;
-  struct MMMessage *MMMsg;
-  struct IntuiMessage *IMsg;
+	ULONG SigMask, SigRec, MMMsgPortMask, IMsgReplyMask;
+	BOOL Ende, DoWait;
+	struct Message *Msg;
+	struct MMMessage *MMMsg;
+	struct IntuiMessage *IMsg;
 
-  MMMsgPortMask = PORTMASK (MMMsgPort);
-  IMsgReplyMask = PORTMASK (IMsgReplyPort);
+	MMMsgPortMask = PORTMASK (MMMsgPort);
+	IMsgReplyMask = PORTMASK (IMsgReplyPort);
 
-  Ende = FALSE;
+	Ende = FALSE;
 
-  while (!Ende)
-  {
-    SigMask = CxSignalMask | MMMsgPortMask | SIGBREAKF_CTRL_C | IMsgReplyMask;
+	while (!Ende)
+	{
+		SigMask = CxSignalMask | MMMsgPortMask | SIGBREAKF_CTRL_C | IMsgReplyMask;
 
-    DoWait = TRUE;
+		DoWait = TRUE;
 
-    if(AktPrefs.mmp_VerifyPatches && MagicActive && NOT AllPatchesOnTop())
-    {
-      Deactivate();
-    }
+		if(AktPrefs.mmp_VerifyPatches && MagicActive && NOT AllPatchesOnTop())
+		{
+			Deactivate();
+		}
 
-    if (Msg = GetMsg (CxMsgPort))
-    {
-      DoWait = FALSE;
-      Ende = CheckCxMsg ((CxMsg *) Msg);
-    }
+		if (Msg = GetMsg (CxMsgPort))
+		{
+			DoWait = FALSE;
+			Ende = CheckCxMsg ((CxMsg *) Msg);
+		}
 
-    if (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
-    {
-      DoWait = FALSE;
-      Ende = CheckMMMsgPort (MMMsg);
-    }
+		if (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
+		{
+			DoWait = FALSE;
+			Ende = CheckMMMsgPort (MMMsg);
+		}
 
-    /* Was hier zurückkommt, sollten Verify-Messages sein. */
-    while (IMsg = (struct IntuiMessage *) GetMsg (IMsgReplyPort))
-    {
-      /* Wer zu spät kommt, den bestraft das Leben. Hier werden die
-       * zu spät beantworteten IDCMP_MENUVERIFY-Messages
-       * abgewickelt.
-       */
-      if (IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUCANCEL))
-      {
-        ULONG IntuiLock;
+		/* Was hier zurückkommt, sollten Verify-Messages sein. */
+		while (IMsg = (struct IntuiMessage *) GetMsg (IMsgReplyPort))
+		{
+			/* Wer zu spät kommt, den bestraft das Leben. Hier werden die
+			 * zu spät beantworteten IDCMP_MENUVERIFY-Messages
+			 * abgewickelt.
+			 */
+			if (IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUCANCEL))
+			{
+				ULONG IntuiLock;
 
-        /* Nötig für RealWindow() und damit das Fenster bis zum Schluß vorhanden bleibt. */
-        IntuiLock = LockIBase (NULL);
+				/* Nötig für RealWindow() und damit das Fenster bis zum Schluß vorhanden bleibt. */
+				IntuiLock = LockIBase (NULL);
 
-        /* Gibt es das Fenster noch? */
-        if (RealWindow (IMsg->IDCMPWindow))
-        {
-          UWORD Code;
+				/* Gibt es das Fenster noch? */
+				if (RealWindow (IMsg->IDCMPWindow))
+				{
+					UWORD Code;
 
-          /* Falls das Menü abgebrochen wurde, kommt zuerst IDCMP_MOUSEBUTTONS. */
-          if (IMsg->Code == MENUCANCEL && (IMsg->IDCMPWindow->IDCMPFlags & IDCMP_MOUSEBUTTONS))
-          {
-            Code = MENUUP;
-            SendIntuiMessage (IDCMP_MOUSEBUTTONS, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
-          }
+					/* Falls das Menü abgebrochen wurde, kommt zuerst IDCMP_MOUSEBUTTONS. */
+					if (IMsg->Code == MENUCANCEL && (IMsg->IDCMPWindow->IDCMPFlags & IDCMP_MOUSEBUTTONS))
+					{
+						Code = MENUUP;
+						SendIntuiMessage (IDCMP_MOUSEBUTTONS, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
+					}
 
-          /* Standardbehandlung... */
-          Code = MENUNULL;
-          SendIntuiMessage (IDCMP_MENUPICK, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
-        }
+					/* Standardbehandlung... */
+					Code = MENUNULL;
+					SendIntuiMessage (IDCMP_MENUPICK, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
+				}
 
-        UnlockIBase (IntuiLock);
-      }
+				UnlockIBase (IntuiLock);
+			}
 
-      FreeVecPooled (IMsg);
-      IMsgReplyCount--;
-    }
+			FreeVecPooled (IMsg);
+			IMsgReplyCount--;
+		}
 
-    if (DoWait)
-    {
-      SigRec = Wait (SigMask);
+		if (DoWait)
+		{
+			SigRec = Wait (SigMask);
 
-      if (SigRec & SIGBREAKF_CTRL_C)
-      {
-        Ende = CheckEnde ();
-      }
-    }
-  }
+			if (SigRec & SIGBREAKF_CTRL_C)
+			{
+				Ende = CheckEnde ();
+			}
+		}
+	}
 }
 
 VOID
 StopPrefs (VOID)
 {
-  struct MsgPort *SomePort;
+	struct MsgPort *SomePort;
 
-  Forbid ();
+	Forbid ();
 
-  if (SomePort = FindPort ("« MagicMenu Preferences »"))
-    Signal (SomePort->mp_SigTask, SIGBREAKF_CTRL_C);
+	if (SomePort = FindPort ("« MagicMenu Preferences »"))
+		Signal (SomePort->mp_SigTask, SIGBREAKF_CTRL_C);
 
-  Permit ();
+	Permit ();
 }
 
 VOID
 StartPrefs (VOID)
 {
-  BPTR In, Out;
+	BPTR In, Out;
 
-  if (In = Open ("NIL:", MODE_NEWFILE))
-  {
-    if (Out = Open ("NIL:", MODE_NEWFILE))
-    {
-      if (WBMsg && !Cli ())
-        AttachCLI (WBMsg);
+	if (In = Open ("NIL:", MODE_NEWFILE))
+	{
+		if (Out = Open ("NIL:", MODE_NEWFILE))
+		{
+			if (WBMsg && !Cli ())
+				AttachCLI (WBMsg);
 
-      SystemTags ("MagicMenuPrefs",
-                  SYS_Input, In,
-                  SYS_Output, Out,
-                  SYS_Asynch, TRUE,
-                  NP_Name, "MagicMenuPrefs",
-                  TAG_DONE);
-    }
-    else
-      Close (In);
-  }
+			SystemTags ("MagicMenuPrefs",
+				SYS_Input, In,
+				SYS_Output, Out,
+				SYS_Asynch, TRUE,
+				NP_Name, "MagicMenuPrefs",
+				TAG_DONE);
+		}
+		else
+			Close (In);
+	}
 }
 
 VOID
 MyArgString (char *Result, struct DiskObject *DO, char *TT, char *Default, LONG Len, BOOL Upcase)
 {
-  char *Found;
+	char *Found;
 
-  Found = FindToolType (DO->do_ToolTypes, (char *) TT);
+	Found = FindToolType (DO->do_ToolTypes, (char *) TT);
 
-  if (Found)
-    strncpy (Result, Found, Len);
-  else
-    strncpy (Result, Default, Len);
+	if (Found)
+		strncpy (Result, Found, Len);
+	else
+		strncpy (Result, Default, Len);
 
-  if (Upcase)
-  {
-    UBYTE *c;
+	if (Upcase)
+	{
+		UBYTE *c;
 
-    c = (UBYTE *) Result;
+		c = (UBYTE *) Result;
 
-    while (*c)
-      *c++ = ToUpper (*c);
-  }
+		while (*c)
+			*c++ = ToUpper (*c);
+	}
 }
 
 LONG
 MyArgInt (struct DiskObject *DO, char *TT, LONG Default)
 {
-  char Str[80];
-  LONG Result;
+	char Str[80];
+	LONG Result;
 
-  MyArgString (Str, DO, TT, "", 79, FALSE);
+	MyArgString (Str, DO, TT, "", 79, FALSE);
 
-  if (StrToLong (Str, &Result) <= 0)
-    Result = Default;
+	if (StrToLong (Str, &Result) <= 0)
+		Result = Default;
 
-  return (Result);
+	return (Result);
 }
 
 VOID
 CheckArguments (struct WBStartup * startupMsg)
 {
-  UBYTE FName[MAX_FILENAME_LENGTH];
-  struct DiskObject *DiskObj;
+	UBYTE FName[MAX_FILENAME_LENGTH];
+	struct DiskObject *DiskObj;
 
-  if(startupMsg != NULL)
-  {
-    strcpy (FName, startupMsg->sm_ArgList[0].wa_Name);
-  }
-  else
-  {
-    strcpy (FName, "PROGDIR:");
-    strcat (FName, ProgName);
-  }
+	if(startupMsg != NULL)
+	{
+		strcpy (FName, startupMsg->sm_ArgList[0].wa_Name);
+	}
+	else
+	{
+		strcpy (FName, "PROGDIR:");
+		strcat (FName, ProgName);
+	}
 
-  IconBase = OpenLibrary ("icon.library", 0);
-  if (IconBase != NULL)
-  {
-    DiskObj = GetDiskObject (FName);
-    if (DiskObj != NULL)
-    {
-      Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
+	IconBase = OpenLibrary ("icon.library", 0);
+	if (IconBase != NULL)
+	{
+		DiskObj = GetDiskObject (FName);
+		if (DiskObj != NULL)
+		{
+			Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
 
-      MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
-      MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
+			MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
+			MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
 
-      if (!Stricmp (Cx_PopupStr, "YES"))
-        Cx_Popup = TRUE;
-      else
-        Cx_Popup = FALSE;
+			if (!Stricmp (Cx_PopupStr, "YES"))
+				Cx_Popup = TRUE;
+			else
+				Cx_Popup = FALSE;
 
-      FreeDiskObject (DiskObj);
-    }
+			FreeDiskObject (DiskObj);
+		}
 
-    CloseLibrary (IconBase);
-  }
+		CloseLibrary (IconBase);
+	}
 }
 
 BOOL
@@ -1980,671 +1980,675 @@ LoadPrefs (char *Name, BOOL Report)
 {
 	STATIC struct StorageItem PrefsStorage[] =
 	{
-		DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UBYTE,	"MenuType"),
-		DECLARE_ITEM(MMPrefs,mmp_Enabled,		SIT_BOOLEAN,	"Enabled"),
-		DECLARE_ITEM(MMPrefs,mmp_MarkSub,		SIT_BOOLEAN,	"MarkSub"),
-		DECLARE_ITEM(MMPrefs,mmp_DblBorder,		SIT_BOOLEAN,	"DblBorder"),
-		DECLARE_ITEM(MMPrefs,mmp_NonBlocking,		SIT_BOOLEAN,	"NonBlocking"),
-		DECLARE_ITEM(MMPrefs,mmp_KCEnabled,		SIT_BOOLEAN,	"KCEnabled"),
-		DECLARE_ITEM(MMPrefs,mmp_KCGoTop,		SIT_BOOLEAN,	"KCGoTop"),
-		DECLARE_ITEM(MMPrefs,mmp_KCRAltRCommand,	SIT_BOOLEAN,	"KCAltRCommand"),
-		DECLARE_ITEM(MMPrefs,mmp_PUCenter,		SIT_BOOLEAN,	"KCPUCenter"),
+		DECLARE_ITEM(MMPrefs,mmp_MenuType,				SIT_UBYTE,		"MenuType"),
+		DECLARE_ITEM(MMPrefs,mmp_Enabled,				SIT_BOOLEAN,	"Enabled"),
+		DECLARE_ITEM(MMPrefs,mmp_MarkSub,				SIT_BOOLEAN,	"MarkSub"),
+		DECLARE_ITEM(MMPrefs,mmp_DblBorder,				SIT_BOOLEAN,	"DblBorder"),
+		DECLARE_ITEM(MMPrefs,mmp_NonBlocking,			SIT_BOOLEAN,	"NonBlocking"),
+		DECLARE_ITEM(MMPrefs,mmp_KCEnabled,				SIT_BOOLEAN,	"KCEnabled"),
+		DECLARE_ITEM(MMPrefs,mmp_KCGoTop,				SIT_BOOLEAN,	"KCGoTop"),
+		DECLARE_ITEM(MMPrefs,mmp_KCRAltRCommand,		SIT_BOOLEAN,	"KCAltRCommand"),
+		DECLARE_ITEM(MMPrefs,mmp_PUCenter,				SIT_BOOLEAN,	"KCPUCenter"),
 		DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
-		DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
-		DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
-		DECLARE_ITEM(MMPrefs,mmp_CastShadows,		SIT_BOOLEAN,	"CastShadows"),
-		DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UBYTE,	"PDMode"),
-		DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UBYTE,	"PDLook"),
-		DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UBYTE,	"PUMode"),
-		DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UBYTE,	"PULook"),
-		DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,		SIT_TEXT,	"KCKeyStr"),
-		DECLARE_ITEM(MMPrefs,mmp_Precision,		SIT_WORD,	"Precision"),
+		DECLARE_ITEM(MMPrefs,mmp_Delayed,				SIT_BOOLEAN,	"Delayed"),
+		DECLARE_ITEM(MMPrefs,mmp_DrawFrames,			SIT_BOOLEAN,	"DrawFrames"),
+		DECLARE_ITEM(MMPrefs,mmp_CastShadows,			SIT_BOOLEAN,	"CastShadows"),
+		DECLARE_ITEM(MMPrefs,mmp_PDMode,				SIT_UBYTE,		"PDMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PDLook,				SIT_UBYTE,		"PDLook"),
+		DECLARE_ITEM(MMPrefs,mmp_PUMode,				SIT_UBYTE,		"PUMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PULook,				SIT_UBYTE,		"PULook"),
+		DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,				SIT_TEXT,		"KCKeyStr"),
+		DECLARE_ITEM(MMPrefs,mmp_Precision,				SIT_WORD,		"Precision"),
 
-		DECLARE_ITEM(MMPrefs,mmp_LightEdge.R,		SIT_ULONG,	"LightEdge.R"),
-		DECLARE_ITEM(MMPrefs,mmp_LightEdge.G,		SIT_ULONG,	"LightEdge.G"),
-		DECLARE_ITEM(MMPrefs,mmp_LightEdge.B,		SIT_ULONG,	"LightEdge.B"),
-		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.R,		SIT_ULONG,	"DarkEdge.R"),
-		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.G,		SIT_ULONG,	"DarkEdge.G"),
-		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.B,		SIT_ULONG,	"DarkEdge.B"),
-		DECLARE_ITEM(MMPrefs,mmp_Background.R,		SIT_ULONG,	"Background.R"),
-		DECLARE_ITEM(MMPrefs,mmp_Background.G,		SIT_ULONG,	"Background.G"),
-		DECLARE_ITEM(MMPrefs,mmp_Background.B,		SIT_ULONG,	"Background.B"),
-		DECLARE_ITEM(MMPrefs,mmp_TextCol.R,		SIT_ULONG,	"Text.R"),
-		DECLARE_ITEM(MMPrefs,mmp_TextCol.G,		SIT_ULONG,	"Text.G"),
-		DECLARE_ITEM(MMPrefs,mmp_TextCol.B,		SIT_ULONG,	"Text.B"),
-		DECLARE_ITEM(MMPrefs,mmp_HiCol.R,		SIT_ULONG,	"HighText.R"),
-		DECLARE_ITEM(MMPrefs,mmp_HiCol.G,		SIT_ULONG,	"HighText.G"),
-		DECLARE_ITEM(MMPrefs,mmp_HiCol.B,		SIT_ULONG,	"HighText.B"),
-		DECLARE_ITEM(MMPrefs,mmp_FillCol.R,		SIT_ULONG,	"Fill.R"),
-		DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
-		DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.R,			SIT_ULONG,		"LightEdge.R"),
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.G,			SIT_ULONG,		"LightEdge.G"),
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.B,			SIT_ULONG,		"LightEdge.B"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.R,			SIT_ULONG,		"DarkEdge.R"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.G,			SIT_ULONG,		"DarkEdge.G"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.B,			SIT_ULONG,		"DarkEdge.B"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.R,			SIT_ULONG,		"Background.R"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.G,			SIT_ULONG,		"Background.G"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.B,			SIT_ULONG,		"Background.B"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.R,				SIT_ULONG,		"Text.R"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.G,				SIT_ULONG,		"Text.G"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.B,				SIT_ULONG,		"Text.B"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.R,				SIT_ULONG,		"HighText.R"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.G,				SIT_ULONG,		"HighText.G"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.B,				SIT_ULONG,		"HighText.B"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.R,				SIT_ULONG,		"Fill.R"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.G,				SIT_ULONG,		"Fill.G"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.B,				SIT_ULONG,		"Fill.B"),
 
-		DECLARE_ITEM(MMPrefs,mmp_Transparency,		SIT_BOOLEAN,	"Transparency"),
-		DECLARE_ITEM(MMPrefs,mmp_HighlightDisabled,	SIT_BOOLEAN,	"HighlightDisabled"),
-		DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,	SIT_UBYTE,	"SeparatorBarStyle"),
-		DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
-		DECLARE_ITEM(MMPrefs,mmp_FixPatches,		SIT_BOOLEAN,	"FixPatches"),
+		DECLARE_ITEM(MMPrefs,mmp_Transparency,			SIT_BOOLEAN,	"Transparency"),	/* == item #37 */
+		DECLARE_ITEM(MMPrefs,mmp_HighlightDisabled,		SIT_BOOLEAN,	"HighlightDisabled"),
+		DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,		SIT_UBYTE,		"SeparatorBarStyle"),
+		DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,			SIT_BOOLEAN,	"VerifyPatches"),
+		DECLARE_ITEM(MMPrefs,mmp_FixPatches,			SIT_BOOLEAN,	"FixPatches"),
 	};
 
 	struct MMPrefs LocalPrefs;
+	LONG NumItemsFound;
+	LONG Error;
 
 	memset(&LocalPrefs,0,sizeof(LocalPrefs));
 
-	if(RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs))
+	Error = RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs,&NumItemsFound);
+	if(Error != 0)
 	{
-		if(Report)
-			ShowRequest(GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
+		if(NumItemsFound != 37 || Error != ERROR_REQUIRED_ARG_MISSING)
+		{
+			if(Report)
+				ShowRequest(GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
 
-		return(FALSE);
+			return(FALSE);
+		}
+	}
+
+	CopyMem(&LocalPrefs,&AktPrefs,sizeof(struct MMPrefs));
+	return(TRUE);
+
+	/*
+	BPTR FH;
+	struct MMPrefs ZwPrefs;
+	ULONG Len;
+
+	if (!(FH = Open (ConfigFile, MODE_OLDFILE)))
+	{
+		if (Report)
+			ShowRequest (GetString (MSG_COULD_NOT_OPEN_TXT));
+		return (FALSE);
+	}
+
+	Len = Read (FH, &ZwPrefs, sizeof (struct MMPrefs));
+
+	Close (FH);
+
+	if (Len == sizeof (struct MMPrefs) && ZwPrefs.mmp_Version == MMP_MAGIC)
+	{
+		memcpy (&AktPrefs, &ZwPrefs, sizeof (struct MMPrefs));
+		return (TRUE);
 	}
 	else
 	{
-		CopyMem(&LocalPrefs,&AktPrefs,sizeof(struct MMPrefs));
-		return(TRUE);
+		if (Report)
+			ShowRequest (GetString (MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
+		return (FALSE);
 	}
-  /*
-  BPTR FH;
-  struct MMPrefs ZwPrefs;
-  ULONG Len;
-
-  if (!(FH = Open (ConfigFile, MODE_OLDFILE)))
-  {
-    if (Report)
-      ShowRequest (GetString (MSG_COULD_NOT_OPEN_TXT));
-    return (FALSE);
-  }
-
-  Len = Read (FH, &ZwPrefs, sizeof (struct MMPrefs));
-
-  Close (FH);
-
-  if (Len == sizeof (struct MMPrefs) && ZwPrefs.mmp_Version == MMP_MAGIC)
-  {
-    memcpy (&AktPrefs, &ZwPrefs, sizeof (struct MMPrefs));
-    return (TRUE);
-  }
-  else
-  {
-    if (Report)
-      ShowRequest (GetString (MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
-    return (FALSE);
-  }
-  */
+	*/
 }
 
 VOID
 ResetBrokerSetup ()
 {
-  if (CxChanged)
-  {
-    struct Message *msg;
+	if (CxChanged)
+	{
+		struct Message *msg;
 
-    ActivateCxObj (Broker, FALSE);
+		ActivateCxObj (Broker, FALSE);
 
-    SetFilterIX (MouseFilter, &MouseIX);
+		SetFilterIX (MouseFilter, &MouseIX);
 
-    RemoveCxObj (ActKbdFilter);
-    RemoveCxObj (MouseMoveFilter);
-    RemoveCxObj (MousePositionFilter);
-    RemoveCxObj (MouseNewPositionFilter);
-    RemoveCxObj (TickFilter);
+		RemoveCxObj (ActKbdFilter);
+		RemoveCxObj (MouseMoveFilter);
+		RemoveCxObj (MousePositionFilter);
+		RemoveCxObj (MouseNewPositionFilter);
+		RemoveCxObj (TickFilter);
 
-    while (msg = GetMsg (CxMsgPort))
-    {
-      if (!CheckReply (msg))
-        ReplyMsg (msg);
-    }
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+				ReplyMsg (msg);
+		}
 
-    ActivateCxObj (Broker, TRUE);
+		ActivateCxObj (Broker, TRUE);
 
-    CxChanged = FALSE;
-  }
+		CxChanged = FALSE;
+	}
 }
 
 VOID
 ChangeBrokerSetup ()
 {
-  if (!CxChanged)
-  {
-    struct Message *msg;
+	if (!CxChanged)
+	{
+		struct Message *msg;
 
-    ActivateCxObj (Broker, FALSE);
+		ActivateCxObj (Broker, FALSE);
 
-    SetFilterIX (MouseFilter, &ActiveMouseIX);
+		SetFilterIX (MouseFilter, &ActiveMouseIX);
 
-    AttachCxObj (Broker, ActKbdFilter);
-    AttachCxObj (Broker, MouseMoveFilter);
-    AttachCxObj (Broker, MousePositionFilter);
-    AttachCxObj (Broker, MouseNewPositionFilter);
-    AttachCxObj (Broker, TickFilter);
+		AttachCxObj (Broker, ActKbdFilter);
+		AttachCxObj (Broker, MouseMoveFilter);
+		AttachCxObj (Broker, MousePositionFilter);
+		AttachCxObj (Broker, MouseNewPositionFilter);
+		AttachCxObj (Broker, TickFilter);
 
-    while (msg = GetMsg (CxMsgPort))
-    {
-      if (!CheckReply (msg))
-        ReplyMsg (msg);
-    }
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+				ReplyMsg (msg);
+		}
 
-    ActivateCxObj (Broker, TRUE);
-    CxChanged = TRUE;
-  }
+		ActivateCxObj (Broker, TRUE);
+		CxChanged = TRUE;
+	}
 }
 
 VOID
 CleanupMenuActiveData ()
 {
-  if (CxBase)
-  {
-    DeleteCxObjAll (ActKbdFilter);
-    ActKbdFilter = NULL;
+	if (CxBase)
+	{
+		DeleteCxObjAll (ActKbdFilter);
+		ActKbdFilter = NULL;
 
-    DeleteCxObjAll (MouseMoveFilter);
-    MouseMoveFilter = NULL;
+		DeleteCxObjAll (MouseMoveFilter);
+		MouseMoveFilter = NULL;
 
-    DeleteCxObjAll (MousePositionFilter);
-    MousePositionFilter = NULL;
+		DeleteCxObjAll (MousePositionFilter);
+		MousePositionFilter = NULL;
 
-    DeleteCxObjAll (MouseNewPositionFilter);
-    MouseNewPositionFilter = NULL;
+		DeleteCxObjAll (MouseNewPositionFilter);
+		MouseNewPositionFilter = NULL;
 
-    DeleteCxObjAll (TickFilter);
-    TickFilter = NULL;
+		DeleteCxObjAll (TickFilter);
+		TickFilter = NULL;
 
-    FreeSignal (TickSigNum);
-    TickSigNum = -1;
-  }
+		FreeSignal (TickSigNum);
+		TickSigNum = -1;
+	}
 }
 
 BOOL
 SetupMenuActiveData ()
 {
-  if (!(ActKbdFilter = CxFilter (NULL)))
-    return (FALSE);
+	if (!(ActKbdFilter = CxFilter (NULL)))
+		return (FALSE);
 
-  SetFilterIX (ActKbdFilter, &ActiveKbdIX);
+	SetFilterIX (ActKbdFilter, &ActiveKbdIX);
 
-  if (!(ActKbdSender = CxSender (CxMsgPort, EVT_KEYBOARD)))
-    return (FALSE);
+	if (!(ActKbdSender = CxSender (CxMsgPort, EVT_KEYBOARD)))
+		return (FALSE);
 
-  AttachCxObj (ActKbdFilter, ActKbdSender);
+	AttachCxObj (ActKbdFilter, ActKbdSender);
 
-  if (!(ActKbdTransl = CxTranslate (NULL)))
-    return (FALSE);
+	if (!(ActKbdTransl = CxTranslate (NULL)))
+		return (FALSE);
 
-  AttachCxObj (ActKbdFilter, ActKbdTransl);
+	AttachCxObj (ActKbdFilter, ActKbdTransl);
 
-  if (!(MouseMoveFilter = CxFilter (NULL)))
-    return (FALSE);
+	if (!(MouseMoveFilter = CxFilter (NULL)))
+		return (FALSE);
 
-  SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
+	SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
 
-  if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-    return (FALSE);
+	if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
+		return (FALSE);
 
-  AttachCxObj (MouseMoveFilter, MouseMoveSender);
+	AttachCxObj (MouseMoveFilter, MouseMoveSender);
 
-  if (!(MousePositionFilter = CxFilter (NULL)))
-    return (FALSE);
+	if (!(MousePositionFilter = CxFilter (NULL)))
+		return (FALSE);
 
-  SetFilterIX (MousePositionFilter, &ActiveMousePositionIX);
+	SetFilterIX (MousePositionFilter, &ActiveMousePositionIX);
 
-  if (!(MousePositionSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-    return (FALSE);
+	if (!(MousePositionSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
+		return (FALSE);
 
-  AttachCxObj (MousePositionFilter, MousePositionSender);
+	AttachCxObj (MousePositionFilter, MousePositionSender);
 
-  if (!(MouseNewPositionFilter = CxFilter (NULL)))
-    return (FALSE);
+	if (!(MouseNewPositionFilter = CxFilter (NULL)))
+		return (FALSE);
 
-  SetFilterIX (MouseNewPositionFilter, &ActiveMouseNewPositionIX);
+	SetFilterIX (MouseNewPositionFilter, &ActiveMouseNewPositionIX);
 
-  if (!(MouseNewPositionSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-    return (FALSE);
+	if (!(MouseNewPositionSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
+		return (FALSE);
 
-  AttachCxObj (MouseNewPositionFilter, MouseNewPositionSender);
+	AttachCxObj (MouseNewPositionFilter, MouseNewPositionSender);
 
-  if (!(TickFilter = CxFilter (NULL)))
-    return (FALSE);
+	if (!(TickFilter = CxFilter (NULL)))
+		return (FALSE);
 
-  SetFilterIX (TickFilter, &TickIX);
+	SetFilterIX (TickFilter, &TickIX);
 
-  if ((TickSigNum = AllocSignal (-1)) == -1)
-    return (FALSE);
+	if ((TickSigNum = AllocSignal (-1)) == -1)
+		return (FALSE);
 
-  TickSigMask = 1L << TickSigNum;
+	TickSigMask = 1L << TickSigNum;
 
-  if (!(TickSignal = CxSignal (FindTask (NULL), TickSigNum)))
-    return (FALSE);
+	if (!(TickSignal = CxSignal (FindTask (NULL), TickSigNum)))
+		return (FALSE);
 
-  AttachCxObj (TickFilter, TickSignal);
+	AttachCxObj (TickFilter, TickSignal);
 
-  return (TRUE);
+	return (TRUE);
 }
 
 VOID
 CloseAll (VOID)
 {
-  struct Message *msg;
-  struct MMMessage *MMMsg;
+	struct Message *msg;
+	struct MMMessage *MMMsg;
 
 /*  StopHihoTask ();*/
 
-  if (LocaleBase)
-  {
-    CloseCatalog (Catalog);
-    CloseLibrary (LocaleBase);
-  }
+	if (LocaleBase)
+	{
+		CloseCatalog (Catalog);
+		CloseLibrary (LocaleBase);
+	}
 
-  if (RememberSemaphore)
-    ObtainSemaphore (RememberSemaphore);
+	if (RememberSemaphore)
+		ObtainSemaphore (RememberSemaphore);
 
-  if (GetPointerSemaphore)
-    ObtainSemaphore (GetPointerSemaphore);
+	if (GetPointerSemaphore)
+		ObtainSemaphore (GetPointerSemaphore);
 
-  if (MenuActSemaphore)
-    ObtainSemaphore (MenuActSemaphore);
+	if (MenuActSemaphore)
+		ObtainSemaphore (MenuActSemaphore);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  WindowGlyphExit ();
+	WindowGlyphExit ();
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  if (MMMsgPort)
-  {
-    RemPort (MMMsgPort);
-    while (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
-    {
-      MMMsg->Class = MMC_VOID;
-      ReplyMsg (MMMsg);
-    }
-    DeleteMsgPort (MMMsgPort);
-  }
+	if (MMMsgPort)
+	{
+		RemPort (MMMsgPort);
+		while (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
+		{
+			MMMsg->Class = MMC_VOID;
+			ReplyMsg (MMMsg);
+		}
+		DeleteMsgPort (MMMsgPort);
+	}
 
-  CleanupMenuActiveData ();
+	CleanupMenuActiveData ();
 
-  if (Broker)
-    DeleteCxObjAll (Broker);
+	if (Broker)
+		DeleteCxObjAll (Broker);
 
-  if (LibPatches)
-    RemovePatches ();
+	if (LibPatches)
+		RemovePatches ();
 
-  if (GlobalRemember)
-    FreeGlobalRemember ();
+	if (GlobalRemember)
+		FreeGlobalRemember ();
 
-  if (CxMsgPort)
-  {
-    while (msg = GetMsg (CxMsgPort))
-    {
-      if (!CheckReply (msg))
-        ReplyMsg (msg);
-    }
-    DeleteMsgPort (CxMsgPort);
-  }
+	if (CxMsgPort)
+	{
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+				ReplyMsg (msg);
+		}
+		DeleteMsgPort (CxMsgPort);
+	}
 
-  if (InputIO)
-  {
-    if (!CheckIO (InputIO))
-    {
-      AbortIO (InputIO);
-      WaitIO (InputIO);
-    }
+	if (InputIO)
+	{
+		if (!CheckIO (InputIO))
+		{
+			AbortIO (InputIO);
+			WaitIO (InputIO);
+		}
 
-    CloseDevice ((struct IORequest *) InputIO);
+		CloseDevice ((struct IORequest *) InputIO);
 
-    DeleteIORequest ((struct IORequest *) InputIO);
+		DeleteIORequest ((struct IORequest *) InputIO);
 
-    DeleteMsgPort (InputPort);
-  }
+		DeleteMsgPort (InputPort);
+	}
 
-  if (TimerIO)
-  {
-    if (!CheckIO (TimerIO))
-    {
-      AbortIO (TimerIO);
-      WaitIO (TimerIO);
-    }
+	if (TimerIO)
+	{
+		if (!CheckIO (TimerIO))
+		{
+			AbortIO (TimerIO);
+			WaitIO (TimerIO);
+		}
 
-    CloseDevice ((struct IORequest *) TimerIO);
+		CloseDevice ((struct IORequest *) TimerIO);
 
-    DeleteIORequest ((struct IORequest *) TimerIO);
+		DeleteIORequest ((struct IORequest *) TimerIO);
 
-    DeleteMsgPort (TimerPort);
-  }
+		DeleteMsgPort (TimerPort);
+	}
 
-  if (IMsgReplyPort)
-  {
-    struct Message *Message;
+	if (IMsgReplyPort)
+	{
+		struct Message *Message;
 
-    while (Message = GetMsg (IMsgReplyPort));
+		while (Message = GetMsg (IMsgReplyPort));
 
-    DeleteMsgPort (IMsgReplyPort);
-  }
+		DeleteMsgPort (IMsgReplyPort);
+	}
 
-  if (TimeoutRequest)
-  {
-    if (TimeoutRequest->tr_node.io_Device)
-      CloseDevice ((struct IORequest *) TimeoutRequest);
+	if (TimeoutRequest)
+	{
+		if (TimeoutRequest->tr_node.io_Device)
+			CloseDevice ((struct IORequest *) TimeoutRequest);
 
-    DeleteIORequest (TimeoutRequest);
-  }
+		DeleteIORequest (TimeoutRequest);
+	}
 
-  if (TimeoutPort)
-    DeleteMsgPort (TimeoutPort);
+	if (TimeoutPort)
+		DeleteMsgPort (TimeoutPort);
 
-  if (CyberGfxBase != NULL)
-    CloseLibrary (CyberGfxBase);
+	if (CyberGfxBase != NULL)
+		CloseLibrary (CyberGfxBase);
 
-  if (KeymapBase)
-    CloseLibrary (KeymapBase);
+	if (KeymapBase)
+		CloseLibrary (KeymapBase);
 
-  if (GadToolsBase)
-    CloseLibrary (GadToolsBase);
+	if (GadToolsBase)
+		CloseLibrary (GadToolsBase);
 
-  if (CxBase)
-    CloseLibrary (CxBase);
+	if (CxBase)
+		CloseLibrary (CxBase);
 
-  if (UtilityBase)
-    CloseLibrary (UtilityBase);
+	if (UtilityBase)
+		CloseLibrary (UtilityBase);
 
-  if (LayersBase)
-    CloseLibrary ((struct Library *) LayersBase);
+	if (LayersBase)
+		CloseLibrary ((struct Library *) LayersBase);
 
-  if (GfxBase)
-    CloseLibrary ((struct Library *) GfxBase);
+	if (GfxBase)
+		CloseLibrary ((struct Library *) GfxBase);
 
-  if (IntuitionBase)
-    CloseLibrary ((struct Library *) IntuitionBase);
+	if (IntuitionBase)
+		CloseLibrary ((struct Library *) IntuitionBase);
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  MemoryExit ();
+	MemoryExit ();
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 }
 
 VOID
 Complain (char *ErrTxt)
 {
-  if (IntuitionBase && ErrTxt[0])
-    ShowRequest (GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
+	if (IntuitionBase && ErrTxt[0])
+		ShowRequest (GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
 }
 
 VOID
 ErrorPrc (char *ErrTxt)
 {
-  Complain (ErrTxt);
+	Complain (ErrTxt);
 
-  CloseAll ();
+	CloseAll ();
 
-  exit (RETURN_FAIL);
+	exit (RETURN_FAIL);
 }
 
 int
 main (int argc, char **argv)
 {
-  BOOL Ok;
-  LONG error;
-  LONG z1;
-  char *SPtr;
+	BOOL Ok;
+	LONG error;
+	LONG z1;
+	char *SPtr;
 
-  if(SysBase->lib_Version < 37)
-  {
-    ((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
-    return(RETURN_FAIL);
-  }
+	if(SysBase->lib_Version < 37)
+	{
+		((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
+		return(RETURN_FAIL);
+	}
 
-  if (argc == 0)
-  {
-    WBMsg = (struct WBStartup *) argv;
-    strncpy (ProgName, WBMsg->sm_ArgList->wa_Name, 31);
-  }
-  else
-  {
-    WBMsg = NULL;
-    z1 = strlen (argv[0]);
-    SPtr = (char *) argv[0];
-    while (z1 >= 0 && SPtr[z1] != '/' && SPtr[z1] != ':')
-      z1--;
-    strncpy (ProgName, &argv[0][z1 + 1], 31);
-  }
+	if (argc == 0)
+	{
+		WBMsg = (struct WBStartup *) argv;
+		strncpy (ProgName, WBMsg->sm_ArgList->wa_Name, 31);
+	}
+	else
+	{
+		WBMsg = NULL;
+		z1 = strlen (argv[0]);
+		SPtr = (char *) argv[0];
+		while (z1 >= 0 && SPtr[z1] != '/' && SPtr[z1] != ':')
+			z1--;
+		strncpy (ProgName, &argv[0][z1 + 1], 31);
+	}
 
-  Forbid();
+	Forbid();
 
-  if(FindPort(MMPORT_NAME))
-  {
-    Permit();
+	if(FindPort(MMPORT_NAME))
+	{
+		Permit();
 
-    StartPrefs();
+		StartPrefs();
 
-    return(RETURN_OK);
-  }
-  else
-    Permit();
+		return(RETURN_OK);
+	}
+	else
+		Permit();
 
-  SetProgramName("MagicMenu");
+	SetProgramName("MagicMenu");
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  WindowGlyphInit ();
+	WindowGlyphInit ();
 
-  /*****************************************************************************************/
+	/*****************************************************************************************/
 
-  if (LocaleBase = OpenLibrary ("locale.library", 38))
-  {
-    STATIC ULONG LocaleTags[] =
-    {
-      OC_BuiltInLanguage, (ULONG) "english",
+	if (LocaleBase = OpenLibrary ("locale.library", 38))
+	{
+		STATIC ULONG LocaleTags[] =
+		{
+			OC_BuiltInLanguage, (ULONG) "english",
 
-      TAG_DONE
-    };
+			TAG_DONE
+		};
 
-    Catalog = OpenCatalogA (NULL, "magicmenu.catalog", (struct TagItem *) LocaleTags);
-  }
+		Catalog = OpenCatalogA (NULL, "magicmenu.catalog", (struct TagItem *) LocaleTags);
+	}
 
-  if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ("intuition.library", 37)))
-    ErrorPrc ("");
+	if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ("intuition.library", 37)))
+		ErrorPrc ("");
 
-  CyberGfxBase = OpenLibrary("cybergraphics.library",0);
+	CyberGfxBase = OpenLibrary("cybergraphics.library",0);
 
-  if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
-    ErrorPrc ("graphics.library V37");
+	if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
+		ErrorPrc ("graphics.library V37");
 
-  if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
-    ErrorPrc ("utility.library V37");
+	if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
+		ErrorPrc ("utility.library V37");
 
-  V39 = (BOOL) (GfxBase->LibNode.lib_Version >= 39);
+	V39 = (BOOL) (GfxBase->LibNode.lib_Version >= 39);
 
-  if (!MemoryInit ())
-    ErrorPrc ("memory allocator");
+	if (!MemoryInit ())
+		ErrorPrc ("memory allocator");
 
-  if (!(LayersBase = (struct Library *) OpenLibrary ("layers.library", 37)))
-    ErrorPrc ("layers.library V37");
+	if (!(LayersBase = (struct Library *) OpenLibrary ("layers.library", 37)))
+		ErrorPrc ("layers.library V37");
 
-  if (!(GadToolsBase = (struct Library *) OpenLibrary ("gadtools.library", 37)))
-    ErrorPrc ("gadtools.library V37");
+	if (!(GadToolsBase = (struct Library *) OpenLibrary ("gadtools.library", 37)))
+		ErrorPrc ("gadtools.library V37");
 
-  if (!(CxBase = OpenLibrary ("commodities.library", 37L)))
-    ErrorPrc ("commodities.library V37");
+	if (!(CxBase = OpenLibrary ("commodities.library", 37L)))
+		ErrorPrc ("commodities.library V37");
 
-  if (!(KeymapBase = OpenLibrary ("keymap.library", 37L)))
-    ErrorPrc ("keymap.library V37");
+	if (!(KeymapBase = OpenLibrary ("keymap.library", 37L)))
+		ErrorPrc ("keymap.library V37");
 
-  if (!(GetPointerSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("semaphore #1");
+	if (!(GetPointerSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
+		ErrorPrc ("semaphore #1");
 
-  InitSemaphore (GetPointerSemaphore);
+	InitSemaphore (GetPointerSemaphore);
 
-  if (!(MenuActSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("semaphore #2");
+	if (!(MenuActSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
+		ErrorPrc ("semaphore #2");
 
-  InitSemaphore (MenuActSemaphore);
+	InitSemaphore (MenuActSemaphore);
 
-  if (!(RememberSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("semaphore #3");
+	if (!(RememberSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
+		ErrorPrc ("semaphore #3");
 
-  if (!(IMsgReplyPort = CreateMsgPort ()))
-    ErrorPrc ("IMsg reply port");
+	if (!(IMsgReplyPort = CreateMsgPort ()))
+		ErrorPrc ("IMsg reply port");
 
-  if (!(TimeoutPort = CreateMsgPort ()))
-    ErrorPrc ("timeout reply port");
+	if (!(TimeoutPort = CreateMsgPort ()))
+		ErrorPrc ("timeout reply port");
 
-  if (!(TimeoutRequest = (struct timerequest *) CreateIORequest (TimeoutPort, sizeof (struct timerequest))))
-      ErrorPrc ("timeout request");
+	if (!(TimeoutRequest = (struct timerequest *) CreateIORequest (TimeoutPort, sizeof (struct timerequest))))
+		ErrorPrc ("timeout request");
 
-  if (OpenDevice (TIMERNAME, UNIT_VBLANK, (struct IORequest *) TimeoutRequest, NULL))
-    ErrorPrc ("timer.device");
+	if (OpenDevice (TIMERNAME, UNIT_VBLANK, (struct IORequest *) TimeoutRequest, NULL))
+		ErrorPrc ("timer.device");
 
-  InitSemaphore (RememberSemaphore);
+	InitSemaphore (RememberSemaphore);
 
 
-  Ok = (NULL != (TimerPort = CreateMsgPort ()));
+	Ok = (NULL != (TimerPort = CreateMsgPort ()));
 
-  if (Ok)
-    Ok = (NULL != (TimerIO = (struct timerequest *)
-                 CreateIORequest (TimerPort, sizeof (struct timerequest))));
+	if (Ok)
+		Ok = (NULL != (TimerIO = (struct timerequest *)CreateIORequest (TimerPort, sizeof (struct timerequest))));
 
-  if (Ok)
-    Ok = (NULL == OpenDevice ((char *) TIMERNAME, UNIT_VBLANK, TimerIO, 0));
-  if (!Ok)
-    ErrorPrc ("timer.device");
+	if (Ok)
+		Ok = (NULL == OpenDevice ((char *) TIMERNAME, UNIT_VBLANK, TimerIO, 0));
 
-  TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
+	if (!Ok)
+		ErrorPrc ("timer.device");
 
-  Ok = (NULL != (InputPort = CreateMsgPort ()));
+	TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
 
-  if (Ok)
-    Ok = (NULL != (InputIO = (struct IOStdReq *)
-                   CreateIORequest (InputPort, sizeof (struct IOStdReq))));
+	Ok = (NULL != (InputPort = CreateMsgPort ()));
 
-  if (Ok)
-    Ok = (NULL == OpenDevice ((char *) INPUTNAME, NULL, InputIO, 0));
-  if (!Ok)
-    ErrorPrc ("input.device");
+	if (Ok)
+		Ok = (NULL != (InputIO = (struct IOStdReq *)CreateIORequest (InputPort, sizeof (struct IOStdReq))));
 
-  InputBase = (struct Library *) InputIO->io_Device;
+	if (Ok)
+		Ok = (NULL == OpenDevice ((char *) INPUTNAME, NULL, InputIO, 0));
+	if (!Ok)
+		ErrorPrc ("input.device");
 
-/*  if (!(PeekQualifier () & IEQUALIFIER_LALT))*/
-/*    StartHihoTask ();*/
+	InputBase = (struct Library *) InputIO->io_Device;
 
-  CheckArguments ((argc == 0) ? ((struct WBStartup *)argv) : NULL);
+/*	if (!(PeekQualifier () & IEQUALIFIER_LALT))*/
+/*		StartHihoTask ();*/
 
-  AktPrefs = DefaultPrefs;
+	CheckArguments ((argc == 0) ? ((struct WBStartup *)argv) : NULL);
 
-  if (!LoadPrefs ("ENV:MagicMenu.prefs", FALSE))
-    Cx_Popup = TRUE;
+	AktPrefs = DefaultPrefs;
 
-  if (!(MMMsgPort = CreateMsgPort ()))
-    ErrorPrc ("MagicMenu MsgPort");
+	if (!LoadPrefs ("ENV:MagicMenu.prefs", FALSE))
+		Cx_Popup = TRUE;
 
-  MMMsgPort->mp_Node.ln_Name = MMPORT_NAME;
-  AddPort (MMMsgPort);
+	if (!(MMMsgPort = CreateMsgPort ()))
+		ErrorPrc ("MagicMenu MsgPort");
 
-  if (!(CxMsgPort = CreateMsgPort ()))
-    ErrorPrc ("CxMsgPort");
+	MMMsgPort->mp_Node.ln_Name = MMPORT_NAME;
+	AddPort (MMMsgPort);
 
-  CxSignalMask = 1l << CxMsgPort->mp_SigBit;
+	if (!(CxMsgPort = CreateMsgPort ()))
+		ErrorPrc ("CxMsgPort");
 
-  StripRPort = NULL;
-  MenuStripSwapped = FALSE;
-  BoxRPort = NULL;
-  MenuBoxSwapped = FALSE;
-  SubBoxRPort = NULL;
-  MenuSubBoxSwapped = FALSE;
-  CxChanged = FALSE;
-  TickSigNum = -1;
+	CxSignalMask = 1l << CxMsgPort->mp_SigBit;
 
-  ObtainSemaphore (RememberSemaphore);
+	StripRPort = NULL;
+	MenuStripSwapped = FALSE;
+	BoxRPort = NULL;
+	MenuBoxSwapped = FALSE;
+	SubBoxRPort = NULL;
+	MenuSubBoxSwapped = FALSE;
+	CxChanged = FALSE;
+	TickSigNum = -1;
 
-  if (InstallPatches ())
-    LibPatches = TRUE;
-  else
-  {
-    ReleaseSemaphore (RememberSemaphore);
-    ErrorPrc ("system patches");
-  }
+	ObtainSemaphore (RememberSemaphore);
 
-  if (!MakeGlobalRemember ())
-  {
-    ReleaseSemaphore (RememberSemaphore);
-    ErrorPrc ("menu cache");
-  }
+	if (InstallPatches ())
+		LibPatches = TRUE;
+	else
+	{
+		ReleaseSemaphore (RememberSemaphore);
+		ErrorPrc ("system patches");
+	}
 
-  ReleaseSemaphore (RememberSemaphore);
+	if (!MakeGlobalRemember ())
+	{
+		ReleaseSemaphore (RememberSemaphore);
+		ErrorPrc ("menu cache");
+	}
 
-  SPrintf (TitleText, "MagicMenu %ld.%ld (%s)", VERSION, REVISION, DATE);
-  NewBroker.nb_Title = TitleText;
+	ReleaseSemaphore (RememberSemaphore);
 
-  NewBroker.nb_Port = CxMsgPort;
-  NewBroker.nb_Pri = Cx_Pri;
+	SPrintf (TitleText, "MagicMenu %ld.%ld (%s)", VERSION, REVISION, DATE);
+	NewBroker.nb_Title = TitleText;
 
-  if (!(Broker = (LONG *) CxBroker (&NewBroker, &error)))
-  {
-    if (error != CBERR_DUP)
-      ErrorPrc ("input broker");
-    CloseAll ();
-    return;
-  }
+	NewBroker.nb_Port = CxMsgPort;
+	NewBroker.nb_Pri = Cx_Pri;
 
-  if (!(MouseFilter = CxFilter (NULL)))
-    ErrorPrc ("mouse filter");
-  SetFilterIX (MouseFilter, &MouseIX);
-  AttachCxObj (Broker, MouseFilter);
+	if (!(Broker = (LONG *) CxBroker (&NewBroker, &error)))
+	{
+		if (error != CBERR_DUP)
+			ErrorPrc ("input broker");
+		CloseAll ();
+		return;
+	}
 
-  if (!(MouseSender = CxSender (CxMsgPort, EVT_MOUSEMENU)))
-    ErrorPrc ("mouse sender");
-  AttachCxObj (MouseFilter, MouseSender);
+	if (!(MouseFilter = CxFilter (NULL)))
+		ErrorPrc ("mouse filter");
+	SetFilterIX (MouseFilter, &MouseIX);
+	AttachCxObj (Broker, MouseFilter);
 
-  if (!(MouseTransl = CxTranslate (NULL)))
-    ErrorPrc ("mouse translator");
-  AttachCxObj (MouseFilter, MouseTransl);
+	if (!(MouseSender = CxSender (CxMsgPort, EVT_MOUSEMENU)))
+		ErrorPrc ("mouse sender");
+	AttachCxObj (MouseFilter, MouseSender);
 
+	if (!(MouseTransl = CxTranslate (NULL)))
+		ErrorPrc ("mouse translator");
+	AttachCxObj (MouseFilter, MouseTransl);
 
-  if(AktPrefs.mmp_KCKeyStr[0])
-  {
-    if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
-      Complain (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
-    else
-      AttachCxObj (Broker, KbdFilter);
-  }
 
-  if (!(StdKbdFilter = CxFilter (NULL)))
-    ErrorPrc ("RAmiga - RCommand keyboard filter");
-  SetFilterIX (StdKbdFilter, &StdKbdIX);
+	if(AktPrefs.mmp_KCKeyStr[0])
+	{
+		if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
+			Complain (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
+		else
+			AttachCxObj (Broker, KbdFilter);
+	}
 
-  if (!(StdKbdSender = CxSender (CxMsgPort, EVT_KBDMENU)))
-    ErrorPrc ("RAmiga - RCommand keyboard sender");
-  AttachCxObj (StdKbdFilter, StdKbdSender);
+	if (!(StdKbdFilter = CxFilter (NULL)))
+		ErrorPrc ("RAmiga - RCommand keyboard filter");
+	SetFilterIX (StdKbdFilter, &StdKbdIX);
 
-  if (!(StdKbdTransl = CxTranslate (NULL)))
-    ErrorPrc ("RAmiga - RCommand keyboard translator");
-  AttachCxObj (StdKbdFilter, StdKbdTransl);
+	if (!(StdKbdSender = CxSender (CxMsgPort, EVT_KBDMENU)))
+		ErrorPrc ("RAmiga - RCommand keyboard sender");
+	AttachCxObj (StdKbdFilter, StdKbdSender);
 
-  AttachCxObj (Broker, StdKbdFilter);
+	if (!(StdKbdTransl = CxTranslate (NULL)))
+		ErrorPrc ("RAmiga - RCommand keyboard translator");
+	AttachCxObj (StdKbdFilter, StdKbdTransl);
 
-  ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
+	AttachCxObj (Broker, StdKbdFilter);
 
-  if(KbdFilter)
-    ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
+	ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
 
-  if(Cx_Popkey[0] != '\0')
-  {
-    if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
-      Complain (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
-    else
-      AttachCxObj (Broker, PrefsFilter);
-  }
+	if(KbdFilter)
+		ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
 
-  if (!(SetupMenuActiveData ()))
-    ErrorPrc ("active menu data");
+	if(Cx_Popkey[0] != '\0')
+	{
+		if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
+			Complain (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
+		else
+			AttachCxObj (Broker, PrefsFilter);
+	}
 
-  Activate ();
+	if (!(SetupMenuActiveData ()))
+		ErrorPrc ("active menu data");
 
-  if (Cx_Popup)
-    StartPrefs ();
+	Activate ();
 
-  ProcessCommodity ();
+	if (Cx_Popup)
+		StartPrefs ();
 
-  CloseAll ();
+	ProcessCommodity ();
 
-  return (0);
+	CloseAll ();
+
+	return (0);
 }
