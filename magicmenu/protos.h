@@ -27,7 +27,7 @@ VOID StartPrefs(VOID);
 VOID MyArgString(char *Result, struct DiskObject *DO, char *TT, char *Default, LONG Len, BOOL Upcase);
 LONG MyArgInt(struct DiskObject *DO, char *TT, LONG Default);
 VOID CheckArguments(VOID);
-BOOL LoadPrefs(char *ConfigFile, BOOL Report);
+BOOL LoadPrefs(char *Name, BOOL Report);
 VOID ResetBrokerSetup(VOID);
 VOID ChangeBrokerSetup(VOID);
 VOID CleanupMenuActiveData(VOID);
@@ -154,6 +154,7 @@ VOID CopyImageDimensions(struct Image *Dest, struct Image *Source);
 VOID DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top);
 VOID SetMCPens(BOOL Vanilla);
 BOOL DrawMenuStrip(BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu);
+VOID Shoot(VOID);
 
 /* dointuimenu.c */
 BOOL DoIntuiMenu(UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown);
@@ -166,3 +167,7 @@ VOID StartHihoTask(VOID);
 VOID StopHihoTask(VOID);
 
 /* remap.a */
+
+/* storage.c */
+LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
+LONG StoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);

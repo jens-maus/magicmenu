@@ -30,6 +30,12 @@ long __stack = 16000;
 
 /******************************************************************************/
 
+#ifndef _STORAGE_H
+#include "storage.h"
+#endif	/* _STORAGE_H */
+
+/******************************************************************************/
+
 #include "prefs.h"
 
 struct MMPrefs DefaultPrefs =
@@ -49,6 +55,8 @@ struct MMPrefs DefaultPrefs =
 	TRUE,					/* KCRAltRCommand */
 	TRUE,					/* PUCenter */
 	FALSE,					/* PreferScreenColours */
+	FALSE,					/* Delayed */
+	TRUE,					/* DrawFrame */
 
 	MODE_STD,				/* PDMode */
 	LOOK_MC,				/* PDLook */
@@ -86,6 +94,49 @@ UBYTE MagicColours[8][3] =
 	0xAF,0xAF,0xAF,
 	0xAA,0x90,0x7C,
 	0xFF,0xA9,0x97
+};
+
+/******************************************************************************/
+
+struct StorageItem PrefsStorage[] =
+{
+	DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UWORD,	"MenuType"),
+	DECLARE_ITEM(MMPrefs,mmp_Enabled,		SIT_BOOLEAN,	"Enabled"),
+	DECLARE_ITEM(MMPrefs,mmp_MarkSub,		SIT_BOOLEAN,	"MarkSub"),
+	DECLARE_ITEM(MMPrefs,mmp_DblBorder,		SIT_BOOLEAN,	"DblBorder"),
+	DECLARE_ITEM(MMPrefs,mmp_NonBlocking,		SIT_BOOLEAN,	"NonBlocking"),
+	DECLARE_ITEM(MMPrefs,mmp_KCEnabled,		SIT_BOOLEAN,	"KCEnabled"),
+	DECLARE_ITEM(MMPrefs,mmp_KCGoTop,		SIT_BOOLEAN,	"KCGoTop"),
+	DECLARE_ITEM(MMPrefs,mmp_KCRAltRCommand,	SIT_BOOLEAN,	"KCAltRCommand"),
+	DECLARE_ITEM(MMPrefs,mmp_PUCenter,		SIT_BOOLEAN,	"KCPUCenter"),
+	DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
+	DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
+	DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
+	DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UWORD,	"PDMode"),
+	DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UWORD,	"PDLook"),
+	DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UWORD,	"PUMode"),
+	DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UWORD,	"PULook"),
+	DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,		SIT_TEXT,	"KCKeyStr"),
+	DECLARE_ITEM(MMPrefs,mmp_Precision,		SIT_WORD,	"Precision"),
+
+	DECLARE_ITEM(MMPrefs,mmp_LightEdge.R,		SIT_ULONG,	"LightEdge.R"),
+	DECLARE_ITEM(MMPrefs,mmp_LightEdge.G,		SIT_ULONG,	"LightEdge.G"),
+	DECLARE_ITEM(MMPrefs,mmp_LightEdge.B,		SIT_ULONG,	"LightEdge.B"),
+	DECLARE_ITEM(MMPrefs,mmp_DarkEdge.R,		SIT_ULONG,	"DarkEdge.R"),
+	DECLARE_ITEM(MMPrefs,mmp_DarkEdge.G,		SIT_ULONG,	"DarkEdge.G"),
+	DECLARE_ITEM(MMPrefs,mmp_DarkEdge.B,		SIT_ULONG,	"DarkEdge.B"),
+	DECLARE_ITEM(MMPrefs,mmp_Background.R,		SIT_ULONG,	"Background.R"),
+	DECLARE_ITEM(MMPrefs,mmp_Background.G,		SIT_ULONG,	"Background.G"),
+	DECLARE_ITEM(MMPrefs,mmp_Background.B,		SIT_ULONG,	"Background.B"),
+	DECLARE_ITEM(MMPrefs,mmp_TextCol.R,		SIT_ULONG,	"Text.R"),
+	DECLARE_ITEM(MMPrefs,mmp_TextCol.G,		SIT_ULONG,	"Text.G"),
+	DECLARE_ITEM(MMPrefs,mmp_TextCol.B,		SIT_ULONG,	"Text.B"),
+	DECLARE_ITEM(MMPrefs,mmp_HiCol.R,		SIT_ULONG,	"HighText.R"),
+	DECLARE_ITEM(MMPrefs,mmp_HiCol.G,		SIT_ULONG,	"HighText.G"),
+	DECLARE_ITEM(MMPrefs,mmp_HiCol.B,		SIT_ULONG,	"HighText.B"),
+	DECLARE_ITEM(MMPrefs,mmp_FillCol.R,		SIT_ULONG,	"Fill.R"),
+	DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
+	DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
 };
 
 /******************************************************************************/
@@ -142,7 +193,9 @@ enum
 	GAD_KCRAltRCommand,
 	GAD_KCKeyStr,
 	GAD_Precision,
-	GAD_PreferScreenColours
+	GAD_PreferScreenColours,
+	GAD_Delayed,
+	GAD_DrawFrames
 };
 
 enum
@@ -179,7 +232,6 @@ extern struct DosLibrary	*DOSBase;
 struct IntuitionBase	*IntuitionBase;
 struct GfxBase		*GfxBase;
 struct Library		*UtilityBase;
-struct Library		*IFFParseBase;
 struct Library		*AslBase;
 struct Library		*LocaleBase;
 struct Library		*IconBase;
@@ -998,6 +1050,17 @@ ShowError(LONG ID,LONG Error)
 LONG
 ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 {
+	struct MMPrefs LocalPrefs;
+	LONG Error;
+
+	memset(&LocalPrefs,0,sizeof(LocalPrefs));
+
+	if(!(Error = RestoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs)))
+		CopyMem(&LocalPrefs,HerePlease,sizeof(struct MMPrefs));
+
+	return(Error);
+
+/*
 	BPTR FileHandle;
 	LONG Error;
 
@@ -1025,11 +1088,15 @@ ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 	}
 
 	return(Error);
+*/
 }
 
 LONG
 WritePrefs(STRPTR Name,struct MMPrefs *ThisPlease)
 {
+	return(StoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),ThisPlease));
+
+/*
 	BPTR FileHandle;
 	LONG Error;
 
@@ -1046,6 +1113,7 @@ WritePrefs(STRPTR Name,struct MMPrefs *ThisPlease)
 	}
 
 	return(Error);
+*/
 }
 
 /******************************************************************************/
@@ -1272,8 +1340,6 @@ CloseAll(VOID)
 
 	CloseLibrary(AslBase);
 
-	CloseLibrary(IFFParseBase);
-
 	CloseLibrary(UtilityBase);
 
 	CloseLibrary(GfxBase);
@@ -1316,9 +1382,6 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	if(!(UtilityBase = OpenLibrary("utility.library",37)))
 		return("utility.library V37");
-
-	if(!(IFFParseBase = OpenLibrary("iffparse.library",37)))
-		return("iffparse.library V37");
 
 	if(!(AslBase = OpenLibrary("asl.library",37)))
 		return("asl.library V37");
@@ -1519,6 +1582,7 @@ OpenAll(struct WBStartup *StartupMsg)
 		return("reply port");
 
 	if(!(FileRequester = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
+		ASLFR_InitialDrawer,	"SYS:Prefs/Presets",
 		ASLFR_InitialPattern,	"#?.prefs",
 		ASLFR_Flags2,		FRF_REJECTICONS,
 	TAG_DONE)))
@@ -1847,6 +1911,20 @@ OpenAll(struct WBStartup *StartupMsg)
 						LA_ID,		GAD_NonBlocking,
 						LA_LabelID,	MSG_NON_BLOCKING_GAD,
 						LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
+					TAG_DONE);
+
+					LT_New(Handle,
+						LA_Type,	CHECKBOX_KIND,
+						LA_ID,		GAD_Delayed,
+						LA_LabelID,	MSG_MENUS_OPEN_DELAYED_GAD,
+						LA_BYTE,	&CurrentPrefs.mmp_Delayed,
+					TAG_DONE);
+
+					LT_New(Handle,
+						LA_Type,	CHECKBOX_KIND,
+						LA_ID,		GAD_DrawFrames,
+						LA_LabelID,	MSG_DRAW_FRAME_GAD,
+						LA_BYTE,	&CurrentPrefs.mmp_DrawFrames,
 					TAG_DONE);
 
 					LT_EndGroup(Handle);
@@ -2315,6 +2393,14 @@ UpdateSettings(struct MMPrefs *Prefs)
 
 	LT_SetAttributes(Handle,GAD_PreferScreenColours,
 		GTCB_Checked,	Prefs->mmp_PreferScreenColours,
+	TAG_DONE);
+
+	LT_SetAttributes(Handle,GAD_Delayed,
+		GTCB_Checked,	Prefs->mmp_Delayed,
+	TAG_DONE);
+
+	LT_SetAttributes(Handle,GAD_DrawFrames,
+		GTCB_Checked,	Prefs->mmp_DrawFrames,
 	TAG_DONE);
 
 	LT_SetAttributes(Handle,GAD_KCKeyStr,

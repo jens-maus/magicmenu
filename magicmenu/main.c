@@ -26,6 +26,12 @@ long __stack = 8192;
 
 /******************************************************************************/
 
+#ifndef _STORAGE_H
+#include "storage.h"
+#endif	/* _STORAGE_H */
+
+/******************************************************************************/
+
  /* This is how a linked list of directory search paths looks like. */
 
 struct Path
@@ -1289,6 +1295,7 @@ ProcessIntuiMenu (VOID)
   ULONG TickCounter;
   ULONG TimeMask;
   BOOL Poll, Ticking;
+  LONG LastX,LastY,NewX,NewY,DeltaX,DeltaY;
 
   Ende = FALSE;
   Cancel = FALSE;
@@ -1298,6 +1305,8 @@ ProcessIntuiMenu (VOID)
   SigMask = CxSignalMask | TickSigMask | TimeMask;
 
   TickCounter = 0;
+
+  LastX = LastY = 0;
 
   StartTimeRequest (TimerIO, 0, MILLION / 4);
 
@@ -1323,11 +1332,30 @@ ProcessIntuiMenu (VOID)
         break;
       }
       else
+      {
         StartTimeRequest (TimerIO, 0, MILLION / 4);
+      }
     }
 
     if (Signals & TickSigMask)
+    {
       TickCounter = 0;
+
+      if(AktPrefs.mmp_Delayed)
+      {
+        NewX = MenScr->MouseX;
+        NewY = MenScr->MouseY;
+
+        DeltaX = abs(LastX - NewX);
+        DeltaY = abs(LastY - NewY);
+
+        LastX = NewX;
+        LastY = NewY;
+
+        if(DeltaX < 3 && DeltaY < 3)
+          Shoot();
+      }
+    }
 
     if ((Signals & CxSignalMask) || Poll)
     {
@@ -1675,6 +1703,11 @@ CheckMMMsgPort (struct MMMessage * MMMsg)
       }
     }
 
+    ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
+
+    if(KbdFilter)
+      ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
+
     ActivateCxObj (Broker, TRUE);
 
     ReplyMsg (MMMsg);
@@ -1910,8 +1943,66 @@ CheckArguments (VOID)
 }
 
 BOOL
-LoadPrefs (char *ConfigFile, BOOL Report)
+LoadPrefs (char *Name, BOOL Report)
 {
+	STATIC struct StorageItem PrefsStorage[] =
+	{
+		DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UWORD,	"MenuType"),
+		DECLARE_ITEM(MMPrefs,mmp_Enabled,		SIT_BOOLEAN,	"Enabled"),
+		DECLARE_ITEM(MMPrefs,mmp_MarkSub,		SIT_BOOLEAN,	"MarkSub"),
+		DECLARE_ITEM(MMPrefs,mmp_DblBorder,		SIT_BOOLEAN,	"DblBorder"),
+		DECLARE_ITEM(MMPrefs,mmp_NonBlocking,		SIT_BOOLEAN,	"NonBlocking"),
+		DECLARE_ITEM(MMPrefs,mmp_KCEnabled,		SIT_BOOLEAN,	"KCEnabled"),
+		DECLARE_ITEM(MMPrefs,mmp_KCGoTop,		SIT_BOOLEAN,	"KCGoTop"),
+		DECLARE_ITEM(MMPrefs,mmp_KCRAltRCommand,	SIT_BOOLEAN,	"KCAltRCommand"),
+		DECLARE_ITEM(MMPrefs,mmp_PUCenter,		SIT_BOOLEAN,	"KCPUCenter"),
+		DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
+		DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
+		DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
+		DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UWORD,	"PDMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UWORD,	"PDLook"),
+		DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UWORD,	"PUMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UWORD,	"PULook"),
+		DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,		SIT_TEXT,	"KCKeyStr"),
+		DECLARE_ITEM(MMPrefs,mmp_Precision,		SIT_WORD,	"Precision"),
+
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.R,		SIT_ULONG,	"LightEdge.R"),
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.G,		SIT_ULONG,	"LightEdge.G"),
+		DECLARE_ITEM(MMPrefs,mmp_LightEdge.B,		SIT_ULONG,	"LightEdge.B"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.R,		SIT_ULONG,	"DarkEdge.R"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.G,		SIT_ULONG,	"DarkEdge.G"),
+		DECLARE_ITEM(MMPrefs,mmp_DarkEdge.B,		SIT_ULONG,	"DarkEdge.B"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.R,		SIT_ULONG,	"Background.R"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.G,		SIT_ULONG,	"Background.G"),
+		DECLARE_ITEM(MMPrefs,mmp_Background.B,		SIT_ULONG,	"Background.B"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.R,		SIT_ULONG,	"Text.R"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.G,		SIT_ULONG,	"Text.G"),
+		DECLARE_ITEM(MMPrefs,mmp_TextCol.B,		SIT_ULONG,	"Text.B"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.R,		SIT_ULONG,	"HighText.R"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.G,		SIT_ULONG,	"HighText.G"),
+		DECLARE_ITEM(MMPrefs,mmp_HiCol.B,		SIT_ULONG,	"HighText.B"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.R,		SIT_ULONG,	"Fill.R"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
+		DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
+	};
+
+	struct MMPrefs LocalPrefs;
+
+	memset(&LocalPrefs,0,sizeof(LocalPrefs));
+
+	if(RestoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs))
+	{
+		if(Report)
+			ShowRequest(GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
+
+		return(FALSE);
+	}
+	else
+	{
+		CopyMem(&LocalPrefs,&AktPrefs,sizeof(struct MMPrefs));
+		return(TRUE);
+	}
+  /*
   BPTR FH;
   struct MMPrefs ZwPrefs;
   ULONG Len;
@@ -1938,6 +2029,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
       ShowRequest (GetString (MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
     return (FALSE);
   }
+  */
 }
 
 VOID
@@ -2025,7 +2117,7 @@ CleanupMenuActiveData ()
 BOOL
 SetupMenuActiveData ()
 {
-  if (!(ActKbdFilter = CxFilter (MouseKey)))
+  if (!(ActKbdFilter = CxFilter (NULL)))
     return (FALSE);
 
   SetFilterIX (ActKbdFilter, &ActiveKbdIX);
@@ -2040,7 +2132,7 @@ SetupMenuActiveData ()
 
   AttachCxObj (ActKbdFilter, ActKbdTransl);
 
-  if (!(MouseMoveFilter = CxFilter (MouseKey)))
+  if (!(MouseMoveFilter = CxFilter (NULL)))
     return (FALSE);
 
   SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
@@ -2050,7 +2142,7 @@ SetupMenuActiveData ()
 
   AttachCxObj (MouseMoveFilter, MouseMoveSender);
 
-  if (!(MousePositionFilter = CxFilter (MouseKey)))
+  if (!(MousePositionFilter = CxFilter (NULL)))
     return (FALSE);
 
   SetFilterIX (MousePositionFilter, &ActiveMousePositionIX);
@@ -2060,7 +2152,7 @@ SetupMenuActiveData ()
 
   AttachCxObj (MousePositionFilter, MousePositionSender);
 
-  if (!(MouseNewPositionFilter = CxFilter (MouseKey)))
+  if (!(MouseNewPositionFilter = CxFilter (NULL)))
     return (FALSE);
 
   SetFilterIX (MouseNewPositionFilter, &ActiveMouseNewPositionIX);
@@ -2070,7 +2162,7 @@ SetupMenuActiveData ()
 
   AttachCxObj (MouseNewPositionFilter, MouseNewPositionSender);
 
-  if (!(TickFilter = CxFilter (MouseKey)))
+  if (!(TickFilter = CxFilter (NULL)))
     return (FALSE);
 
   SetFilterIX (TickFilter, &TickIX);
@@ -2443,7 +2535,7 @@ main (int argc, char **argv)
     return;
   }
 
-  if (!(MouseFilter = CxFilter (MouseKey)))
+  if (!(MouseFilter = CxFilter (NULL)))
     ErrorPrc ("mouse filter");
   SetFilterIX (MouseFilter, &MouseIX);
   AttachCxObj (Broker, MouseFilter);
@@ -2464,10 +2556,9 @@ main (int argc, char **argv)
     AttachCxObj (Broker, KbdFilter);
   }
 
-  if (!(StdKbdFilter = CxFilter (MouseKey)))
+  if (!(StdKbdFilter = CxFilter (NULL)))
     ErrorPrc ("RAmiga - RCommand keyboard filter");
   SetFilterIX (StdKbdFilter, &StdKbdIX);
-  AttachCxObj (Broker, StdKbdFilter);
 
   if (!(StdKbdSender = CxSender (CxMsgPort, EVT_KBDMENU)))
     ErrorPrc ("RAmiga - RCommand keyboard sender");
@@ -2477,8 +2568,12 @@ main (int argc, char **argv)
     ErrorPrc ("RAmiga - RCommand keyboard translator");
   AttachCxObj (StdKbdFilter, StdKbdTransl);
 
-  ActivateCxObj (StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand == 1));
+  AttachCxObj (Broker, StdKbdFilter);
 
+  ActivateCxObj(StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand != FALSE) && (AktPrefs.mmp_KCEnabled != FALSE));
+
+  if(KbdFilter)
+    ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
 
   if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
     ErrorPrc (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));

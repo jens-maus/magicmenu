@@ -55,7 +55,6 @@ extern CxObj *TickSignal;
 extern struct MsgPort *CxMsgPort;
 extern struct MsgPort *ReplyPort;
 extern struct MsgPort *MMMsgPort;
-extern char MouseKey[];
 extern LONG TickSigNum;
 extern ULONG TickSigMask;
 

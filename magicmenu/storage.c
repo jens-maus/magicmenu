@@ -78,6 +78,8 @@ PrepareItem(APTR That,WORD Type,WORD Size,STRPTR String)
 			STRPTR There;
 			UBYTE c;
 
+			String[Len - 1] = 0;
+
 			if(Type == SIT_STRPTR)
 			{
 				There = *(STRPTR *)That;
@@ -229,7 +231,7 @@ RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG 
 
 				Error = ERROR_OBJECT_WRONG_TYPE;
 
-				if(!Strnicmp(LocalBuffer,Type,strlen(Type)) && LocalBuffer[Len - 1] != ':')
+				if(!Strnicmp(LocalBuffer,Type,strlen(Type)) && LocalBuffer[Len - 1] == ':')
 				{
 					LocalBuffer[Len - 1] = 0;
 
@@ -244,18 +246,34 @@ RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG 
 			if(!Error)
 			{
 				STRPTR Buffer;
-				LONG Index;
+				LONG i;
 
-				Index = 0;
+				for(i = 0 ; i < NumItems ; i++)
+					Items[i].si_Found = 0;
 
 				while(!(Error = GetLine(FileHandle,LocalBuffer)))
 				{
-					if(LocalBuffer[0] == '\t')
+					Buffer = LocalBuffer;
+
+					while(*Buffer == ' ' || *Buffer == '\t')
+						Buffer++;
+
+					if(LocalBuffer[0] == '#')
+					{
+						for(i = 0 ; i < NumItems ; i++)
+						{
+							if(Items[i].si_Found == 0)
+							{
+								Error = ERROR_REQUIRED_ARG_MISSING;
+								break;
+							}
+						}
+
+						break;
+					}
+					else
 					{
 						STRPTR Argument;
-						LONG i;
-
-						Buffer = LocalBuffer + 1;
 
 						Argument = NULL;
 
@@ -271,42 +289,36 @@ RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG 
 
 						if(Argument == NULL)
 						{
-							Error = ERROR_OBJECT_WRONG_TYPE;
+							Error = ERROR_KEY_NEEDS_ARG;
 							break;
 						}
 						else
 						{
-							if(Stricmp(Buffer,Items[Index].si_Name))
-							{
-								Error = ERROR_OBJECT_WRONG_TYPE;
-								break;
-							}
-							else
-							{
-								if(Error = PrepareItem((APTR)(((ULONG)DataPtr) + Items[Index].si_Offset),Items[Index].si_Type,Items[Index].si_Size,Argument))
-									break;
-								else
-								{
-									Index++;
+							LONG Index;
 
-									if(Index == NumItems && ThisVersion > Version)
-										break;
+							Index = -1;
+
+							for(i = 0 ; i < NumItems ; i++)
+							{
+								if(!Stricmp(Buffer,Items[i].si_Name))
+								{
+									Index = i;
+									break;
 								}
 							}
+
+							if(Index != -1)
+							{
+								if(Items[Index].si_Found++ > 0)
+								{
+									Error = ERROR_TOO_MANY_ARGS;
+									break;
+								}
+
+								if(Error = PrepareItem((APTR)(((ULONG)DataPtr) + Items[Index].si_Offset),Items[Index].si_Type,Items[Index].si_Size,Argument))
+									break;
+							}
 						}
-					}
-					else if(LocalBuffer[0] == '#')
-					{
-						if(Index != NumItems)
-							Error = ERROR_OBJECT_WRONG_TYPE;
-
-						break;
-					}
-					else
-					{
-						Error = ERROR_OBJECT_WRONG_TYPE;
-
-						break;
 					}
 				}
 			}
@@ -350,7 +362,7 @@ StoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG Nu
 			{
 				That = (APTR)(((ULONG)DataPtr) + Items[i].si_Offset);
 
-				Error = LPrintf(Error,FileHandle,"\t%s=",Items[i].si_Type);
+				Error = LPrintf(Error,FileHandle,"\t%s=",Items[i].si_Name);
 
 				switch(Items[i].si_Type)
 				{

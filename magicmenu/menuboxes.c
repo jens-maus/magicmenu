@@ -16,6 +16,11 @@ void kprintf(const char *,...);
 
 /******************************************************************************/
 
+STATIC BOOL MenuNotDrawn;
+STATIC BOOL SubNotDrawn;
+
+/******************************************************************************/
+
 //#define DEMO_MENU
 
 /******************************************************************************/
@@ -580,13 +585,18 @@ DrawHiSubItem (struct MenuItem *Item)
         {
           if (!LookMC || MenuMode == MODE_KEYBOARD)
           {
-            Draw3DRect (SubBoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+            if(AktPrefs.mmp_DrawFrames)
+              Draw3DRect (SubBoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+
             if (!LookMC)
               GhostRect (SubBoxDrawRPort, l, t, w, h);
           }
         }
         else
-          Draw3DRect (SubBoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+        {
+          if(AktPrefs.mmp_DrawFrames)
+            Draw3DRect (SubBoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+        }
       }
       else
       {
@@ -695,6 +705,8 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   struct ItemRmb *LookItemRmb;
   LONG ItemY1;
   struct MenuItem *ZwItem;
+
+  SubNotDrawn = FALSE;
 
   MenuSubBoxSwapped = FALSE;
 
@@ -976,13 +988,17 @@ DrawHiItem (struct MenuItem *Item)
         {
           if (!LookMC || MenuMode == MODE_KEYBOARD)
           {
-            Draw3DRect (BoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+            if(AktPrefs.mmp_DrawFrames)
+              Draw3DRect (BoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
             if (!LookMC)
               GhostRect (BoxDrawRPort, l, t, w, h);
           }
         }
         else
-          Draw3DRect (BoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+        {
+          if(AktPrefs.mmp_DrawFrames)
+            Draw3DRect (BoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
+        }
       }
       else
       {
@@ -1115,6 +1131,8 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   struct MenuRmb *LookMenRmb;
   LONG MenuY1;
   struct MenuItem *ZwItem;
+
+  MenuNotDrawn = FALSE;
 
   MenuBoxSwapped = FALSE;
 
@@ -1397,7 +1415,10 @@ DrawHiMenu (struct Menu * Menu)
         if (StripPopUp)
         {
           if ((Menu->Flags & MENUENABLED) || MenuMode == MODE_KEYBOARD)
-            Draw3DRect (StripDrawRPort, l, t, w, h + 1, AktPrefs.mmp_DblBorder, FALSE, FALSE);
+          {
+            if(AktPrefs.mmp_DrawFrames)
+              Draw3DRect (StripDrawRPort, l, t, w, h + 1, AktPrefs.mmp_DblBorder, FALSE, FALSE);
+          }
         }
         else
         {
@@ -1414,7 +1435,8 @@ DrawHiMenu (struct Menu * Menu)
       {
         if (Menu->Flags & MENUENABLED)
           CompRect (StripDrawRPort, l, t, w, h);
-        Draw3DRect (StripDrawRPort, l, t, w, h, (AktPrefs.mmp_DblBorder || (!StripPopUp)), ((!StripPopUp) && ScrHiRes && (!DblBorder)), FALSE);
+        if(!StripPopUp || AktPrefs.mmp_DrawFrames)
+          Draw3DRect (StripDrawRPort, l, t, w, h, (AktPrefs.mmp_DblBorder || (!StripPopUp)), ((!StripPopUp) && ScrHiRes && (!DblBorder)), FALSE);
         if (!(Menu->Flags & MENUENABLED))
           GhostRect (StripDrawRPort, l, t, w, h);
       }
@@ -1803,7 +1825,12 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
     {
       AktItem->Flags |= HIGHITEM;
       if (MenuMode != MODE_KEYBOARD)
-        DrawMenuSubBox (AktMenu, AktItem, TRUE);
+      {
+        if(AktPrefs.mmp_Delayed)
+          SubNotDrawn = TRUE;
+        else
+          DrawMenuSubBox (AktMenu, AktItem, TRUE);
+      }
     }
     else
     {
@@ -1941,7 +1968,12 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     if (DrawHiMenu (AktMenu = NewMenu))
     {
       if (MenuMode != MODE_KEYBOARD)
-        DrawMenuBox (AktMenu, TRUE);
+      {
+        if(AktPrefs.mmp_Delayed)
+          MenuNotDrawn = TRUE;
+        else
+          DrawMenuBox (AktMenu, TRUE);
+      }
     }
     else
     {
@@ -3296,4 +3328,24 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   }
 
   return (TRUE);
+}
+
+VOID
+Shoot()
+{
+  if(MenuNotDrawn)
+  {
+    if(AktMenu)
+      DrawMenuBox (AktMenu, TRUE);
+    else
+      MenuNotDrawn = FALSE;
+  }
+
+  if(SubNotDrawn)
+  {
+    if(AktMenu && AktItem)
+      DrawMenuSubBox (AktMenu, AktItem, TRUE);
+    else
+      SubNotDrawn = FALSE;
+  }
 }

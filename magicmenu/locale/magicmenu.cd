@@ -1,4 +1,4 @@
-; $VER: magicmenu.cd 1.7 (12.11.96)
+; $VER: magicmenu.cd 1.9 (15.11.96)
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>
@@ -234,4 +234,10 @@ MSG_PRECISION4_TXT (//)
 ;
 MSG_PREFER_SCREEN_COLOURS_GAD (//)
 Prefer screen colours:
+;
+MSG_MENUS_OPEN_DELAYED_GAD (//)
+Menus open delayed:
+;
+MSG_DRAW_FRAME_GAD (//)
+Draw frames around menu items:
 ;
