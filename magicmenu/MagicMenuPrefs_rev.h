@@ -1,6 +1,6 @@
 #define VERSION		2
-#define REVISION	29
-#define DATE		"15.10.1999"
-#define VERS		"MagicMenuPrefs 2.29"
-#define VSTRING		"MagicMenuPrefs 2.29 (15.10.1999)\r\n"
-#define VERSTAG		"\0$VER: MagicMenuPrefs 2.29 (15.10.1999)"
+#define REVISION	31
+#define DATE		"2.3.2001"
+#define VERS		"MagicMenuPrefs 2.31"
+#define VSTRING		"MagicMenuPrefs 2.31 (2.3.2001)\r\n"
+#define VERSTAG		"\0$VER: MagicMenuPrefs 2.31 (2.3.2001)"
