@@ -10,6 +10,12 @@
 
 /******************************************************************************/
 
+//#define DB(x) x
+
+void kprintf(const char *,...);
+
+/******************************************************************************/
+
 //#define DEMO_MENU
 
 /******************************************************************************/
@@ -117,14 +123,6 @@ FreeMenuColours (struct ColorMap *cmap)
 STATIC BOOL
 AllocateMenuColours (struct ColorMap *cmap)
 {
-  STATIC Tag Tags[] =
-  {
-    OBP_Precision, PRECISION_GUI,
-    OBP_FailIfBad, TRUE,
-
-    TAG_DONE
-  };
-
   ULONG *colour;
   LONG i;
 
@@ -132,7 +130,7 @@ AllocateMenuColours (struct ColorMap *cmap)
 
   for (i = 0; i < NUM_MENU_PENS; i++)
   {
-    if ((MenuPens[i] = ObtainBestPenA (cmap, *colour++, *colour++, *colour++, (struct TagItem *) Tags)) == -1)
+    if ((MenuPens[i] = AllocateColour(cmap, *colour++, *colour++, *colour++)) == -1)
     {
       FreeMenuColours (cmap);
       return (FALSE);
@@ -508,6 +506,8 @@ DrawHiSubItem (struct MenuItem *Item)
   LONG t, l, h, w;
   UWORD HiFlags;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Item)
   {
     if (!GetSubItemContCoor (Item, &t, &l, &w, &h))
@@ -522,9 +522,15 @@ DrawHiSubItem (struct MenuItem *Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
+      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return(TRUE);
+      }
+
       if (Look3D)
       {
-        if (Item->Flags & ITEMENABLED && (!SubBoxGhosted) && (!BoxGhosted))
+        if ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted))
         {
           if (LookMC)
           {
@@ -554,7 +560,7 @@ DrawHiSubItem (struct MenuItem *Item)
       }
       else
       {
-        if (MenuMode == MODE_KEYBOARD || (Item->Flags & ITEMENABLED && (!SubBoxGhosted) && (!BoxGhosted)))
+        if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
             DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE);
@@ -578,6 +584,8 @@ DrawNormSubItem (struct MenuItem * Item)
   LONG t, l, h, w;
   UWORD HiFlags;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Item)
   {
     if (!GetSubItemContCoor (Item, &t, &l, &w, &h))
@@ -589,6 +597,12 @@ DrawNormSubItem (struct MenuItem * Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
+      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return(TRUE);
+      }
+
       if (LookMC)
       {
         HiRect (SubBoxDrawRPort, l, t, w, h, FALSE);
@@ -596,7 +610,7 @@ DrawNormSubItem (struct MenuItem * Item)
       }
       else if (Look3D)
       {
-        if (!LookMC && HiFlags != HIGHIMAGE && Item->Flags & ITEMENABLED && (!SubBoxGhosted) && (!BoxGhosted))
+        if (!LookMC && HiFlags != HIGHIMAGE && (Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted))
           CompRect (SubBoxDrawRPort, l, t, w, h);
 
         DrawNormRect (SubBoxDrawRPort, l, t, w, h);
@@ -606,7 +620,7 @@ DrawNormSubItem (struct MenuItem * Item)
       {
         if (HiFlags != HIGHIMAGE)
         {
-          if (MenuMode == MODE_KEYBOARD || (Item->Flags & ITEMENABLED && (!SubBoxGhosted) && (!BoxGhosted)))
+          if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
           {
             if (HiFlags == HIGHBOX)
               CompRect (SubBoxDrawRPort, l - 4, t - 2, w + 8, h + 4);
@@ -888,6 +902,8 @@ DrawHiItem (struct MenuItem *Item)
   LONG t, l, h, w;
   UWORD HiFlags;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Item)
   {
     if (!GetItemContCoor (Item, &t, &l, &w, &h))
@@ -902,9 +918,15 @@ DrawHiItem (struct MenuItem *Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
+      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return(TRUE);
+      }
+
       if (Look3D)
       {
-        if (Item->Flags & ITEMENABLED && (!BoxGhosted))
+        if ((Item->Flags & ITEMENABLED) && (!BoxGhosted))
         {
           if (LookMC)
           {
@@ -934,7 +956,7 @@ DrawHiItem (struct MenuItem *Item)
       }
       else
       {
-        if (MenuMode == MODE_KEYBOARD || (Item->Flags & ITEMENABLED && (!BoxGhosted)))
+        if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
             DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE);
@@ -959,6 +981,8 @@ DrawNormItem (struct MenuItem * Item)
   LONG t, l, h, w;
   UWORD HiFlags;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Item)
   {
     if (!GetItemContCoor (Item, &t, &l, &w, &h))
@@ -970,6 +994,12 @@ DrawNormItem (struct MenuItem * Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
+      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return(TRUE);
+      }
+
       if (LookMC)
       {
         HiRect (BoxDrawRPort, l, t, w, h, FALSE);
@@ -977,7 +1007,7 @@ DrawNormItem (struct MenuItem * Item)
       }
       else if (Look3D)
       {
-        if (HiFlags != HIGHIMAGE && Item->Flags & ITEMENABLED && (!BoxGhosted))
+        if (HiFlags != HIGHIMAGE && (Item->Flags & ITEMENABLED) && (!BoxGhosted))
           CompRect (BoxDrawRPort, l, t, w, h);
         DrawNormRect (BoxDrawRPort, l, t, w, h);
         DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE);
@@ -986,7 +1016,7 @@ DrawNormItem (struct MenuItem * Item)
       {
         if (HiFlags != HIGHIMAGE)
         {
-          if (MenuMode == MODE_KEYBOARD || (Item->Flags & ITEMENABLED && (!BoxGhosted)))
+          if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
           {
             if (HiFlags == HIGHBOX)
               CompRect (BoxDrawRPort, l - 4, t - 2, w + 8, h + 4);
@@ -1290,6 +1320,8 @@ DrawHiMenu (struct Menu * Menu)
 {
   LONG t, l, h, w;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Menu)
   {
     if (!GetMenuContCoor (Menu, &t, &l, &w, &h))
@@ -1301,6 +1333,12 @@ DrawHiMenu (struct Menu * Menu)
       if (MenuMode == MODE_KEYBOARD)
         CheckDispClipVisible (l + (StripLeft - StripDrawLeft), t + (StripTop - StripDrawTop), l + w - 1, t + h - 1);
 
+      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return(TRUE);
+      }
+
       if (LookMC)
       {
         SetFont (StripDrawRPort, MenFont);
@@ -1311,8 +1349,7 @@ DrawHiMenu (struct Menu * Menu)
           HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, TRUE);
           SetFgPen (StripDrawRPort, MenHiCol);
 
-          Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
         else
         {
@@ -1320,13 +1357,11 @@ DrawHiMenu (struct Menu * Menu)
 
           SetFgPen (StripDrawRPort, MenStdGrey2);
 
-          Move (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
 
           SetFgPen (StripDrawRPort, MenStdGrey0);
 
-          Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
 
         if (StripPopUp)
@@ -1385,6 +1420,8 @@ DrawNormMenu (struct Menu *Menu)
 {
   LONG t, l, h, w;
 
+  DB(kprintf("%s\n",__FUNC__));
+
   if (Menu)
   {
     GetMenuContCoor (Menu, &t, &l, &w, &h);
@@ -1392,6 +1429,13 @@ DrawNormMenu (struct Menu *Menu)
     {
       t += StripDrawTop;
       l += StripDrawLeft;
+
+      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD)
+      {
+        DB(kprintf("->abort\n"));
+        return;
+      }
+
       if (LookMC)
       {
         SetFont (StripDrawRPort, MenFont);
@@ -1402,20 +1446,17 @@ DrawNormMenu (struct Menu *Menu)
         {
           SetFgPen (StripDrawRPort, MenTextCol);
 
-          Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
         else
         {
           SetFgPen (StripDrawRPort, MenStdGrey2);
 
-          Move (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
 
           SetFgPen (StripDrawRPort, MenStdGrey0);
 
-          Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
 
         if (!StripPopUp)
@@ -1440,9 +1481,7 @@ DrawNormMenu (struct Menu *Menu)
 
           SetFont (StripDrawRPort, MenFont);
 
-          Move (StripDrawRPort, Menu->LeftEdge + StripLeftOffs + 4,
-             Menu->TopEdge + StripTopOffs + 1 + StripDrawRPort->TxBaseline);
-          Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
+          PlaceText (StripDrawRPort, Menu->LeftEdge + StripLeftOffs + 4, Menu->TopEdge + StripTopOffs + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
 
           if (!Menu->Flags & MENUENABLED)
             GhostRect (StripDrawRPort, l, t, w, h);
@@ -2008,7 +2047,8 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
     {
       if (AktSubItem)
       {
-        DrawNormSubItem (AktSubItem);
+        if(AktSubItem->Flags & ITEMENABLED)
+          DrawNormSubItem (AktSubItem);
 
         AktSubItem->Flags &= ~HIGHITEM;
         AktSubItem = NULL;
@@ -2084,7 +2124,8 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
 
       if (AktItem)
       {
-        DrawNormItem (AktItem);
+        if(AktItem->Flags & ITEMENABLED)
+          DrawNormItem (AktItem);
 
         AktItem->Flags &= ~HIGHITEM;
         AktItem = NULL;
@@ -2151,7 +2192,8 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
 
     if (AktMenu)
     {
-      DrawNormMenu (AktMenu);
+      if(AktMenu->Flags & MENUENABLED)
+        DrawNormMenu (AktMenu);
       AktMenu = NULL;
     }
 
@@ -2267,16 +2309,14 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
     {
       SetFgPen (RPort, MenStdGrey2);
 
-      Move (RPort, X + 1, Y + 1);
-      Text (RPort, ZwMenu->MenuName, strlen (ZwMenu->MenuName));
+      PlaceText (RPort, X + 1, Y + 1, ZwMenu->MenuName, -1);
 
       SetFgPen (RPort, MenStdGrey0);
     }
     else
       SetFgPen (RPort, MenTextCol);
 
-    Move (RPort, X, Y);
-    Text (RPort, ZwMenu->MenuName, strlen (ZwMenu->MenuName));
+    PlaceText (RPort, X, Y, ZwMenu->MenuName, -1);
 
     if (!LookMC && !ZwMenu->Flags & MENUENABLED)
       GhostMenu (ZwMenu, RPort, Left, Top);
@@ -2337,6 +2377,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   struct Menu *ZwMenu;
   UWORD *Pens;
   LONG MaxMapPen,MaxMapDepth;
+  UWORD CheckWidth,CommandWidth;
 
   memset(StdRemapArray,0,sizeof(StdRemapArray));
 
@@ -2378,6 +2419,33 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   DoFlipCheck = DoFlipCommand = DoFlipMX = DoFlipSubArrow = FALSE;
 
   ColorMap = MenScr->ViewPort.ColorMap;
+
+  /* Jetzt wird die Größe der vorgegebenen Bilder ermittelt. */
+
+  if(ScrHiRes)
+  {
+    CheckWidth = CHECKWIDTH;
+    CommandWidth = COMMWIDTH;
+  }
+  else
+  {
+    CheckWidth = LOWCHECKWIDTH;
+    CommandWidth = LOWCOMMWIDTH;
+  }
+
+  ObtainGlyphs (MenWin, &CheckImage, &CommandImage);
+
+  if(CheckImage)
+  {
+    CheckWidth = CheckImage->Width;
+    CheckImage = NULL;
+  }
+
+  if(CommandImage)
+  {
+    CommandWidth = CommandImage->Width;
+    CommandImage = NULL;
+  }
 
   if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes && MenFont->tf_YSize >= 9)
   {
@@ -2444,7 +2512,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
     if (AllocateMenuColours (ColorMap))
     {
-
       LONG *Pen;
 
       Pen = MenuPens;

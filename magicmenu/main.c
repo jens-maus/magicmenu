@@ -415,8 +415,6 @@ MakeMenuRemember (struct Window *Win)
         NewItemRmb->ZwTop = 0x7fff;
         NewItemRmb->ZwLeft = 0x7fff;
         NewItemRmb->CmdOffs = 0;
-        NewItemRmb->Detached = FALSE;
-        NewItemRmb->Detachable = TRUE;
 
         ZwItem = LookItem->SubItem;
 
@@ -982,7 +980,10 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
             break;
 
           case ESC:
-            CleanUpMenuSubBox ();
+            if(Shift)
+              *Cancel = Ende = TRUE;
+            else
+              CleanUpMenuSubBox ();
             break;
 
           case CRSLEFT:
@@ -1844,7 +1845,7 @@ StartPrefs (VOID)
 }
 
 VOID
-MyArgString (char *Result, struct DiskObject *DO, const char *TT, const char *Default, LONG Len, BOOL Upcase)
+MyArgString (char *Result, struct DiskObject *DO, char *TT, char *Default, LONG Len, BOOL Upcase)
 {
   char *Found;
 
@@ -1867,7 +1868,7 @@ MyArgString (char *Result, struct DiskObject *DO, const char *TT, const char *De
 }
 
 LONG
-MyArgInt (struct DiskObject *DO, const char *TT, LONG Default)
+MyArgInt (struct DiskObject *DO, char *TT, LONG Default)
 {
   char Str[80];
   LONG Result;
@@ -2286,7 +2287,7 @@ ExitTrap (VOID)
 }
 
 VOID
-ErrorPrc (const char *ErrTxt)
+ErrorPrc (char *ErrTxt)
 {
   if (IntuitionBase && ErrTxt[0])
     ShowRequest ("Ok", GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);

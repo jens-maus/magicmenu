@@ -16,8 +16,6 @@ struct MenuRemember
   struct MenuRemember *NextRemember;
 
   ULONG AktMenuNum;
-
-//  BOOL        Valid;
 };
 
 struct MenuRmb
@@ -48,7 +46,4 @@ struct ItemRmb
 
   WORD Width, Height, TopOffs, LeftOffs, ZwLeft, ZwTop;
   WORD LeftBorder, TopBorder, CmdOffs;
-
-  BOOL Detachable;
-  BOOL Detached;
 };

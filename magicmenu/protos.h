@@ -24,8 +24,8 @@ BOOL RealWindow(struct Window *ThisWindow);
 VOID ProcessCommodity(VOID);
 VOID StopPrefs(VOID);
 VOID StartPrefs(VOID);
-VOID MyArgString(char *Result, struct DiskObject *DO, const char *TT, const char *Default, LONG Len, BOOL Upcase);
-LONG MyArgInt(struct DiskObject *DO, const char *TT, LONG Default);
+VOID MyArgString(char *Result, struct DiskObject *DO, char *TT, char *Default, LONG Len, BOOL Upcase);
+LONG MyArgInt(struct DiskObject *DO, char *TT, LONG Default);
 VOID CheckArguments(VOID);
 BOOL LoadPrefs(char *ConfigFile, BOOL Report);
 VOID ResetBrokerSetup(VOID);
@@ -34,7 +34,7 @@ VOID CleanupMenuActiveData(VOID);
 BOOL SetupMenuActiveData(VOID);
 VOID CloseAll(VOID);
 VOID ExitTrap(VOID);
-VOID ErrorPrc(const char *ErrTxt);
+VOID ErrorPrc(char *ErrTxt);
 int main(int argc, char **argv);
 
 /* misc.c */
@@ -57,7 +57,7 @@ struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInf
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
-VOID CreateBitMapFromImage(const struct Image *Image, struct BitMap *BitMap);
+VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
 BOOL MakeRemappedImage(struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
 VOID FreeRemappedImage(struct Image *Image);
@@ -91,6 +91,7 @@ VOID SafeObtainSemaphoreShared(struct SignalSemaphore *Semaphore);
 VOID DrawLine(struct RastPort *rp, LONG x0, LONG y0, LONG x1, LONG y1);
 VOID DrawLinePairs(struct RastPort *rp, LONG totalPairs, LONG left, LONG top, ...);
 VOID PlaceText(struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len);
+LONG AllocateColour(struct ColorMap *ColorMap, ULONG Red, ULONG Green, ULONG Blue);
 
 /* data.c */
 

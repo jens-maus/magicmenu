@@ -19,19 +19,21 @@
 VERSION =	2
 
 GSTFILE =	system_headers.gst
-#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
 #CPU =		030
 CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
 
-LFLAGS =	sc sd noicons addsym \
-		define __CXM33=__UCXM33 define __CXD33=__UCXD33 \
-		define __CXM22=__UCXM22 define __CXD22=__UCXD22
+LFLAGS =	sc sd noicons addsym
 
-#LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
-LIBS =		lib:sc.lib lib:amiga.lib
+#LFLAGS =	sc sd noicons addsym \
+#		define __CXM33=__UCXM33 define __CXD33=__UCXD33 \
+#		define __CXM22=__UCXM22 define __CXD22=__UCXD22
+
+LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
+#LIBS =		lib:sc.lib lib:amiga.lib
 
 ###############################################################################
 

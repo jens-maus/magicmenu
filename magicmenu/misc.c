@@ -21,7 +21,6 @@ ULONG __asm CallClearMenuStrip (REG(a0) struct Window *W, REG(a6) struct Intuiti
 ULONG __asm CallSetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallResetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallActivateWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallWindowToFront (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallWindowToBack (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
@@ -485,7 +484,7 @@ MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 /*****************************************************************************************/
 
 VOID
-CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
+CreateBitMapFromImage (struct Image * Image, struct BitMap * BitMap)
 {
   PLANEPTR Data;
   ULONG Modulo;
@@ -552,7 +551,7 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
       {
         CreateBitMapFromImage (*DestImage, &Dst);
 
-        if (SrcImage->Depth == -1 || ((SrcImage->PlanePick ^ (*DestImage)->PlanePick) & (*DestImage)->PlanePick))
+        if (SrcImage->Depth == -1 || (((SrcImage->PlanePick ^ (*DestImage)->PlanePick)) & (*DestImage)->PlanePick))
         {
           struct RastPort TempRPort;
 
@@ -1330,4 +1329,20 @@ PlaceText (struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len)
     Move (RPort, Left, Top);
     Text (RPort, String, Len);
   }
+}
+
+/******************************************************************************/
+
+LONG
+AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
+{
+	STATIC Tag Tags[] =
+	{
+		OBP_Precision, PRECISION_GUI,
+		OBP_FailIfBad, TRUE,
+
+		TAG_DONE
+	};
+
+	return(ObtainBestPenA (ColorMap, Red, Green, Blue, (struct TagItem *) Tags));
 }

@@ -183,7 +183,7 @@ struct ColorWheelHSB	 ColorHSB;
 
 /******************************************************************************/
 
-#define GRADIENT_PENS	 16
+#define GRADIENT_PENS	 8
 #define COLOUR_PENS	 21
 
 WORD			 GradientPens[GRADIENT_PENS+1];
@@ -1189,7 +1189,7 @@ CloseAll(VOID)
 		for(i = 0 ; i < COLOUR_PENS ; i++)
 			ReleasePen(CMap,Pens[i]);
 
-		for(i = 0 ; i < GRADIENT_PENS ; i++)
+		for(i = 0 ; i < GradientPensUsed ; i++)
 			ReleasePen(CMap,GradientPens[i]);
 	}
 
@@ -1541,13 +1541,19 @@ OpenAll(struct WBStartup *StartupMsg)
 
 		if(GotPens)
 		{
-			for(i = 0, GradientPensUsed = 0 ; i < GRADIENT_PENS ; i++, GradientPensUsed++)
+			GradientPensUsed = 0;
+
+			for(i = 0 ; i < GRADIENT_PENS ; i++)
 			{
 				GradientPens[i] = ObtainPen(CMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
 
-				if(GradientPens[i] == -1 && GradientPensUsed < 2)
+				if(GradientPens[i] != -1)
+					GradientPensUsed++;
+				else
 				{
-					GotPens = FALSE;
+					if(GradientPensUsed < 2)
+						GotPens = FALSE;
+
 					break;
 				}
 			}
@@ -1609,7 +1615,7 @@ OpenAll(struct WBStartup *StartupMsg)
 				Pens[i] = -1;
 			}
 
-			for(i = 0 ; i < GRADIENT_PENS ; i++)
+			for(i = 0 ; i < GradientPensUsed ; i++)
 			{
 				ReleasePen(CMap,GradientPens[i]);
 				GradientPens[i] = -1;
