@@ -1,0 +1,45 @@
+**
+**	$Id$
+**
+**	:ts=8
+**
+
+	section text,code
+
+*--------------------------------------------------------------------------
+
+PATCH	macro
+
+	xref	Old\1
+	xdef	Call\1
+
+Call\1:
+	movem.l a0-a6/d1-d7,-(sp)
+	move.l	IntuitionBase(a4),a6
+	move.l	Old\1(a4),a3
+	jsr	(a3)
+	movem.l (sp)+,a0-a6/d1-d7
+	rts
+
+	endm
+
+*--------------------------------------------------------------------------
+
+	PATCH	OpenWindow
+	PATCH	OpenWindowTagList
+	PATCH	ClearMenuStrip
+	PATCH	SetMenuStrip
+	PATCH	ResetMenuStrip
+	PATCH	CloseWindow
+	PATCH	ActivateWindow
+	PATCH	WindowToFront
+
+*--------------------------------------------------------------------------
+
+	section __MERGED,data
+
+	xref	IntuitionBase
+
+*--------------------------------------------------------------------------
+
+	end
