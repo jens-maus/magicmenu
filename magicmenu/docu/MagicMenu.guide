@@ -3,13 +3,14 @@
 @author "Olaf Barthel"
 @node main "MagicMenu"
 
-                               MagicMenu 2.31
+                               MagicMenu 2.32
                      A utility to enhance the Intuition
                             pull-down menu system
 
-                        Written by Martin Korndörfer
-                                     and
-                            Olaf `Olsen' Barthel
+                        Written by Martin Korndörfer,                                     
+                            Olaf 'Olsen' Barthel,
+                          Jens 'Damato' Langner and
+                              Stephan Rupprecht
 
                  Artwork created by Mario 'padrino' Cattaneo
 
@@ -84,6 +85,11 @@ to it. It also sports a well-defined set of icon tooltypes:
    This tooltype defines the order in which MagicMenu will be launched with
    the other tools in the WBStartup drawer. The higher this value, the
    sooner it will be started.
+   
+@{b}ENABLEPPC=<YES or NO>@{ub}
+   If you want to disable the WarpUP/PPC support of MagicMenu (for transparent
+   menus), set this tooltype value to "NO". By default, the PPC support is
+   enabled.
 @endnode
 
 @node MMPrefsToolTypes "MagicMenuPrefs tooltypes"

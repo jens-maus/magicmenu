@@ -1960,9 +1960,14 @@ CheckArguments (struct WBStartup * startupMsg)
 {
 	UBYTE FName[MAX_FILENAME_LENGTH];
 	struct DiskObject *DiskObj;
+	BPTR cd;
 
 	if(startupMsg != NULL)
 	{
+		/* Stephan: Muß in das ProgVerzeichnis cd'en, sonst
+		 * geht's nicht. StormC spezifisch ?
+		 */
+		cd = CurrentDir( startupMsg->sm_ArgList[0].wa_Lock );
 		strcpy (FName, startupMsg->sm_ArgList[0].wa_Name);
 	}
 	else
@@ -1981,7 +1986,16 @@ CheckArguments (struct WBStartup * startupMsg)
 
 			MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
 			MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
+#ifdef __MIXEDBINARY__
+			{
+			char EnablePPC[ANSWER_LEN + 1];
 
+			MyArgString (EnablePPC, DiskObj, "ENABLEPPC", "YES", ANSWER_LEN, FALSE);
+
+			if (!Stricmp (EnablePPC, "YES"))
+				PowerPCBase = OpenLibrary("powerpc.library",14);
+			}
+#endif
 			if (!Stricmp (Cx_PopupStr, "YES"))
 				Cx_Popup = TRUE;
 			else
@@ -1992,6 +2006,9 @@ CheckArguments (struct WBStartup * startupMsg)
 
 		CloseLibrary (IconBase);
 	}
+
+	if(startupMsg != NULL)
+		CurrentDir(cd);
 }
 
 BOOL
@@ -2479,9 +2496,7 @@ main (int argc, char **argv)
 		ErrorPrc ("");
 
 	CyberGfxBase = OpenLibrary("cybergraphics.library",0);
-#ifdef __MIXEDBINARY__
-	PowerPCBase = OpenLibrary("powerpc.library",14);
-#endif
+
 	if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
 		ErrorPrc ("graphics.library V37");
 

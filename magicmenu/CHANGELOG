@@ -1,3 +1,6 @@
+2001-10-22  Stephan Rupprecht <mail@stephan-rupprecht.de>
+  * added ENABLEPPC tooltype.
+
 2001-10-17  Stephan Rupprecht <mail@stephan-rupprecht.de>
 
   * Utilizes the PPC (if available) to speedup the transparency mode.
