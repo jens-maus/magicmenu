@@ -8,8 +8,8 @@
                             pull-down menu system
 
                         Written by Martin Korndörfer,                                     
-                            Olaf 'Olsen' Barthel,
-                          Jens 'Damato' Langner and
+                            Olaf `Olsen' Barthel,
+                          Jens `Damato' Langner and
                               Stephan Rupprecht
 
                  Artwork created by Mario 'padrino' Cattaneo
@@ -29,11 +29,8 @@
 @node Installation
 MagicMenu consists of two programs. Drop the "MagicMenu" program into the
 "WBStartup" drawer of your system boot partition and put "MagicMenuPrefs"
-into the "Prefs" drawer on the same partition. Two versions of the program
-are provided. The "68k" versions will run on any Amiga machine, while the
-"020" versions will require an Amiga with an 68020 process or better. Take
-care, the "020" versions are bound to crash on machines they were not
-designed for.
+into the "Prefs" drawer on the same partition. Please note that MagicMenu
+is designed for 68020+ processors and will crash on older cpus!
 
 If you do not have "gtlayout.library" installed already, you should copy it
 into the "Libs:" drawer. The preferences editor depends upon it.
@@ -87,9 +84,9 @@ to it. It also sports a well-defined set of icon tooltypes:
    sooner it will be started.
    
 @{b}ENABLEPPC=<YES or NO>@{ub}
-   If you want to disable the WarpUP/PPC support of MagicMenu (for transparent
-   menus), set this tooltype value to "NO". By default, the PPC support is
-   enabled.
+   If you want to disable the WarpUP/PPC support of MagicMenu (used to speedup
+   transparent menus), set this tooltype value to "NO". By default, the PPC 
+   support is enabled.
 @endnode
 
 @node MMPrefsToolTypes "MagicMenuPrefs tooltypes"
@@ -727,7 +724,9 @@ recent version of the MagicMenuPrefs program.
 
 @node History
 MagicMenu versions 0.01 through 2.3 were developed by Martin Korndörfer. With
-V2.4 development passed into the hands of Olaf `Olsen' Barthel.
+V2.4 development passed into the hands of Olaf `Olsen' Barthel. Later with
+V2.32 development were passed into the hands of Jens `Damato` Langner and
+Stephan Rupprecht.
 
 (Most recent change comes last)
 
@@ -1262,6 +1261,21 @@ MagicMenu 2.31 (2.3.2001)
 
 - Made the 'SetFunction()' patch safer, following much good advice
   from Harry Sintonen.
+
+
+MagicMenu 2.32 (17.10.2001)
+
+- Pulldown menus are transparent, again <Mario Cattaneo>. The menustrip
+  isn't transparent in this mode to make the menutexts easier to read.
+  
+- This release of MagicMenu is a FAT binary containing code for the 68k
+  *and* PPC processor running WarpUP v4.  The PPC is used to speedup rendering
+  when the transparent mode is enabled. If you feel like the PPC support makes
+  menu rendering even slower, then you can disable the PPC support by setting 
+  the "ENABLEPPC=NO" tooltype. Of course, this version also works without a
+  PPC. Responsible for PPC support is Stephan, so please send bugreports
+  to <stephan@magicmenu.de> if you experience any problems with it.
+
 @endnode
 
 @node Translations
@@ -1321,7 +1335,10 @@ It was him who brought MagicMenu back to life after development had come to
 a standstill with the 1.29 version.
 
 This documentation, the preferences editor and the development work
-following MagicMenu 2.3 were done by Olaf `Olsen' Barthel.
+following MagicMenu 2.3 and upto 2.31 were done by Olaf `Olsen' Barthel.
+
+Currently MagicMenu is maintained by Jens `Damato' Langner and Stephan 
+Rupprecht.
 @endnode
 
 @node Registration
@@ -1352,11 +1369,19 @@ want to send it to:
       66111 Saarbrücken, Germany
 
    Olaf Barthel picked up development with V2.4, he is responsible for all
-   the changes, enhancements, bug fixes and new bugs in this version:
+   the changes, enhancements, bug fixes and new bugs in V2.4-V2.31.
 
       Olaf Barthel
       Brabeckstraße 35
       30559 Hannover, Germany
+      
+   In October 2001 Olaf gave the sources of MagicMenu away as he wants to
+   spend more time on individual projects. Now a new crew took over 
+   development of MagicMenu. The sad individuals continouing the development
+   are:)
+   
+      Jens `Damato' Langner <damato@magicmenu.de> and
+      Stephan Rupprecht <stephan@magicmenu.de>
 
 Any contribution makes sense, large or small.
 @endnode
@@ -1365,7 +1390,11 @@ Any contribution makes sense, large or small.
 You can find the most current version of MagicMenu either on Aminet or
 on the official home page, as maintained by Mario 'padrino' Cattaneo:
 
-   http://www.cattaneo.de/magicmenu
+   http://www.magicmenu.de
 
-For feature requests or bug reports please contact <olsen@sourcery.han.de>.
+For feature requests or bug reports please contact either 
+
+   <damato@magicmenu.de> or
+   <stephan@magicmenu.de>
+
 @endnode

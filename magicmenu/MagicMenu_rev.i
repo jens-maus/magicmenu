@@ -1,18 +1,18 @@
 VERSION		EQU	2
-REVISION	EQU	32
+REVISION	EQU	33
 
 DATE	MACRO
-		dc.b '19.10.2001'
+		dc.b '23.10.2001'
 		ENDM
 
 VERS	MACRO
-		dc.b 'MagicMenu 2.32'
+		dc.b 'MagicMenu 2.33'
 		ENDM
 
 VSTRING	MACRO
-		dc.b 'MagicMenu 2.32 (19.10.2001)',13,10,0
+		dc.b 'MagicMenu 2.33 (23.10.2001)',13,10,0
 		ENDM
 
 VERSTAG	MACRO
-		dc.b 0,'$VER: MagicMenu 2.32 (19.10.2001)',0
+		dc.b 0,'$VER: MagicMenu 2.33 (23.10.2001)',0
 		ENDM

@@ -277,9 +277,9 @@ AddMenuColour8 (LONG red, LONG green, LONG blue)
 	else if (blue < 0)
 		blue = 0;
 
-	*MenuColour++ = 0x01010101UL * red;
-	*MenuColour++ = 0x01010101UL * green;
-	*MenuColour++ = 0x01010101UL * blue;
+	*MenuColour++ = (red<<24)|(red<<16)|(red<<8)|red;
+	*MenuColour++ = (green<<24)|(green<<16)|(green<<8)|green;
+	*MenuColour++ = (blue<<24)|(blue<<16)|(blue<<8)|blue;
 }
 
 STATIC VOID
