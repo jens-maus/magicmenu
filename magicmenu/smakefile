@@ -156,7 +156,7 @@ xref-clean:
 ###############################################################################
 
 checkin: RCS
-	ci -q -M -l$(VERSION) -m. -t-. $(SOURCE)
+	ci -M -l$(VERSION) -m. -t-. $(SOURCE)
 
 lock: RCS
 	rcs -l $(SOURCE)
