@@ -848,7 +848,7 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 	Error = FALSE;
 
 	if (V39 && !WantChipMem)
-		return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
+		return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES|BMF_DISPLAYABLE, Friend));
 	else
 	{
 		struct FatBitMap *fat;
