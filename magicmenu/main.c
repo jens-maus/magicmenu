@@ -1678,6 +1678,12 @@ CheckMMMsgPort (struct MMMessage * MMMsg)
     break;
   case MMC_NEWCONFIG:
 
+    if(((struct MMPrefs *) MMMsg->Ptr1)->mmp_Magic != MMPREFS_MAGIC || ((struct MMPrefs *) MMMsg->Ptr1)->mmp_Version < MMPREFS_VERSION)
+    {
+      ReplyMsg (MMMsg);
+      break;
+    }
+
     ActivateCxObj (Broker, FALSE);
 
     if (Stricmp (((struct MMPrefs *) MMMsg->Ptr1)->mmp_KCKeyStr, AktPrefs.mmp_KCKeyStr))
@@ -1969,6 +1975,7 @@ LoadPrefs (char *Name, BOOL Report)
 		DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
 		DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
 		DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
+		DECLARE_ITEM(MMPrefs,mmp_CastShadows,		SIT_BOOLEAN,	"CastShadows"),
 		DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UBYTE,	"PDMode"),
 		DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UBYTE,	"PDLook"),
 		DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UBYTE,	"PUMode"),
@@ -2000,7 +2007,7 @@ LoadPrefs (char *Name, BOOL Report)
 
 	memset(&LocalPrefs,0,sizeof(LocalPrefs));
 
-	if(RestoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs))
+	if(RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs))
 	{
 		if(Report)
 			ShowRequest(GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
@@ -2502,7 +2509,6 @@ main (int argc, char **argv)
     ErrorPrc ("CxMsgPort");
 
   CxSignalMask = 1l << CxMsgPort->mp_SigBit;
-
 
   StripRPort = NULL;
   MenuStripSwapped = FALSE;

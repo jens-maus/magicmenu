@@ -8,6 +8,8 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+struct Task *ThisTask;
+
 struct Library *CxBase;
 struct Library *IconBase;
 struct Library *LayersBase;
@@ -217,6 +219,8 @@ WORD GlobalDMRCount;
 
 struct MMPrefs DefaultPrefs =
 {
+	MMPREFS_MAGIC,				/* Magic */
+	MMPREFS_VERSION,			/* Version */
 	MT_AUTO,				/* MenuType */
 	TRUE,					/* Enabled */
 	TRUE,					/* MarkSub */
@@ -229,6 +233,7 @@ struct MMPrefs DefaultPrefs =
 	FALSE,					/* PreferScreenColours */
 	FALSE,					/* Delayed */
 	TRUE,					/* DrawFrame */
+	TRUE,					/* CastShadows */
 
 	MODE_STD,				/* PDMode */
 	LOOK_MC,				/* PDLook */
@@ -1118,6 +1123,7 @@ BOOL SelectSpecial;
 
 ULONG CxSignalMask;
 
+BOOL IsBlocking;
 struct Window *MenWin;
 struct Screen *MenScr;
 struct Menu *MenStrip;

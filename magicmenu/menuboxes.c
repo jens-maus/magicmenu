@@ -27,43 +27,67 @@ STATIC BOOL SubNotDrawn;
 
 #define SHADOW_SIZE 4
 
-STATIC VOID
-AddShadow (struct RastPort *RPort, LONG Width, LONG Height, LONG ShadowSize)
+STATIC struct Window *
+OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level,BOOL DontCare)
 {
-  STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
+	struct Window *Window;
+	ULONG Flag;
+	LONG OriginalHeight,OriginalWidth,ShadowSize;
 
-  SetAfPt (RPort, Crosshatch, 1);
+	if(DontCare)
+		Flag = WFLG_SIMPLE_REFRESH;
+	else
+		Flag = 0;
 
-  SetFgPen (RPort, MenXENBlack);
-  SetDrawMode (RPort, JAM1);
+	if(V39 && Look3D && AktPrefs.mmp_CastShadows && StripPopUp)
+	{
+		ShadowSize = SHADOW_SIZE + Level * 2;
 
-  RectFill (RPort, Width, ShadowSize, Width + ShadowSize - 1, Height - 1);
-  RectFill (RPort, ShadowSize, Height, Width + ShadowSize - 1, Height + ShadowSize - 1);
+		OriginalWidth	= Width;
+		OriginalHeight	= Height;
 
-  SetAfPt (RPort, NULL, 0);
-}
+		Width	+= ShadowSize;
+		Height	+= ShadowSize;
 
-STATIC VOID
-ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height, LONG Level, LONG * widthPtr, LONG * heightPtr, LONG *shadowPtr)
-{
-  if(V39 && LookMC)
-  {
-    *shadowPtr = SHADOW_SIZE + Level * 2;
+		if(Left + Width > MenScr->Width)
+			Width = MenScr->Width - Left;
 
-    width += *shadowPtr;
-    height += *shadowPtr;
-  }
-  else
-    *shadowPtr = 0;
+		if(Top + Height > MenScr->Height)
+			Height = MenScr->Height - Top;
+ 	}
+	else
+		ShadowSize = 0;
 
-  if (left + width > screen->Width)
-    width = screen->Width - left;
+	Window = OpenWindowTags(NULL,
+		WA_Left,		Left,
+		WA_Top,			Top,
+		WA_Width,		Width,
+		WA_Height,		Height,
+		WA_CustomScreen,	MenScr,
+		WA_Flags,		WFLG_BORDERLESS | WFLG_RMBTRAP | WFLG_NOCAREREFRESH | Flag,
+		WA_BackFill,		GetNOPFillHook(),
+		WA_ScreenTitle,		MenWin->ScreenTitle,
+	TAG_DONE);
 
-  if (top + height > screen->Height)
-    height = screen->Height - top;
+	if(Window != NULL && ShadowSize > 0)
+	{
+		STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
 
-  *widthPtr = width;
-  *heightPtr = height;
+		struct RastPort *RPort;
+
+		RPort = Window->RPort;
+
+		SetAfPt (RPort, Crosshatch, 1);
+
+		SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+
+		RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+		RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+
+		SetAfPt (RPort, NULL, 0);
+	}
+
+	return(Window);
 }
 
 /******************************************************************************/
@@ -161,6 +185,51 @@ AllocateMenuColours (struct ColorMap *cmap)
 
 /******************************************************************************/
 
+/* Warum eine eigene Routine? Das Original im ROM macht weit mehr als es muß
+ * und außerdem brauche ich weiter unten TxBaseline. Man könnte noch ein paar
+ * Optimierungen einbauen, aber das ist leider recht knifflig.
+ */
+VOID
+LocalPrintIText(struct RastPort *rp,struct IntuiText *itext,WORD left,WORD top)
+{
+	struct TextFont *font;
+	UBYTE style;
+
+	do
+	{
+		SetPens(rp,itext->FrontPen,itext->BackPen,itext->DrawMode);
+
+		if(itext->ITextFont)
+		{
+			if(font = OpenFont(itext->ITextFont))
+			{
+				SetFont(rp,font);
+
+				if(style = itext->ITextFont->ta_Style & 0x3F)
+					SetSoftStyle(rp,style,0x3F);
+			}
+		}
+		else
+			font = NULL;
+
+		Move(rp,left + itext->LeftEdge,top + itext->TopEdge + rp->TxBaseline);
+		Text(rp,itext->IText,strlen(itext->IText));
+
+		if(font)
+		{
+			CloseFont(font);
+
+			if(style)
+				SetSoftStyle(rp,0,0x3F);
+		}
+	}
+	while(itext = itext->NextText);
+}
+
+#define PrintIText LocalPrintIText
+
+/******************************************************************************/
+
 VOID
 DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left,WORD Width)
 {
@@ -169,25 +238,18 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
   struct Image MyImage;
   struct Image *Image;
   UWORD StartX, StartY;
-  UWORD ImageYOffs;
   UWORD ZwWidth, NW;
   LONG z1;
-  BOOL DrawCheck, YOffsOk, Ghosted;
+  BOOL DrawCheck, Ghosted;
+
+  /* Der Rest wird später initialisiert, wenn man ihn brauchen sollte. */
+  CommandText.TopEdge = 0;
+  CommandText.ITextFont = &MenTextAttr;
 
   StartX = x + Item->LeftEdge;
   StartY = y + Item->TopEdge;
 
-  ImageYOffs = ((UWORD) Item->Height) / 2;
-
-  CommandText.FrontPen = MenTextCol;
-  CommandText.BackPen = MenBackGround;
-  CommandText.DrawMode = JAM2;
-  CommandText.ITextFont = &MenTextAttr;
-  CommandText.TopEdge = 0;
-
   Ghosted = (GhostIt || !(Item->Flags & ITEMENABLED));
-
-  YOffsOk = FALSE;
 
   DrawCheck = ((Item->Flags & CHECKIT) && (!Item->SubItem) && (Item->Flags & HIGHNONE) != HIGHNONE);
   if (Item->Flags & ITEMTEXT)
@@ -201,81 +263,72 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
 
     while (Text)
     {
-      MyText = *Text;
-
-      MyText.NextText = NULL;
-
-      if (!LookMC || strcmp (MyText.IText, "»") != 0)
+      if(Text->IText != NULL) /* Der Idiotentest... */
       {
-        if (LookMC && Ghosted)
+        MyText = *Text;
+
+        MyText.NextText = NULL;
+
+        if (!LookMC || !AktPrefs.mmp_MarkSub || strcmp (MyText.IText, "»") != 0)
         {
-          MyText.DrawMode = JAM1;
-          MyText.FrontPen = MenStdGrey2;
-
-          PrintIText (rp, &MyText, StartX + 1, StartY + 1);
-
-          MyText.DrawMode = JAM1;
-          MyText.FrontPen = MenStdGrey0;
-
-          PrintIText (rp, &MyText, StartX, StartY);
-        }
-        else
-        {
-          if (LookMC)
+          if (LookMC && Ghosted)
           {
-            MyText.FrontPen = (Highlighted) ? MenHiCol : MenTextCol;
             MyText.DrawMode = JAM1;
+            MyText.FrontPen = MenStdGrey2;
+
+            PrintIText (rp, &MyText, StartX + 1, StartY + 1);
+
+            MyText.DrawMode = JAM1;
+            MyText.FrontPen = MenStdGrey0;
+
+            PrintIText (rp, &MyText, StartX, StartY);
           }
-          else if (Look3D)
+          else
           {
-            if (MyText.BackPen == MenTextCol || MyText.DrawMode == JAM1 || MyText.DrawMode == COMPLEMENT)
+            if (LookMC)
+            {
+              MyText.FrontPen = (Highlighted) ? MenHiCol : MenTextCol;
+              MyText.DrawMode = JAM1;
+            }
+            else if (Look3D)
+            {
+              if (MyText.BackPen == MenTextCol || MyText.DrawMode == JAM1 || MyText.DrawMode == COMPLEMENT)
+              {
+                if (MyText.DrawMode == COMPLEMENT)
+                  MyText.DrawMode = JAM1;
+
+                MyText.FrontPen = MenTextCol;
+                MyText.BackPen = MenBackGround;
+              }
+              else if (MyText.DrawMode == JAM2 && (MyText.BackPen == MenBackGround || (V39 && MyText.BackPen == 2)))
+              {
+                MyText.DrawMode = JAM1;
+              }
+            }
+            else
             {
               if (MyText.DrawMode == COMPLEMENT)
                 MyText.DrawMode = JAM1;
+            }
 
-              MyText.FrontPen = MenTextCol;
-              MyText.BackPen = MenBackGround;
-            }
-            else if (MyText.DrawMode == JAM2 && (MyText.BackPen == MenBackGround || (V39 && MyText.BackPen == 2)))
-            {
-              MyText.DrawMode = JAM1;
-            }
-          }
-          else
-          {
-            if (MyText.DrawMode == COMPLEMENT)
-              MyText.DrawMode = JAM1;
+            PrintIText (rp, &MyText, StartX, StartY);
           }
 
-          PrintIText (rp, &MyText, StartX, StartY);
+          CommandText.ITextFont = MyText.ITextFont;
+          CommandText.TopEdge = MyText.TopEdge;
+
+          NW = IntuiTextLength (&MyText) + MyText.LeftEdge;
+          if (NW > ZwWidth)
+            ZwWidth = NW;
         }
 
-        CommandText.ITextFont = MyText.ITextFont;
-        CommandText.TopEdge = MyText.TopEdge;
-
-        if (!YOffsOk)
-        {
-          if (MyText.ITextFont)
-            ImageYOffs = (UWORD) MyText.TopEdge + ((UWORD) (MyText.ITextFont->ta_YSize)) / 2;
-          else
-            ImageYOffs = (UWORD) MyText.TopEdge + ((UWORD) (MenTextAttr.ta_YSize)) / 2;
-
-          YOffsOk = TRUE;
-        }
-
-        NW = IntuiTextLength (&MyText) + MyText.LeftEdge;
-        if (NW > ZwWidth)
-          ZwWidth = NW;
+        Text = Text->NextText;
       }
-
-      Text = Text->NextText;
     }
   }
   else
   {
     struct Image *ThatImage;
-
-    CommandText.ITextFont = &MenTextAttr;
 
     if (Highlighted)
       Image = (struct Image *) Item->SelectFill;
@@ -301,7 +354,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
         {
           if(LookMC)
           {
-#if 0
+          #if 0
             if(AktPrefs.mmp_DblBorder)
             {
               SetFgPen (rp, MenSeparatorGrey0);
@@ -330,7 +383,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
               WritePixel (rp,Left,Top);
               WritePixel (rp,Left + Width - 1,Top + 1);
             }
-#else
+          #else
               SetFgPen (rp, MenSeparatorGrey0);
               DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
                         StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
@@ -340,7 +393,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
               DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
                           StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
               WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
-#endif
+          #endif
           }
           else
           {
@@ -364,6 +417,8 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       else
         DrawImage (rp, ThatImage, StartX, StartY);
 
+      CommandText.TopEdge = ThatImage->TopEdge;
+
       Image = Image->NextImage;
     }
     ZwWidth = 0;
@@ -372,6 +427,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
   if (DrawCheck)
   {
     struct Image *WhichImage;
+    LONG TopEdge;
 
     if (LookMC)
     {
@@ -442,49 +498,89 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       }
     }
 
-    DrawImage (rp, WhichImage, StartX, StartY + (short) ImageYOffs - (WhichImage->Height / 2));
+    /* Das Checkmark-Zeichen wird an der Oberkante der Textzeile
+     * ausgerichtet.
+     */
+    TopEdge = CommandText.TopEdge;
+
+    /* Unter den Eintrag sollte das Zeichen aber auch nicht rutschen. */
+    if(TopEdge > 0 && TopEdge + WhichImage->Height > Item->Height)
+    {
+      if((TopEdge = Item->Height - WhichImage->Height) < 0)
+        TopEdge = 0;
+    }
+
+    DrawImage (rp, WhichImage, StartX, StartY + TopEdge);
   }
 
   z1 = StartX + Item->Width;
 
   if (Item->Flags & COMMSEQ)
   {
+    struct Image *WhichImage;
+    LONG TopEdge;
+
     CommText[0] = Item->Command;
 
     CommText[1] = 0;
 
     if (LookMC)
     {
+      if(Ghosted)
+        WhichImage = CommandImageGhosted;
+      else
+      {
+        if(Highlighted)
+          WhichImage = CommandImageActive;
+        else
+          WhichImage = CommandImage;
+      }
+    }
+    else
+      WhichImage = CommandImage;
+
+    CommandText.FrontPen = MenTextCol;
+    CommandText.BackPen = MenBackGround;
+    CommandText.DrawMode = JAM2;
+
+    if (LookMC)
+    {
       if (Ghosted)
       {
-        DrawImage (rp, CommandImageGhosted, z1 - CommandImageGhosted->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImageGhosted->Height / 2));
-
         CommandText.FrontPen = MenStdGrey2;
         PrintIText (rp, &CommandText, z1 - CmdOffs + 1, StartY + 1);
 
         CommandText.FrontPen = MenStdGrey0;
-        CommandText.DrawMode = JAM1;
       }
       else
-      {
-        DrawImage (rp, (Highlighted) ? CommandImageActive : CommandImage, z1 - CommandImageGhosted->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImageGhosted->Height / 2));
-
         CommandText.FrontPen = (Highlighted) ? MenHiCol : MenTextCol;
-        CommandText.DrawMode = JAM1;
-      }
-    }
-    else
-    {
-      DrawImage (rp, CommandImage, z1 - CommandImage->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImage->Height / 2));
+
+      CommandText.DrawMode = JAM1;
     }
 
-    PrintIText (rp, &CommandText, z1 - CmdOffs, StartY + ImageYOffs - (MenTextAttr.ta_YSize / 2));
+    PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
+
+    /* Das Amiga-Zeichen wird an der Grundlinie des Zeichensatzes
+     * ausgerichtet.
+     */
+    if((TopEdge = CommandText.TopEdge + rp->TxBaseline - (WhichImage->Height - 1)) < 0)
+      TopEdge = 0;
+
+    /* Unter den Eintrag sollte das Zeichen aber auch nicht rutschen. */
+    if(TopEdge > 0 && TopEdge + WhichImage->Height > Item->Height)
+    {
+      if((TopEdge = Item->Height - WhichImage->Height) < 0)
+        TopEdge = 0;
+    }
+
+    DrawImage (rp, WhichImage,z1 - WhichImage->Width - CmdOffs - 2, StartY + TopEdge);
   }
-  else if ((Item->SubItem) && (AktPrefs.mmp_MarkSub == 1))
+  else if ((Item->SubItem) && (AktPrefs.mmp_MarkSub))
   {
     if (ZwWidth < Item->Width - SubArrowImage->Width - 5)
     {
       struct Image *WhichImage;
+      LONG TopEdge;
 
       if (LookMC)
       {
@@ -501,7 +597,20 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       else
         WhichImage = SubArrowImage;
 
-      DrawImage (rp, WhichImage, z1 - WhichImage->Width - 3, StartY + ImageYOffs - (WhichImage->Height / 2));
+      /* Der Pfeil wird an der Grundlinie des Zeichensatzes
+       * ausgerichtet.
+       */
+      if((TopEdge = CommandText.TopEdge + rp->TxBaseline - WhichImage->Height) < 0)
+        TopEdge = 0;
+
+      /* Unter den Eintrag sollte der Pfeil aber auch nicht rutschen. */
+      if(TopEdge > 0 && TopEdge + WhichImage->Height > Item->Height)
+      {
+        if((TopEdge = Item->Height - WhichImage->Height) < 0)
+          TopEdge = 0;
+      }
+
+      DrawImage (rp, WhichImage, z1 - WhichImage->Width - 3, StartY + TopEdge);
     }
   }
 
@@ -835,22 +944,7 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight, shadowSize;
-
-    ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, 2, &windowWidth, &windowHeight, &shadowSize);
-
-    if (!(SubBoxWin = OpenWindowTags (NULL,
-                                      WA_Left, SubBoxLeft,
-                                      WA_Top, SubBoxTop,
-                                      WA_Width, windowWidth,
-                                      WA_Height, windowHeight,
-                                      WA_CustomScreen, MenScr,
-                                      WA_Borderless, TRUE,
-                                      WA_Activate, FALSE,
-                                      WA_RMBTrap, TRUE,
-                                      WA_ScreenTitle, MenWin->ScreenTitle,
-                                      WA_BackFill, GetNOPFillHook (),
-                                      TAG_DONE)))
+    if (!(SubBoxWin = OpenCommonWindow(SubBoxLeft,SubBoxTop,SubBoxWidth,SubBoxHeight,2,TRUE)))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
@@ -859,9 +953,6 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
     SubBoxDrawRPort = SubBoxWin->RPort;
     SubBoxDrawLeft = 0;
     SubBoxDrawTop = 0;
-
-    if (LookMC)
-      AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight, shadowSize);
 
     DrawMenuSubBoxContents (Item, SubBoxDrawRPort, SubBoxDrawLeft, SubBoxDrawTop);
   }
@@ -1116,7 +1207,7 @@ VOID
 DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD Top)
 {
   struct MenuItem *ZwItem;
-  LONG x1, x2;
+
 
   SetPens (RPort, MenBackGround, 0, JAM1);
 
@@ -1126,30 +1217,6 @@ DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWOR
   Draw3DRect (RPort, Left, Top, BoxWidth, BoxHeight, TRUE, ScrHiRes, DblBorder);
 
   SetPens (RPort, MenBackGround, 0, JAM1);
-
-  if (!StripPopUp && Look3D && (!LookMC) && (!DblBorder))
-  {
-    x1 = Menu->LeftEdge - BoxLeft + StripLeftOffs + ((ScrHiRes) ? 2 : 1);
-    if (x1 < 0)
-      x1 = 0;
-    x2 = x1 + Menu->Width - ((ScrHiRes) ? 4 : 2);
-    if (x2 >= BoxWidth)
-      x2 = BoxWidth - 1;
-    DrawLine (RPort, Left + x1, Top,
-              Left + x2, Top);
-
-    if (!BoxGhosted)
-    {
-      SetFgPen (RPort, MenComplMsk);
-
-      DrawLine (RPort, Left + x1, Top,
-                Left + x2, Top);
-      SetDrawMode (RPort, JAM1);
-
-      SetDrawMask (RPort, 0xff);
-
-    }
-  }
 
   ZwItem = BoxItems;
   while (ZwItem)
@@ -1166,6 +1233,18 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   struct MenuRmb *LookMenRmb;
   LONG MenuY1;
   struct MenuItem *ZwItem;
+  BOOL NoSubs;
+
+  NoSubs = TRUE;
+
+  for(ZwItem = Menu->FirstItem ; ZwItem ; ZwItem = ZwItem->NextItem)
+  {
+    if(ZwItem->SubItem)
+    {
+      NoSubs = FALSE;
+      break;
+    }
+  }
 
   MenuNotDrawn = FALSE;
 
@@ -1281,22 +1360,7 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight, shadowSize;
-
-    ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, 1, &windowWidth, &windowHeight, &shadowSize);
-
-    if (!(BoxWin = OpenWindowTags (NULL,
-                                   WA_Left, BoxLeft,
-                                   WA_Top, BoxTop,
-                                   WA_Width, windowWidth,
-                                   WA_Height, windowHeight,
-                                   WA_CustomScreen, MenScr,
-                                   WA_Borderless, TRUE,
-                                   WA_Activate, FALSE,
-                                   WA_RMBTrap, TRUE,
-                                   WA_ScreenTitle, MenWin->ScreenTitle,
-                                   WA_BackFill, GetNOPFillHook (),
-                                   TAG_DONE)))
+    if (!(BoxWin = OpenCommonWindow(BoxLeft,BoxTop,BoxWidth,BoxHeight,1,NoSubs)))
     {
       CleanUpMenuBox ();
       return (FALSE);
@@ -1305,9 +1369,6 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
     BoxDrawRPort = BoxWin->RPort;
     BoxDrawLeft = 0;
     BoxDrawTop = 0;
-
-    if (LookMC)
-      AddShadow (BoxDrawRPort, BoxWidth, BoxHeight, shadowSize);
 
     DrawMenuBoxContents (Menu, BoxDrawRPort, BoxDrawLeft, BoxDrawTop);
   }
@@ -2433,9 +2494,9 @@ SetMCPens(BOOL Vanilla)
   StdRemapArray[10] = MenStdGrey1;
   StdRemapArray[11] = MenStdGrey2;
 
-  memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
-  memcpy(DreiDGhostedRemapArray,StdRemapArray,sizeof(StdRemapArray));
-  memcpy(DreiDActiveRemapArray,StdRemapArray,sizeof(StdRemapArray));
+  CopyMem(StdRemapArray,DreiDRemapArray,sizeof(StdRemapArray));
+  CopyMem(StdRemapArray,DreiDGhostedRemapArray,sizeof(StdRemapArray));
+  CopyMem(StdRemapArray,DreiDActiveRemapArray,sizeof(StdRemapArray));
 
   DreiDActiveRemapArray[ 8] = MenFillCol;
   DreiDActiveRemapArray[ 9] = MenActiveGrey0;
@@ -2469,6 +2530,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   UWORD *Pens;
   LONG MaxMapPen,MaxMapDepth;
 /*  UWORD CheckWidth,CommandWidth;*/
+
+  IsBlocking = !AktPrefs.mmp_NonBlocking;
+  ThisTask = FindTask(NULL);
 
   memset(StdRemapArray,0,sizeof(StdRemapArray));
 
@@ -2725,7 +2789,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         MenSeparatorGrey2 = MenLightEdge;
       }
 
-      LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
+      LookMC = (MenTextCol != MenBackGround && MenBackGround != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
 
       if(LookMC)
       {
@@ -2792,7 +2856,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       StdRemapArray[2] = MenLightEdge;
       StdRemapArray[3] = MenFillCol;
 
-      memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
+      CopyMem(StdRemapArray,DreiDRemapArray,sizeof(StdRemapArray));
 
       DreiDRemapArray[MenMenuTextCol] = MenTextCol;
       DreiDRemapArray[MenMenuBackCol] = MenBackGround;
@@ -3291,22 +3355,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight, shadowSize;
-
-    ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, 0, &windowWidth, &windowHeight, &shadowSize);
-
-    if (!(StripWin = OpenWindowTags (NULL,
-                                     WA_Left, StripLeft,
-                                     WA_Top, StripTop,
-                                     WA_Width, windowWidth,
-                                     WA_Height, windowHeight,
-                                     WA_CustomScreen, MenScr,
-                                     WA_Borderless, TRUE,
-                                     WA_Activate, FALSE,
-                                     WA_RMBTrap, TRUE,
-                                     WA_ScreenTitle, MenWin->ScreenTitle,
-                                     WA_BackFill, GetNOPFillHook (),
-                                     TAG_DONE)))
+    if (!(StripWin = OpenCommonWindow(StripLeft,StripTop,StripWidth,StripHeight,0,FALSE)))
     {
       CleanUpMenuStrip ();
       return (FALSE);
@@ -3315,9 +3364,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     StripDrawRPort = StripWin->RPort;
     StripDrawLeft = 0;
     StripDrawTop = 0;
-
-    if (LookMC && StripPopUp)
-      AddShadow (StripDrawRPort, StripWidth, StripHeight, shadowSize);
 
     DrawMenuStripContents (StripDrawRPort, StripDrawLeft, StripDrawTop);
   }

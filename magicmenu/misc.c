@@ -36,14 +36,27 @@ struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *Layer
 
 /*****************************************************************************************/
 
+#if 0
+#ifdef DB
+#undef DB
+#endif	/* DB */
+
+/*#define DB(x)	;*/
+#define DB(x) x
+
+extern void kprintf(const char *,...);
+#endif
+
+/*****************************************************************************************/
+
 BOOL
-MMCheckParentScreen (struct Window *Window)
+MMCheckParentScreen (struct Window *Window,BOOL PlayItSafe)
 {
   BOOL Wait;
 
   SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenScr == Window->WScreen);
+  Wait = (MenScr == Window->WScreen) && (PlayItSafe || IsBlocking) && (FindTask(NULL) != ThisTask);
 
   ReleaseSemaphore (GetPointerSemaphore);
 
@@ -62,7 +75,7 @@ MMCheckScreen (void)
 
   SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenScr != NULL);
+  Wait = (MenScr != NULL) && (FindTask(NULL) != ThisTask);
 
   ReleaseSemaphore (GetPointerSemaphore);
 
@@ -81,7 +94,7 @@ MMCheckWindow (struct Window * Win)
 
   SafeObtainSemaphoreShared (GetPointerSemaphore);
 
-  Wait = (MenWin == Win);
+  Wait = (MenWin == Win) && (FindTask(NULL) != ThisTask);
 
   ReleaseSemaphore (GetPointerSemaphore);
 
@@ -136,7 +149,7 @@ MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
 
   /*****************************************************************************************/
 
-  if (Win)
+  if (Win && (FindTask(NULL) != ThisTask))
     RegisterGlyphs ((struct Window *) Win, NW, TI);
 
   /*****************************************************************************************/
@@ -211,6 +224,9 @@ ULONG __asm __saveds
 MMCloseWindow (REG(a0) struct Window * W)
 {
   ULONG Res;
+  BOOL CallSelf;
+
+  CallSelf = (FindTask(NULL) == ThisTask);
 
   DB (kprintf ("|%s| in CloseWindow patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
@@ -222,13 +238,15 @@ MMCloseWindow (REG(a0) struct Window * W)
   }
   else
   {
-    ClearRemember (W);
+    if(!CallSelf)
+      ClearRemember (W);
     Res = CallCloseWindow (W, IntuitionBase);
   }
 
   /*****************************************************************************************/
 
-  DiscardWindowGlyphs (W);
+  if(!CallSelf)
+    DiscardWindowGlyphs (W);
 
   /*****************************************************************************************/
 
@@ -259,7 +277,7 @@ MMWindowToFront (REG(a0) struct Window * W)
 
   DB (kprintf ("|%s| in WindowToFront patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W))
+  if (MMCheckParentScreen (W, TRUE))
   {
     Result = CallWindowToFront (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
@@ -277,7 +295,7 @@ MMWindowToBack (REG(a0) struct Window * W)
 
   DB (kprintf ("|%s| in WindowToBack patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W))
+  if (MMCheckParentScreen (W, TRUE))
   {
     Result = CallWindowToBack (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
@@ -388,7 +406,7 @@ MMRefreshWindowFrame (REG(a0) struct Window * W)
 
   DB (kprintf ("|%s| in RefreshWindowFrame patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W))
+  if (MMCheckParentScreen (W, FALSE))
   {
     Result = CallRefreshWindowFrame (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
@@ -410,7 +428,7 @@ MMSetWindowTitles (REG(a0) struct Window * W, REG(a1) STRPTR WindowTitle, REG(a2
 
   DB (kprintf ("|%s| in SetWindowTitles patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (MMCheckParentScreen (W))
+  if (MMCheckParentScreen (W, FALSE))
   {
     Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
@@ -542,10 +560,8 @@ CreateBitMapFromImage (struct Image * Image, struct BitMap * BitMap)
   Modulo = BitMap->BytesPerRow * BitMap->Rows;
   Data = (PLANEPTR) Image->ImageData;
 
-  for (i = 0; i < BitMap->Depth; i++)
+  for (i = 0, Mask = 1; i < BitMap->Depth; i++, Mask += Mask)
   {
-    Mask = (1 << i);
-
     if (Image->PlanePick & Mask)
     {
       BitMap->Planes[i] = Data;
@@ -774,7 +790,10 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
       for (z1 = 0; z1 < Depth; z1++)
       {
         if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
+        {
           Error = TRUE;
+          break;
+        }
       }
 
       if (Error)
@@ -945,6 +964,10 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
 
   else
     SetFgPen (rp, MenDarkEdge);
+
+  /* Nur zur Kompatibilität... */
+  if(Look3D)
+    HiRes = FALSE;
 
   if (HiRes && (!LookMC))
   {
@@ -1145,7 +1168,6 @@ GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 
   SetAfPt (rp, NULL, 0);
   SetFgPen (rp, MenTextCol);
-
 }
 
 void
@@ -1202,7 +1224,7 @@ MoveMouse (LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct
 
       if (AddEvent)
       {
-        memcpy (MyNewEvent, Event, sizeof (struct InputEvent));
+        CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
         MyNewEvent->ie_NextEvent = NULL;
 
         InputIO->io_Data = (APTR) MyNewEvent;
@@ -1214,7 +1236,6 @@ MoveMouse (LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct
       success = TRUE;
 
       FreeVecPooled (MyNewEvent);
-
     }
 
     FreeVecPooled (MyNewPPixel);

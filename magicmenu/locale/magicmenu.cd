@@ -1,4 +1,4 @@
-; $VER: magicmenu.cd 1.9 (15.11.96)
+; $VER: magicmenu.cd 1.10 (22.11.96)
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>
@@ -240,4 +240,7 @@ Menus open delayed:
 ;
 MSG_DRAW_FRAME_GAD (//)
 Draw frames around menu items:
+;
+MSG_CAST_DROP_SHADOWS_GAD (//)
+Cast drop shadows:
 ;

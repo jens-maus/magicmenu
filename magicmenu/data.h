@@ -4,6 +4,8 @@
 **   :ts=8
 */
 
+extern struct Task *ThisTask;
+
 extern struct DosLibrary *DOSBase;
 extern struct ExecBase *SysBase;
 extern struct Library *CxBase;
@@ -381,6 +383,7 @@ extern BOOL SelectSpecial;
 
 extern ULONG CxSignalMask;
 
+extern BOOL IsBlocking;
 extern struct Window *MenWin;
 extern struct Screen *MenScr;
 extern struct Menu *MenStrip;

@@ -27,8 +27,8 @@ DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
 
-#LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
-LIBS =		lib:sc.lib lib:amiga.lib
+LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
+#LIBS =		lib:sc.lib lib:amiga.lib
 
 ###############################################################################
 

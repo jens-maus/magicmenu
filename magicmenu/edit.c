@@ -40,6 +40,8 @@ long __stack = 16000;
 
 struct MMPrefs DefaultPrefs =
 {
+	MMPREFS_MAGIC,				/* Magic */
+	MMPREFS_VERSION,			/* Version */
 	MT_AUTO,				/* MenuType */
 	TRUE,					/* Enabled */
 	TRUE,					/* MarkSub */
@@ -52,6 +54,7 @@ struct MMPrefs DefaultPrefs =
 	FALSE,					/* PreferScreenColours */
 	FALSE,					/* Delayed */
 	TRUE,					/* DrawFrame */
+	TRUE,					/* CastShadows */
 
 	MODE_STD,				/* PDMode */
 	LOOK_MC,				/* PDLook */
@@ -106,6 +109,7 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
 	DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
 	DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
+	DECLARE_ITEM(MMPrefs,mmp_CastShadows,		SIT_BOOLEAN,	"CastShadows"),
 	DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UBYTE,	"PDMode"),
 	DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UBYTE,	"PDLook"),
 	DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UBYTE,	"PUMode"),
@@ -189,7 +193,8 @@ enum
 	GAD_Precision,
 	GAD_PreferScreenColours,
 	GAD_Delayed,
-	GAD_DrawFrames
+	GAD_DrawFrames,
+	GAD_CastShadows
 };
 
 enum
@@ -662,6 +667,9 @@ NewPrefs(struct MMPrefs *Prefs)
 	Message.Ptr1 = Prefs;
 	Message.Ptr2 = CX_PopKey;
 
+	Prefs->mmp_Magic = MMPREFS_MAGIC;
+	Prefs->mmp_Version = MMPREFS_VERSION;
+
 	Forbid();
 
 	if(MMPort = FindPort(MMPORT_NAME))
@@ -1049,7 +1057,7 @@ ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 
 	memset(&LocalPrefs,0,sizeof(LocalPrefs));
 
-	if(!(Error = RestoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs)))
+	if(!(Error = RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs)))
 		CopyMem(&LocalPrefs,HerePlease,sizeof(struct MMPrefs));
 
 	return(Error);
@@ -1088,7 +1096,7 @@ ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 LONG
 WritePrefs(STRPTR Name,struct MMPrefs *ThisPlease)
 {
-	return(StoreData(Name,"MagicMenu",1,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),ThisPlease));
+	return(StoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),ThisPlease));
 
 /*
 	BPTR FileHandle;
@@ -1870,56 +1878,91 @@ OpenAll(struct WBStartup *StartupMsg)
 					LA_LabelID,	MSG_GENERAL_GROUP_TXT,
 				TAG_DONE);
 				{
-					STATIC LONG TypeLabelTable[] =
+					LT_New(Handle,
+						LA_Type,	VERTICAL_KIND,
+					TAG_DONE);
 					{
-						MSG_TYPELABEL1_TXT,
-						MSG_TYPELABEL2_TXT,
-						MSG_TYPELABEL3_TXT,
-						-1
-					};
+						STATIC LONG TypeLabelTable[] =
+						{
+							MSG_TYPELABEL1_TXT,
+							MSG_TYPELABEL2_TXT,
+							MSG_TYPELABEL3_TXT,
+							-1
+						};
+
+						LT_New(Handle,
+							LA_Type,	CYCLE_KIND,
+							LA_ID,		GAD_MenuType,
+							LA_LabelID,	MSG_TYPE_GAD,
+							LA_BYTE,	&CurrentPrefs.mmp_MenuType,
+							LACY_LabelTable,TypeLabelTable,
+						TAG_DONE);
+
+						LT_EndGroup(Handle);
+					}
 
 					LT_New(Handle,
-						LA_Type,	CYCLE_KIND,
-						LA_ID,		GAD_MenuType,
-						LA_LabelID,	MSG_TYPE_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_MenuType,
-						LACY_LabelTable,TypeLabelTable,
+						LA_Type,	HORIZONTAL_KIND,
 					TAG_DONE);
+					{
+						LT_New(Handle,
+							LA_Type,	VERTICAL_KIND,
+						TAG_DONE);
+						{
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_MarkSub,
+								LA_LabelID,	MSG_MARK_SUBMENUS_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_MarkSub,
+							TAG_DONE);
 
-					LT_New(Handle,
-						LA_Type,	CHECKBOX_KIND,
-						LA_ID,		GAD_MarkSub,
-						LA_LabelID,	MSG_MARK_SUBMENUS_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_MarkSub,
-					TAG_DONE);
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_DblBorder,
+								LA_LabelID,	MSG_DOUBLE_BORDERS_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_DblBorder,
+							TAG_DONE);
 
-					LT_New(Handle,
-						LA_Type,	CHECKBOX_KIND,
-						LA_ID,		GAD_DblBorder,
-						LA_LabelID,	MSG_DOUBLE_BORDERS_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_DblBorder,
-					TAG_DONE);
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_NonBlocking,
+								LA_LabelID,	MSG_NON_BLOCKING_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
+							TAG_DONE);
 
-					LT_New(Handle,
-						LA_Type,	CHECKBOX_KIND,
-						LA_ID,		GAD_NonBlocking,
-						LA_LabelID,	MSG_NON_BLOCKING_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
-					TAG_DONE);
+							LT_EndGroup(Handle);
+						}
 
-					LT_New(Handle,
-						LA_Type,	CHECKBOX_KIND,
-						LA_ID,		GAD_Delayed,
-						LA_LabelID,	MSG_MENUS_OPEN_DELAYED_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_Delayed,
-					TAG_DONE);
+						LT_New(Handle,
+							LA_Type,	VERTICAL_KIND,
+						TAG_DONE);
+						{
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_Delayed,
+								LA_LabelID,	MSG_MENUS_OPEN_DELAYED_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_Delayed,
+							TAG_DONE);
 
-					LT_New(Handle,
-						LA_Type,	CHECKBOX_KIND,
-						LA_ID,		GAD_DrawFrames,
-						LA_LabelID,	MSG_DRAW_FRAME_GAD,
-						LA_BYTE,	&CurrentPrefs.mmp_DrawFrames,
-					TAG_DONE);
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_DrawFrames,
+								LA_LabelID,	MSG_DRAW_FRAME_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_DrawFrames,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_CastShadows,
+								LA_LabelID,	MSG_CAST_DROP_SHADOWS_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_CastShadows,
+							TAG_DONE);
+
+							LT_EndGroup(Handle);
+						}
+
+						LT_EndGroup(Handle);
+					}
 
 					LT_EndGroup(Handle);
 				}
@@ -2395,6 +2438,10 @@ UpdateSettings(struct MMPrefs *Prefs)
 
 	LT_SetAttributes(Handle,GAD_DrawFrames,
 		GTCB_Checked,	Prefs->mmp_DrawFrames,
+	TAG_DONE);
+
+	LT_SetAttributes(Handle,GAD_CastShadows,
+		GTCB_Checked,	Prefs->mmp_CastShadows,
 	TAG_DONE);
 
 	LT_SetAttributes(Handle,GAD_KCKeyStr,

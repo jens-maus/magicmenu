@@ -37,7 +37,7 @@ VOID ErrorPrc(char *ErrTxt);
 int main(int argc, char **argv);
 
 /* misc.c */
-BOOL MMCheckParentScreen(struct Window *Window);
+BOOL MMCheckParentScreen(struct Window *Window, BOOL PlayItSafe);
 BOOL MMCheckScreen(void);
 BOOL MMCheckWindow(struct Window *Win);
 ULONG __asm __saveds MMOpenWindow(REG (a0 )struct NewWindow *NW);
@@ -116,6 +116,7 @@ VOID MemoryExit(VOID);
 BOOL MemoryInit(VOID);
 
 /* menuboxes.c */
+VOID LocalPrintIText(struct RastPort *rp, struct IntuiText *itext, WORD left, WORD top);
 VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
 VOID CleanUpMenuSubBox(VOID);
