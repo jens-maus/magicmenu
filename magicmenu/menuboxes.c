@@ -8,6 +8,72 @@
 #include "Global.h"
 #endif	/* _GLOBAL_H */
 
+static ULONG MenuColours[16 * 3];
+static ULONG *MenuColour;
+static LONG MenuPens[16];
+
+static void
+ResetMenuColours(void)
+{
+	LONG i;
+
+	MenuColour = MenuColours;
+
+	for(i = 0 ; i < 16 ; i++)
+		MenuPens[i] = -1;
+}
+
+static void
+AddMenuColour(ULONG red,ULONG green,ULONG blue)
+{
+	*MenuColour++ = red;
+	*MenuColour++ = green;
+	*MenuColour++ = blue;
+}
+
+static void
+FreeMenuColours(struct ColorMap *cmap)
+{
+	if(GfxVersion >= 39)
+	{
+		LONG i;
+
+		for(i = 0 ; i < 16 ; i++)
+		{
+			ReleasePen(cmap,MenuPens[i]);
+			MenuPens[i] = -1;
+		}
+	}
+}
+
+static BOOL
+AllocateMenuColours(struct ColorMap *cmap)
+{
+        static Tag Tags[] =
+        {
+            OBP_Precision,PRECISION_IMAGE,
+            OBP_FailIfBad,TRUE,
+
+            TAG_DONE
+        };
+
+	ULONG *colour;
+	LONG i;
+
+	colour = MenuColours;
+
+	for(i = 0 ; i < 16 ; i++)
+	{
+		if((MenuPens[i] = ObtainBestPenA(cmap,*colour++,*colour++,*colour++,(struct TagItem *)Tags)) == -1)
+		{
+			FreeMenuColours(cmap);
+			return(FALSE);
+		}
+	}
+
+	return(TRUE);
+}
+
 void
 DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlited)
 {
@@ -137,21 +203,21 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       {
           if(LookMC && (MyImage.Depth == 0 || MyImage.ImageData == NULL) && MyImage.Height <= 2)
           {
-              SetAPen(rp,MenGhostLoCol);
+              SetFgPen(rp,MenGhostLoCol);	// Olsen
               RectFill(rp,StartX + MyImage.LeftEdge,StartY + MyImage.TopEdge,
                           StartX + MyImage.LeftEdge + MyImage.Width - 1,StartY + MyImage.TopEdge);
-              SetAPen(rp,MenGhostHiCol);
+              SetFgPen(rp,MenGhostHiCol);	// Olsen
               RectFill(rp,StartX + MyImage.LeftEdge,StartY + MyImage.TopEdge + 1,
                           StartX + MyImage.LeftEdge + MyImage.Width - 1,StartY + MyImage.TopEdge + 1);
           }
           else
           {
               if(LookMC)
-                Ok = MakeRemappedImage(&RemappedImage,&MyImage,8,StripDepth,(Highlited) ? DreiDActiveRemapArray :
+                Ok = MakeRemappedImage(&RemappedImage,&MyImage,StripDepth,(Highlited) ? DreiDActiveRemapArray :
                                                                                  (Ghosted) ? DreiDGhostedRemapArray :
                                                                                  DreiDRemapArray);
               else
-                Ok = MakeRemappedImage(&RemappedImage,&MyImage,8,StripDepth,DreiDRemapArray);
+                Ok = MakeRemappedImage(&RemappedImage,&MyImage,StripDepth,DreiDRemapArray);
 
               if(Ok)
               {
@@ -425,8 +491,7 @@ DrawMenuSubBoxContents(struct MenuItem *Item, struct RastPort *RPort, UWORD Left
 {
     register struct MenuItem *ZwItem;
 
-    SetAPen (RPort, MenBackGround);
-    SetDrMd (RPort, JAM1);
+    SetPens(RPort,MenBackGround,0,JAM1);	// Olsen
     RectFill (RPort, Left, Top, Left + SubBoxWidth - 1, Top + SubBoxHeight - 1);
 
     SetFont (RPort, MenFont);
@@ -570,6 +635,7 @@ DrawMenuSubBox (struct Menu * Menu, struct MenuItem * Item, BOOL ActivateItem)
                             WA_RMBTrap,         TRUE,
                             WA_SmartRefresh,    TRUE,
                             WA_ScreenTitle,     MenWin->ScreenTitle,
+                            WA_BackFill,        GetNOPFillHook(),
                             TAG_DONE)))
           {
               CleanUpMenuSubBox();
@@ -608,6 +674,7 @@ DrawMenuSubBox (struct Menu * Menu, struct MenuItem * Item, BOOL ActivateItem)
                             WA_Activate,        FALSE,
                             WA_RMBTrap,         TRUE,
                             WA_ScreenTitle,     MenWin->ScreenTitle,
+                            WA_BackFill,        GetNOPFillHook(),
                             TAG_DONE)))
           {
               CleanUpMenuSubBox();
@@ -635,7 +702,7 @@ DrawMenuSubBox (struct Menu * Menu, struct MenuItem * Item, BOOL ActivateItem)
   }
 
   SetFont(SubBoxDrawRPort,MenFont);
-  SetPens(SubBoxDrawRPort,MenTextCol,MenBackGround,JAM1);
+  SetPens(SubBoxDrawRPort,MenTextCol,0,JAM1);	// Olsen
 
   MenuSubBoxSwapped = TRUE;
 
@@ -836,15 +903,13 @@ DrawMenuBoxContents(struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD
     register struct MenuItem *ZwItem;
     LONG x1, x2;
 
-    SetAPen (RPort, MenBackGround);
-    SetDrMd (RPort, JAM1);
+    SetPens(RPort,MenBackGround,0,JAM1);	// Olsen
     RectFill (RPort, Left, Top, Left + BoxWidth - 1, Top + BoxHeight - 1);
 
     SetFont (RPort, MenFont);
     Draw3DRect (RPort, Left, Top, BoxWidth, BoxHeight, TRUE, ScrHiRes, DblBorder);
 
-    SetAPen (RPort, MenBackGround);
-    SetDrMd (RPort, JAM1);
+    SetPens(RPort,MenBackGround,0,JAM1);	// Olsen
 
     if (!StripPopUp && Look3D && (! LookMC) && (!DblBorder))
     {
@@ -858,11 +923,11 @@ DrawMenuBoxContents(struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD
         Draw (RPort, Left + x2, Top);
         if (!BoxGhosted)
         {
-            SetAPen (RPort, MenComplMsk);
+            SetFgPen (RPort, MenComplMsk);	// Olsen
             Move (RPort, Left + x1, Top);
             Draw (RPort, Left + x2, Top);
-            SetDrMd (RPort, JAM1);
-            SetWrMsk (RPort, 0xff);
+            SetDrawMode (RPort, JAM1);	// Olsen
+            SetDrawMask (RPort, 0xff);	// Olsen
         }
     }
 
@@ -1022,6 +1087,7 @@ DrawMenuBox (struct Menu * Menu, BOOL ActivateItem)
                             WA_RMBTrap,         TRUE,
                             WA_SmartRefresh,    TRUE,
                             WA_ScreenTitle,     MenWin->ScreenTitle,
+                            WA_BackFill,        GetNOPFillHook(),
                             TAG_DONE)))
           {
               CleanUpMenuBox();
@@ -1060,6 +1126,7 @@ DrawMenuBox (struct Menu * Menu, BOOL ActivateItem)
                             WA_Activate,        FALSE,
                             WA_RMBTrap,         TRUE,
                             WA_ScreenTitle,     MenWin->ScreenTitle,
+                            WA_BackFill,        GetNOPFillHook(),
                             TAG_DONE)))
           {
               CleanUpMenuBox();
@@ -1089,7 +1156,7 @@ DrawMenuBox (struct Menu * Menu, BOOL ActivateItem)
   }
 
   SetFont(BoxDrawRPort,MenFont);
-  SetPens(BoxDrawRPort,MenTextCol,MenBackGround,JAM1);
+  SetPens(BoxDrawRPort,MenTextCol,0,JAM1);	// Olsen
 
   MenuBoxSwapped = TRUE;
 
@@ -1171,21 +1238,21 @@ DrawHiMenu (struct Menu * Menu)
       if (LookMC)
       {
           SetFont (StripDrawRPort, MenFont);
-          SetDrMd (StripDrawRPort, JAM1);
+          SetDrawMode (StripDrawRPort, JAM1);	// Olsen
           if (Menu->Flags & MENUENABLED)
           {
               HiRect (StripDrawRPort, l, t, w, h + 1, TRUE);
               Move (StripDrawRPort, l + ((StripPopUp) ? 2 : 3), t + 1 + MenFont->tf_Baseline);
-              SetAPen (StripDrawRPort, MenHiCol);
+              SetFgPen (StripDrawRPort, MenHiCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
           }
           else
           {
               Move (StripDrawRPort, l + ((StripPopUp) ? 3 : 4), t + 1 + MenFont->tf_Baseline + 1);
-              SetAPen (StripDrawRPort, MenGhostHiCol);
+              SetFgPen (StripDrawRPort, MenGhostHiCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
               Move (StripDrawRPort, l + ((StripPopUp) ? 2 : 3), t + 1 + MenFont->tf_Baseline);
-              SetAPen (StripDrawRPort, MenGhostLoCol);
+              SetFgPen (StripDrawRPort, MenGhostLoCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
           }
 
@@ -1242,26 +1309,26 @@ DrawNormMenu (struct Menu *Menu)
       {
           SetFont (StripDrawRPort, MenFont);
           HiRect (StripDrawRPort, l, t, w, h + 1, FALSE);
-          SetDrMd (StripDrawRPort, JAM1);
+          SetDrawMode (StripDrawRPort, JAM1);	// Olsen
           if (Menu->Flags & MENUENABLED)
           {
               Move (StripDrawRPort, l + ((StripPopUp) ? 2 : 3), t + 1 + MenFont->tf_Baseline);
-              SetAPen (StripDrawRPort, MenTextCol);
+              SetFgPen (StripDrawRPort, MenTextCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
           }
           else
           {
               Move (StripDrawRPort, l + ((StripPopUp) ? 3 : 4), t + 1 + MenFont->tf_Baseline + 1);
-              SetAPen (StripDrawRPort, MenGhostHiCol);
+              SetFgPen (StripDrawRPort, MenGhostHiCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
               Move (StripDrawRPort, l + ((StripPopUp) ? 2 : 3), t + 1 + MenFont->tf_Baseline);
-              SetAPen (StripDrawRPort, MenGhostLoCol);
+              SetFgPen (StripDrawRPort, MenGhostLoCol);	// Olsen
               Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
           }
 
           if(! StripPopUp)
           {
-              SetAPen(StripDrawRPort,MenDarkEdge);
+              SetFgPen(StripDrawRPort,MenDarkEdge);	// Olsen
               RectFill(StripDrawRPort,l,t+h,l+w-1,t+h);
           }
       }
@@ -1275,7 +1342,7 @@ DrawNormMenu (struct Menu *Menu)
           DrawNormRect (StripDrawRPort, l + 1, t, w - 2, h);
           Move (StripDrawRPort, Menu->LeftEdge + StripLeftOffs + 4,
                 Menu->TopEdge + StripTopOffs + 1 + MenFont->tf_Baseline);
-          SetAPen (StripDrawRPort, MenTextCol);
+          SetFgPen (StripDrawRPort, MenTextCol);	// Olsen
           SetFont (StripDrawRPort, MenFont);
           Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
           if (!Menu->Flags & MENUENABLED)
@@ -1323,25 +1390,7 @@ CleanUpMenuStrip (void)
   CheckImageGhosted = CommandImageGhosted = SubArrowImageGhosted = NULL;
   CheckImageActive = CommandImageActive = SubArrowImageActive = NULL;
 
-  if(LookMC)
-  {
-      MyReleasePen(MenScr,MenLightEdge);
-      MyReleasePen(MenScr,MenDarkEdge);
-      MyReleasePen(MenScr,MenBackGround);
-      MyReleasePen(MenScr,MenTextCol);
-      MyReleasePen(MenScr,MenHiCol);
-      MyReleasePen(MenScr,MenFillCol);
-      MyReleasePen(MenScr,MenGhostLoCol);
-      MyReleasePen(MenScr,MenGhostHiCol);
-      MyReleasePen(MenScr,MenXENGrey0);
-      MyReleasePen(MenScr,MenXENBlack);
-      MyReleasePen(MenScr,MenXENWhite);
-      MyReleasePen(MenScr,MenXENBlue);
-      MyReleasePen(MenScr,MenXENGrey1);
-      MyReleasePen(MenScr,MenXENGrey2);
-      MyReleasePen(MenScr,MenXENBeige);
-      MyReleasePen(MenScr,MenXENPink);
-  }
+  FreeMenuColours(MenScr->ViewPort.ColorMap);
 
   if (MenuStripSwapped)
   {
@@ -1461,7 +1510,7 @@ FindSubItemChar (char Search, BOOL * Single)
   BOOL FirstFound, AnotherFound, Found;
   char LookChar;
 
-  Search = ToUpper (Search);
+  Search = ToUpper (Search);	// Olsen
 
   if (!AktSubItem)
     return (FALSE);
@@ -1488,7 +1537,7 @@ FindSubItemChar (char Search, BOOL * Single)
     if (ZwItem && (ZwItem->Flags & ITEMTEXT) != NULL)
     {
       LookChar = ((struct IntuiText *) ZwItem->ItemFill)->IText[0];
-      Found = ToUpper (LookChar) == Search;
+      Found = ToUpper (LookChar) == Search;	// Olsen
     }
     else
       Found = FALSE;
@@ -1602,7 +1651,7 @@ FindItemChar (char Search, BOOL * Single)
   BOOL FirstFound, AnotherFound, Found;
   char LookChar;
 
-  Search = ToUpper (Search);
+  Search = ToUpper (Search);	// Olsen
 
   if (!AktItem)
     return (FALSE);
@@ -1629,7 +1678,7 @@ FindItemChar (char Search, BOOL * Single)
     if (ZwItem && (ZwItem->Flags & ITEMTEXT) != NULL)
     {
       LookChar = ((struct IntuiText *) ZwItem->ItemFill)->IText[0];
-      Found = ToUpper (LookChar) == Search;
+      Found = ToUpper (LookChar) == Search;	// Olsen
     }
     else
       Found = FALSE;
@@ -1740,7 +1789,7 @@ FindMenuChar (char Search, BOOL * Single)
   UWORD ZwMenuNum;
   BOOL FirstFound, AnotherFound, Found;
 
-  Search = ToUpper (Search);
+  Search = ToUpper (Search);	// Olsen
 
   if (!AktMenu)
     return (FALSE);
@@ -1764,7 +1813,7 @@ FindMenuChar (char Search, BOOL * Single)
       ZwMenuNum = 0;
     }
 
-    Found = (ZwMenu && ToUpper (ZwMenu->MenuName[0]) == Search);
+    Found = (ZwMenu && ToUpper (ZwMenu->MenuName[0]) == Search);	// Olsen
     if (Found)
     {
       if (!FirstFound)
@@ -2017,8 +2066,7 @@ DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top)
     struct Menu                 *ZwMenu;
     UWORD                       ZwY, X, Y;
 
-    SetAPen (RPort, MenBackGround);
-    SetDrMd (RPort, JAM1);
+    SetPens(RPort,MenBackGround,0,JAM1);	// Olsen
     RectFill (RPort, Left, Top, Left + StripWidth - 1, Top + StripHeight - 1);
 
     SetFont (RPort, MenFont);
@@ -2029,14 +2077,14 @@ DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top)
     {
         Move (RPort, Top, Top + StripHeight - 1);
         if(LookMC)
-            SetAPen (RPort, MenDarkEdge);
+            SetFgPen (RPort, MenDarkEdge);
         else
-            SetAPen (RPort, MenTrimPen);
-        SetDrMd (RPort, JAM1);
+            SetFgPen (RPort, MenTrimPen);
+        SetDrawMode (RPort, JAM1);	// Olsen
         Draw (RPort, Left + StripWidth - 1, Top + StripHeight - 1);
     }
 
-    SetDrMd (RPort, JAM1);
+    SetDrawMode (RPort, JAM1);	// Olsen
     ZwMenu = MenStrip;
     ZwY = StripTopOffs;
     while (ZwMenu)
@@ -2056,12 +2104,12 @@ DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top)
         if(LookMC && ! ZwMenu->Flags & MENUENABLED)
         {
             Move(RPort,X+1,Y+1);
-            SetAPen(RPort,MenGhostHiCol);
+            SetFgPen(RPort,MenGhostHiCol);
             Text (RPort, ZwMenu->MenuName, strlen (ZwMenu->MenuName));
-            SetAPen(RPort,MenGhostLoCol);
+            SetFgPen(RPort,MenGhostLoCol);
         }
         else
-            SetAPen(RPort,MenTextCol);
+            SetFgPen(RPort,MenTextCol);
 
         Move(RPort,X,Y);
         Text (RPort, ZwMenu->MenuName, strlen (ZwMenu->MenuName));
@@ -2076,16 +2124,17 @@ DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top)
 BOOL
 DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 {
-    struct DrawInfo             *DrawInfo;
-    struct MenuRemember         *LookRemember;
-    struct Image                *ZwCheckImage, *ZwCommandImage;
-    struct ColorMap             *ColorMap;
-    BOOL                        Ok, UseLow;
-    BOOL                        DoFlipCheck, DoFlipCommand, DoFlipMX, DoFlipSubArrow;
-    UWORD                       z1;
-    WORD                        ZwWert;
-    ULONG                       *LPtrD, *LPtrD2, *LPtrD3, *LPtrS;
-    struct Menu                 *ZwMenu;
+    struct DrawInfo     *DrawInfo;
+    struct MenuRemember *LookRemember;
+    struct Image        *ZwCheckImage, *ZwCommandImage;
+    struct ColorMap     *ColorMap;
+    BOOL                Ok, UseLow;
+    BOOL                DoFlipCheck, DoFlipCommand, DoFlipMX, DoFlipSubArrow;
+    UWORD               z1;
+    WORD                ZwWert;
+    ULONG               *LPtrD, *LPtrD2, *LPtrD3, *LPtrS;
+    struct Menu         *ZwMenu;
+    UWORD               *Pens;
 
     for(LPtrD = (ULONG *)StdRemapArray, z1 = 0; z1 < 256 / 4; z1++)
         *LPtrD++ = 0;
@@ -2093,8 +2142,8 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     MenuStripSwapped = FALSE;
 
     ScrRPort = MenScr->RastPort;
-    SetWrMsk (&ScrRPort, 0xff);
-    SetDrMd (&ScrRPort, JAM1);
+    SetDrawMask (&ScrRPort, ~0);	// Olsen
+    SetDrawMode (&ScrRPort, JAM1);	// Olsen
     SetAfPt (&ScrRPort, NULL, 0);
     SetDrPt (&ScrRPort, 0xffff);
 
@@ -2102,6 +2151,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     ScrHiRes = (MenScr->Flags & SCREENHIRES) != NULL;
 
     DrawInfo = GetScreenDrawInfo (MenScr);
+    Pens = DrawInfo->dri_Pens;
 
     MenOpenedFont = NULL;
 
@@ -2133,83 +2183,79 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     if (NewLook == LOOK_MC && StripDepth >= 3 && GfxVersion >= 39 && ScrHiRes &&
         ColorMap->Type >= COLORMAP_TYPE_V39 && ColorMap->PalExtra)
     {
-        MenLightEdge = MyObtainPen(MenScr,AktPrefs.mmp_LightEdge.R, AktPrefs.mmp_LightEdge.G, AktPrefs.mmp_LightEdge.B);
-        MenDarkEdge = MyObtainPen(MenScr,AktPrefs.mmp_DarkEdge.R, AktPrefs.mmp_DarkEdge.G, AktPrefs.mmp_DarkEdge.B);
-        MenBackGround = MyObtainPen(MenScr,AktPrefs.mmp_Background.R, AktPrefs.mmp_Background.G, AktPrefs.mmp_Background.B);
-        MenTextCol = MyObtainPen(MenScr,AktPrefs.mmp_TextCol.R, AktPrefs.mmp_TextCol.G, AktPrefs.mmp_TextCol.B);
-        MenHiCol = MyObtainPen(MenScr,AktPrefs.mmp_HiCol.R, AktPrefs.mmp_HiCol.G, AktPrefs.mmp_HiCol.B);
-        MenFillCol = MyObtainPen(MenScr,AktPrefs.mmp_FillCol.R, AktPrefs.mmp_FillCol.G, AktPrefs.mmp_FillCol.B);
-        MenGhostLoCol = MyObtainPen(MenScr,AktPrefs.mmp_GhostLoCol.R, AktPrefs.mmp_GhostLoCol.G, AktPrefs.mmp_GhostLoCol.B);
-        MenGhostHiCol = MyObtainPen(MenScr,AktPrefs.mmp_GhostHiCol.R, AktPrefs.mmp_GhostHiCol.G, AktPrefs.mmp_GhostHiCol.B);
+        MenMenuTextCol = Pens[BARDETAILPEN];
+        MenMenuBackCol = Pens[BARBLOCKPEN];
 
-/*        MenDarkEdge = MyObtainPen(MenScr,0x00000000, 0x00000000, 0x00000000);
-        MenBackGround = MyObtainPen(MenScr,0x95000000, 0x95000000, 0x95000000);
-        MenTextCol = MyObtainPen(MenScr,0x00000000, 0x00000000, 0x00000000);
-        MenHiCol = MyObtainPen(MenScr,0xffffffff, 0xffffffff, 0xffffffff);
-        MenFillCol = MyObtainPen(MenScr,0x3b000000, 0x67000000, 0xA3000000);
-        MenGhostLoCol = MyObtainPen(MenScr,0x60000000, 0x60000000, 0x60000000);
-        MenGhostHiCol = MyObtainPen(MenScr,0xaf000000, 0xaf000000, 0xaf000000);*/
+        /* Mal sehen, ob das hier nicht vielleicht besser geht. */
+        ResetMenuColours();
 
-/*        MenLightEdge = 8;
-        MenDarkEdge = 9;
-        MenBackGround = 10;
-        MenTextCol = 11;
-        MenHiCol = 12;
-        MenFillCol = 13;
-        MenGhostLoCol = 14;
-        MenGhostHiCol = 15;*/
+        AddMenuColour(AktPrefs.mmp_LightEdge.R,  AktPrefs.mmp_LightEdge.G,  AktPrefs.mmp_LightEdge.B);
+        AddMenuColour(AktPrefs.mmp_DarkEdge.R,   AktPrefs.mmp_DarkEdge.G,   AktPrefs.mmp_DarkEdge.B);
+        AddMenuColour(AktPrefs.mmp_Background.R, AktPrefs.mmp_Background.G, AktPrefs.mmp_Background.B);
+        AddMenuColour(AktPrefs.mmp_TextCol.R,    AktPrefs.mmp_TextCol.G,    AktPrefs.mmp_TextCol.B);
+        AddMenuColour(AktPrefs.mmp_HiCol.R,      AktPrefs.mmp_HiCol.G,      AktPrefs.mmp_HiCol.B);
+        AddMenuColour(AktPrefs.mmp_FillCol.R,    AktPrefs.mmp_FillCol.G,    AktPrefs.mmp_FillCol.B);
+        AddMenuColour(AktPrefs.mmp_GhostLoCol.R, AktPrefs.mmp_GhostLoCol.G, AktPrefs.mmp_GhostLoCol.B);
+        AddMenuColour(AktPrefs.mmp_GhostHiCol.R, AktPrefs.mmp_GhostHiCol.G, AktPrefs.mmp_GhostHiCol.B);
 
-
-        MenXENGrey0 = MyObtainPen(MenScr,0x95000000, 0x95000000, 0x95000000);
-        MenXENBlack = MyObtainPen(MenScr,0x00000000, 0x00000000, 0x00000000);
-        MenXENWhite = MyObtainPen(MenScr,0xffffffff, 0xffffffff, 0xffffffff);
-        MenXENBlue  = MyObtainPen(MenScr,0x3b000000, 0x67000000, 0xA3000000);
-        MenXENGrey1 = MyObtainPen(MenScr,0x7b000000, 0x7b000000, 0x7b000000);
-        MenXENGrey2 = MyObtainPen(MenScr,0xaf000000, 0xaf000000, 0xaf000000);
-        MenXENBeige = MyObtainPen(MenScr,0xaa000000, 0x90000000, 0x7c000000);
-        MenXENPink  = MyObtainPen(MenScr,0xffffffff, 0xa9000000, 0x97000000);
-        MenMenuTextCol = GetCol (DrawInfo, BARDETAILPEN, 0);
-        MenMenuBackCol = GetCol (DrawInfo, BARBLOCKPEN, 1);
+        AddMenuColour(0x95959595, 0x95959595, 0x95959595);
+        AddMenuColour(0x00000000, 0x00000000, 0x00000000);
+        AddMenuColour(0xffffffff, 0xffffffff, 0xffffffff);
+        AddMenuColour(0x3b3b3b3b, 0x67676767, 0xA3A3A3A3);
+        AddMenuColour(0x7b7b7b7b, 0x7b7b7b7b, 0x7b7b7b7b);
+        AddMenuColour(0xafafafaf, 0xafafafaf, 0xafafafaf);
+        AddMenuColour(0xaaaaaaaa, 0x90909090, 0x7c7c7c7c);
+        AddMenuColour(0xffffffff, 0xa9a9a9a9, 0x97979797);
 
         Look3D = TRUE;
-        LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol &&
-                  (MenGhostLoCol != MenBackGround || MenGhostHiCol != MenBackGround));
+
+        if(AllocateMenuColours(ColorMap))
+        {
+        	LONG *Pen;
+
+		Pen = MenuPens;
+
+		MenLightEdge  = *Pen++;
+		MenDarkEdge   = *Pen++;
+		MenBackGround = *Pen++;
+		MenTextCol    = *Pen++;
+		MenHiCol      = *Pen++;
+		MenFillCol    = *Pen++;
+		MenGhostLoCol = *Pen++;
+		MenGhostHiCol = *Pen++;
+		MenXENGrey0   = *Pen++;
+		MenXENBlack   = *Pen++;
+		MenXENWhite   = *Pen++;
+		MenXENBlue    = *Pen++;
+		MenXENGrey1   = *Pen++;
+		MenXENGrey2   = *Pen++;
+		MenXENBeige   = *Pen++;
+		MenXENPink    = *Pen;
+
+		LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol &&
+			 (MenGhostLoCol != MenBackGround || MenGhostHiCol != MenBackGround));
+	}
+	else
+		LookMC = FALSE;
 
         if(! LookMC)
-        {
-            MyReleasePen(MenScr,MenLightEdge);
-            MyReleasePen(MenScr,MenDarkEdge);
-            MyReleasePen(MenScr,MenBackGround);
-            MyReleasePen(MenScr,MenTextCol);
-            MyReleasePen(MenScr,MenHiCol);
-            MyReleasePen(MenScr,MenFillCol);
-            MyReleasePen(MenScr,MenGhostLoCol);
-            MyReleasePen(MenScr,MenGhostHiCol);
-            MyReleasePen(MenScr,MenXENGrey0);
-            MyReleasePen(MenScr,MenXENBlack);
-            MyReleasePen(MenScr,MenXENWhite);
-            MyReleasePen(MenScr,MenXENBlue);
-            MyReleasePen(MenScr,MenXENGrey1);
-            MyReleasePen(MenScr,MenXENGrey2);
-            MyReleasePen(MenScr,MenXENBeige);
-            MyReleasePen(MenScr,MenXENPink);
-        }
+        	FreeMenuColours(ColorMap);
 
         DblBorder = (AktPrefs.mmp_DblBorder == 1);
     }
 
     if ((NewLook == LOOK_3D || NewLook == LOOK_MC) && (! LookMC) && StripDepth >= 2)
     {
-        MenLightEdge = GetCol (DrawInfo, SHINEPEN, 2);
-        MenDarkEdge = GetCol (DrawInfo, SHADOWPEN, 1);
-        MenBackGround = GetCol (DrawInfo, BACKGROUNDPEN, 0);
-        MenTextCol = GetCol (DrawInfo, TEXTPEN, 1);
-        MenHiCol = GetCol (DrawInfo, HIGHLIGHTTEXTPEN,2);
-        MenFillCol = GetCol (DrawInfo, FILLPEN, 3);
-        MenBlockPen = GetCol (DrawInfo, BLOCKPEN, 1);
-        MenDetailPen = GetCol (DrawInfo, DETAILPEN, 0);
-        MenMenuTextCol = GetCol (DrawInfo, BARDETAILPEN, 0);
-        MenMenuBackCol = GetCol (DrawInfo, BARBLOCKPEN, 1);
+        MenLightEdge = Pens[SHINEPEN];
+        MenDarkEdge = Pens[ SHADOWPEN];
+        MenBackGround = Pens[ BACKGROUNDPEN];
+        MenTextCol = Pens[ TEXTPEN];
+        MenHiCol = Pens[ HIGHLIGHTTEXTPEN];
+        MenFillCol = Pens[ FILLPEN];
+        MenBlockPen = Pens[ BLOCKPEN];
+        MenDetailPen = Pens[ DETAILPEN];
+        MenMenuTextCol = Pens[ BARDETAILPEN];
+        MenMenuBackCol = Pens[ BARBLOCKPEN];
 
         MenTrimPen = MenBlockPen;
         MenComplMsk = MenFillCol;
@@ -2269,16 +2315,16 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
             if(CheckImage)
             {
                 if(Ok)
-                    Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, 8, StripDepth, DreiDRemapArray);
+                    Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, StripDepth, DreiDRemapArray);
                 NoMXImage = &NoCheckImage2Pl;
                 CopyImageDimensions (NoMXImage, CheckImage);
 
                 if(LookMC)
                 {
                     if(Ok)
-                        MakeRemappedImage (&CheckImageGhosted, CheckImage, 8, StripDepth, DreiDGhostedRemapArray);
+                        MakeRemappedImage (&CheckImageGhosted, CheckImage, StripDepth, DreiDGhostedRemapArray);
                     if(Ok)
-                        MakeRemappedImage (&CheckImageActive, CheckImage, 8, StripDepth, DreiDActiveRemapArray);
+                        MakeRemappedImage (&CheckImageActive, CheckImage, StripDepth, DreiDActiveRemapArray);
                 }
 
                 CheckImage = CheckImageRmp;
@@ -2292,13 +2338,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
             {
                 DoFlipCommand = FALSE;
                 if(Ok)
-                    Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, 8, StripDepth, DreiDRemapArray);
+                    Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, StripDepth, DreiDRemapArray);
                 if(LookMC)
                 {
                     if(Ok)
-                        Ok = MakeRemappedImage (&CommandImageGhosted, CommandImage, 8, StripDepth, DreiDGhostedRemapArray);
+                        Ok = MakeRemappedImage (&CommandImageGhosted, CommandImage, StripDepth, DreiDGhostedRemapArray);
                     if(Ok)
-                        Ok = MakeRemappedImage (&CommandImageActive, CommandImage, 8, StripDepth, DreiDActiveRemapArray);
+                        Ok = MakeRemappedImage (&CommandImageActive, CommandImage, StripDepth, DreiDActiveRemapArray);
                 }
 
                 CommandImage = CommandImageRmp;
@@ -2313,13 +2359,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
             {
                 StdRemapArray[8] = MenBackGround;
                 if(Ok)
-                    Ok = MakeRemappedImage (&CommandImageRmp, &AmigaImage4Pl, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CommandImageRmp, &AmigaImage4Pl, StripDepth, StdRemapArray);
                 if(Ok)
-                    Ok = MakeRemappedImage (&CommandImageGhosted, &AmigaImage4PlGhosted, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CommandImageGhosted, &AmigaImage4PlGhosted, StripDepth, StdRemapArray);
 
                 StdRemapArray[8] = MenFillCol;
                 if(Ok)
-                    Ok = MakeRemappedImage (&CommandImageActive, &AmigaImage4Pl, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CommandImageActive, &AmigaImage4Pl, StripDepth, StdRemapArray);
 
                 CommandImage = CommandImageRmp;
             }
@@ -2329,13 +2375,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
             {
                 StdRemapArray[8] = MenBackGround;
                 if(Ok)
-                    Ok = MakeRemappedImage (&CheckImageRmp, &CheckImage4Pl, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CheckImageRmp, &CheckImage4Pl, StripDepth, StdRemapArray);
                 if(Ok)
-                    Ok = MakeRemappedImage (&CheckImageGhosted, &CheckImage4PlGhosted, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CheckImageGhosted, &CheckImage4PlGhosted, StripDepth, StdRemapArray);
 
                 StdRemapArray[8] = MenFillCol;
                 if(Ok)
-                    Ok = MakeRemappedImage (&CheckImageActive, &CheckImage4Pl, 8, StripDepth, StdRemapArray);
+                    Ok = MakeRemappedImage (&CheckImageActive, &CheckImage4Pl, StripDepth, StdRemapArray);
 
                 CheckImage = CheckImageRmp;
             }
@@ -2347,13 +2393,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
             StdRemapArray[8] = MenBackGround;
             if(Ok)
-                Ok = MakeRemappedImage (&SubArrowImageRmp, &SubArrowImage4Pl, 8, StripDepth, StdRemapArray);
+                Ok = MakeRemappedImage (&SubArrowImageRmp, &SubArrowImage4Pl, StripDepth, StdRemapArray);
             if(Ok)
-                Ok = MakeRemappedImage (&SubArrowImageGhosted, &SubArrowImage4PlGhosted, 8, StripDepth, StdRemapArray);
+                Ok = MakeRemappedImage (&SubArrowImageGhosted, &SubArrowImage4PlGhosted, StripDepth, StdRemapArray);
 
             StdRemapArray[8] = MenFillCol;
             if(Ok)
-                Ok = MakeRemappedImage (&SubArrowImageActive, &SubArrowImage4Pl, 8, StripDepth, StdRemapArray);
+                Ok = MakeRemappedImage (&SubArrowImageActive, &SubArrowImage4Pl, StripDepth, StdRemapArray);
 
             SubArrowImage = SubArrowImageRmp;
         }
@@ -2419,14 +2465,14 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     {
         if (DrawInfo->dri_Version >= 2 && DrawInfo->dri_NumPens > 9 && GfxVersion >= 39)
         {
-            MenLightEdge = GetCol (DrawInfo, BARDETAILPEN, 2);
-            MenDarkEdge = GetCol (DrawInfo, BARDETAILPEN, 2);
-            MenBackGround = GetCol (DrawInfo, BARBLOCKPEN, 1);
-            MenTextCol = GetCol (DrawInfo, BARDETAILPEN, 2);
-            MenFillCol = GetCol (DrawInfo, BARBLOCKPEN, 1);
-            MenBlockPen = GetCol (DrawInfo, BARBLOCKPEN, 1);
-            MenDetailPen = GetCol (DrawInfo, BARDETAILPEN, 2);
-            MenTrimPen = GetCol (DrawInfo, BARTRIMPEN, 1);
+            MenLightEdge = Pens[ BARDETAILPEN];
+            MenDarkEdge = Pens[ BARDETAILPEN];
+            MenBackGround = Pens[ BARBLOCKPEN];
+            MenTextCol = Pens[ BARDETAILPEN];
+            MenFillCol = Pens[ BARBLOCKPEN];
+            MenBlockPen = Pens[ BARBLOCKPEN];
+            MenDetailPen = Pens[ BARDETAILPEN];
+            MenTrimPen = Pens[ BARTRIMPEN];
             MenComplMsk = (MenTextCol | MenBackGround);
             NoCheckImage = NoMXImage = NULL;
             CheckImage = DrawInfo->dri_CheckMark;
@@ -2516,10 +2562,10 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (Ok && DoFlipMX)
         {
-            Ok = MakeRemappedImage (&MXImageRmp, MXImage, 8, StripDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&MXImageRmp, MXImage, StripDepth, StdRemapArray);
             if (Ok && NoMXImage)
             {
-                Ok = MakeRemappedImage (&NoMXImageRmp, NoMXImage, 8, StripDepth, StdRemapArray);
+                Ok = MakeRemappedImage (&NoMXImageRmp, NoMXImage, StripDepth, StdRemapArray);
                 if(! Ok)
                     FreeRemappedImage(MXImage);
             }
@@ -2530,19 +2576,19 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (Ok && DoFlipCommand)
         {
-            Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, 8, StripDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, StripDepth, StdRemapArray);
             CommandImage = CommandImageRmp;
         }
 
         if (Ok && DoFlipCheck)
         {
-            Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, 8, StripDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, StripDepth, StdRemapArray);
             CheckImage = CheckImageRmp;
         }
 
         if (Ok && DoFlipSubArrow)
         {
-            Ok = MakeRemappedImage (&SubArrowImageRmp, SubArrowImage, 8, StripDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&SubArrowImageRmp, SubArrowImage, StripDepth, StdRemapArray);
             SubArrowImage = SubArrowImageRmp;
         }
     }
@@ -2671,6 +2717,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
                               WA_RMBTrap,         TRUE,
                               WA_SmartRefresh,    TRUE,
                               WA_ScreenTitle,     MenWin->ScreenTitle,
+                              WA_BackFill,        GetNOPFillHook(),
                               TAG_DONE)))
             {
                 CleanUpMenuStrip();
@@ -2710,6 +2757,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
                               WA_Activate,        FALSE,
                               WA_RMBTrap,         TRUE,
                               WA_ScreenTitle,     MenWin->ScreenTitle,
+                              WA_BackFill,        GetNOPFillHook(),
                               TAG_DONE)))
             {
                 CleanUpMenuStrip();
@@ -2738,7 +2786,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     }
 
     SetFont(StripDrawRPort,MenFont);
-    SetPens(StripDrawRPort,MenTextCol,MenBackGround,JAM1);
+    SetPens(StripDrawRPort,MenTextCol,0,JAM1);	// Olsen
 
     AktMenu = NULL;
     MenuStripSwapped = TRUE;

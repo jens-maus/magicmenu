@@ -31,21 +31,37 @@ STATIC APTR MemoryPool;
 APTR
 AllocVecPooled(ULONG Size,ULONG Flags)
 {
-	ULONG *Chunk;
-
-	ObtainSemaphore(&MemorySemaphore);
-	Chunk = (ULONG *)AsmAllocPooled(MemoryPool,sizeof(ULONG) + Size,SysBase);
-	ReleaseSemaphore(&MemorySemaphore);
-
-	if(Chunk)
+	if(!Size)
+		return(NULL);
+	else
 	{
-		*Chunk++ = sizeof(ULONG) + Size;
+		ULONG *Chunk;
 
-		if(Flags & MEMF_CLEAR)
-			memset(Chunk,0,Size);
+		Size = (Size + 7) & ~7;
+
+		ObtainSemaphore(&MemorySemaphore);
+		Chunk = (ULONG *)AsmAllocPooled(MemoryPool,sizeof(ULONG) + Size,SysBase);
+		ReleaseSemaphore(&MemorySemaphore);
+
+		if(Chunk)
+		{
+			*Chunk++ = sizeof(ULONG) + Size;
+
+			if(Flags & MEMF_CLEAR)
+			{
+				ULONG *Mem,Longs;
+
+				Mem = Chunk;
+				Longs = Size / sizeof(ULONG);
+
+				do
+					*Mem++ = 0;
+				while(--Longs);
+			}
+		}
+
+		return(Chunk);
 	}
-
-	return(Chunk);
 }
 
 VOID

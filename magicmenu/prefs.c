@@ -14,8 +14,6 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 68030 version\r\n";
 STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #endif // _M68030
 
-#define MAJORVERS	   "2.0"
-
 enum	{	GAD_PAGER=1000,GAD_PAGEGROUP,
 			GAD_PULLDOWN_MODE,GAD_PULLDOWN_LOOK,
 			GAD_POPUP_MODE,GAD_POPUP_LOOK,GAD_POPUP_CENTRE,
@@ -963,12 +961,10 @@ BOOL
 HandleSettingsGUI(struct IntuiMessage *Msg)
 {
 	BOOL Ende;
-	UWORD MenuNum, ItemNum;
 	UWORD SelectMenu;
 	struct MenuItem *MenuAddr;
 	struct Gadget *MsgGadget;
 	ULONG MsgClass;
-	ULONG MsgQualifier;
 	UWORD MsgCode;
 	ULONG MenId, z1;
 	struct		ColorWheelRGB	ColorRGB;
@@ -978,7 +974,6 @@ HandleSettingsGUI(struct IntuiMessage *Msg)
 	Ende = FALSE;
 
 	MsgClass		= Msg -> Class;
-	MsgQualifier		= Msg -> Qualifier;
 	MsgCode 		= Msg -> Code;
 	MsgGadget		= Msg -> IAddress;
 
@@ -992,8 +987,6 @@ HandleSettingsGUI(struct IntuiMessage *Msg)
 
 			while (SelectMenu != MENUNULL)
 			{
-				MenuNum = MENUNUM (SelectMenu);
-				ItemNum = ITEMNUM (SelectMenu);
 				MenuAddr = ItemAddress (GUI_Menu, SelectMenu);
 				MenId = (ULONG)LAMN_Item_ID(MenuAddr);
 
@@ -1434,25 +1427,20 @@ HandleSettingsGUI(struct IntuiMessage *Msg)
 
 void MainLoop(void)
 {
-	BOOL Ende;
 	struct IntuiMessage *Msg;
 	ULONG  Sigs;
 
 	do
 	{
-	Ende = FALSE;
-
 	Sigs = 0;
 
 	while(! (Msg = LT_GetIMsg(GUI_Handle)) && (Sigs & SIGBREAKF_CTRL_C) == 0)
 		Sigs = Wait(1l << GUI_Handle->Window->UserPort->mp_SigBit | SIGBREAKF_CTRL_C);
 
 	if((Sigs & SIGBREAKF_CTRL_C) != 0)
-		return;
-
-	Ende = HandleSettingsGUI(Msg);
+		break;
 	}
-	while(! Ende);
+	while(!HandleSettingsGUI(Msg));
 }
 
 
@@ -1461,7 +1449,7 @@ About (void)
 {
   char ZwStr[500];
 
-  SPrintf (ZwStr, "MagicMenu Prefs " MAJORVERS " Rev. %ld.%ld (%s)\n\nMartin Korndörfer\n&\nOlaf 'Olsen' Barthel\n\nGTLayout.library © Olaf Barthel\n\n"
+  SPrintf (ZwStr, "MagicMenu Prefs %ld.%ld (%s)\n\nMartin Korndörfer\n&\nOlaf 'Olsen' Barthel\n\nGTLayout.library © Olaf Barthel\n\n"
 		  "Martin Korndörfer\nPommernstraße 15\nD-86916 Kaufering, Germany\n\nOlaf Barthel\nBrabeckstraße 35\n"
 		  "D-30559 Hannover, Germany\n\nE-Mail:\nm.korndoerfer@nathan.gun.de\nolsen@sourcery.han.de", VERSION,REVISION,DATE);
 
@@ -1498,6 +1486,9 @@ MakeRemappedImage (struct Image **DestImage, struct Image *SrcImage,
   ULONG PlaneSize, PlaneOffs;
   UBYTE SrcPlanes, Plane;
   UWORD Line, Column, Color, NewColor;
+
+  if(Depth > 8)
+      Depth = 8;
 
   if (*DestImage = (struct Image *) AllocVecPooled (sizeof (struct Image), MEMF_PUBLIC))
   {
@@ -1590,12 +1581,12 @@ MyObtainPen(struct Screen *Screen, ULONG R, ULONG G, ULONG B)
 	for(z1=0; z1 < Screen->RastPort.BitMap->Depth; z1++)
 	{
 		Col = GetRGB4(Screen->ViewPort.ColorMap,z1);
-		Diff = iabs(B - (Col & 0xf));
-		Sum = Diff * Diff;
-		Diff = iabs(G - ((Col >> 4) & 0xf));
-		Sum += (Diff * Diff);
-		Diff = iabs(R - ((Col >> 8) & 0xf));
-		Sum += (Diff * Diff);
+		Diff = abs(B - (Col & 0xf));
+		Sum = Diff;
+		Diff = abs(G - ((Col >> 4) & 0xf));
+		Sum += Diff;
+		Diff = abs(R - ((Col >> 8) & 0xf));
+		Sum += Diff;
 		if(Sum == 0)
 		return(z1);
 		else if(Sum < MinDiff)
@@ -2078,7 +2069,7 @@ main (int argc, char **argv)
   if(! AskPrefs())
 	  LoadPrefs(ConfigFile);
 
-  SPrintf(WindowTitle,"MagicMenu Prefs " MAJORVERS " <%s>",Cx_Popkey);
+  SPrintf(WindowTitle,"MagicMenu Prefs %ld.%ld <%s>",VERSION,REVISION,Cx_Popkey);
 
   OpenSettingsGUI();
 

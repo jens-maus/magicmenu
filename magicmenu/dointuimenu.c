@@ -11,7 +11,6 @@
 BOOL
 DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 {
-  struct Message *msg;
   struct Window *ZwWin;
   UWORD Code, Err;
   struct Screen *FrontScreen;
@@ -36,22 +35,10 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   MenScr = MenWin->WScreen;
   MenStrip = MenWin->MenuStrip;
 
-  /* Intuition wieder starten. */
-  UnlockIBase (IBaseLock);
-
-  /* Das Menü ist jetzt aktiv; Operationen in diesem
-   * Bildschirm, in diesem Fenster, in diesem Menü werden
-   * warten müssen.
-   */
-  ObtainSemaphore (MenuActSemaphore);
-
   /* Ab jetzt kann wieder lesend auf MenWin, MenScr, MenStrip
    * zugegriffen werden.
    */
   ReleaseSemaphore (GetPointerSemaphore);
-
-  /* Intuition anhalten. */
-  IBaseLock = LockIBase (NULL);
 
   MenuMode = NewMenuMode;
 
@@ -68,31 +55,26 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   {
     /* Intuition wieder starten. */
     UnlockIBase (IBaseLock);
-    /* MenWin, MenScr, MenStrip löschen, MenuActSemaphore loslassen. */
-    EndIntuiMenu ();
+    /* MenWin, MenScr, MenStrip löschen. */
+    EndIntuiMenu (FALSE);
     return (FALSE);
   }
 
   if (MenWin->IDCMPFlags & IDCMP_MENUVERIFY)
   {
+    DB(kprintf("has menuverify\n"));
     /* Nachricht verschicken (beinhaltet UnlockIBase()) */
     Code = MENUHOT;
     Err = SendIntuiMessage (IDCMP_MENUVERIFY,&Code, PeekQualifier (), NULL, MenWin, IBaseLock, TRUE);
 
-    /* Falls abgebrochen werden soll, braucht das Fenster noch ein IDCMP_MENUPICK/MENUNULL-Event. */
-    if (Code == MENUCANCEL)
+    if (Code == MENUCANCEL || Err != SENDINTUI_OK)
     {
-      Code = MENUNULL;
-      SendIntuiMessage (IDCMP_MENUPICK,&Code, PeekQualifier (), NULL, MenWin, NULL, FALSE);
-      EndIntuiMenu ();
+      DB(kprintf("code=%ld err=%ld\n",Code,Err));
+      EndIntuiMenu (FALSE);
       return (TRUE);
     }
 
-    if (Err != SENDINTUI_OK)
-    {
-      EndIntuiMenu ();
-      return (TRUE);
-    }
+    DB(kprintf("get going again\n"));
 
     /* Intuition wieder starten. */
     IBaseLock = LockIBase (NULL);
@@ -116,10 +98,15 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   FrontScreen = IntuitionBase->FirstScreen;
 
   /* Das war die letzte Handlung, zu der Intuition
-   * gesperrt werden mußte. Jetzt ist nur noch ein
-   * einziges Lock aktiv: MenuActSemaphore.
+   * gesperrt werden mußte.
    */
   UnlockIBase(IBaseLock);
+
+  /* Das Menü wird jetzt endlich aktiv; Operationen in diesem
+   * Bildschirm, in diesem Fenster, in diesem Menü werden
+   * warten müssen.
+   */
+  ObtainSemaphore (MenuActSemaphore);
 
   /* Den Bildschirm mit dem Menü in den Vordergrund holen. */
   if (FrontScreen != MenScr)
@@ -140,88 +127,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   ResetMenu (MenStrip, TRUE);
 
-  ActivateCxObj (Broker, FALSE);
-
-  SetFilterIX (MouseFilter, &ActiveMouseIX);
-
-  if (!(ActKbdFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  SetFilterIX (ActKbdFilter, &ActiveKbdIX);
-  AttachCxObj (Broker, ActKbdFilter);
-
-  if (!(ActKbdSender = CxSender (CxMsgPort, EVT_KEYBOARD)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  AttachCxObj (ActKbdFilter, ActKbdSender);
-
-  if (!(ActKbdTransl = CxTranslate (NULL)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (ActKbdFilter, ActKbdTransl);
-
-  if (!(MouseMoveFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
-  AttachCxObj (Broker, MouseMoveFilter);
-
-  if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (MouseMoveFilter, MouseMoveSender);
-
-  if (!(TickFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  SetFilterIX (TickFilter, &TickIX);
-  AttachCxObj (Broker, TickFilter);
-
-  if((TickSigNum = AllocSignal(-1)) == -1)
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  TickSigMask = 1l << TickSigNum;
-
-  if (!(TickSignal = CxSignal (FindTask(NULL), TickSigNum)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (TickFilter, TickSignal);
-
-  while (msg = GetMsg (CxMsgPort))
-  {
-    if (!CheckReply (msg))
-      ReplyMsg (msg);
-  }
-
-  ActivateCxObj (Broker, TRUE);
-  CxChanged = TRUE;
+  ChangeBrokerSetup();
 
   if (DrawMenuStrip (PopUp, ((PopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook), TRUE))
   {
@@ -264,7 +170,26 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   if (FrontScreen != MenScr)
     ScreenToBack (MenScr);
 
-  EndIntuiMenu ();
+  /* Jetzt kommt die letzte Maßnahme. Die Fenster, die vorher die
+   * MENUVERIFY/MENUWAITING-Nachricht bekommen hatten, erhalten jetzt
+   * noch MOUSEBUTTONS/MENUUP.
+   */
+
+  IBaseLock = LockIBase (NULL);
+
+  for(ZwWin = MenScr->FirstWindow ; ZwWin != NULL ; ZwWin = ZwWin->NextWindow)
+  {
+    if (ZwWin != MenWin && (ZwWin->IDCMPFlags & (IDCMP_MENUVERIFY|IDCMP_MOUSEBUTTONS)) == (IDCMP_MENUVERIFY|IDCMP_MOUSEBUTTONS))
+    {
+      /* Nachricht verschicken; fire and forget. */
+      Code = MENUUP;
+      SendIntuiMessage (IDCMP_MOUSEBUTTONS,&Code, PeekQualifier (), NULL, ZwWin, NULL, FALSE);
+    }
+  }
+
+  UnlockIBase(IBaseLock);
+
+  EndIntuiMenu (TRUE);
 
   return (TRUE);
 }

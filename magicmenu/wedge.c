@@ -11,7 +11,7 @@
 #define JMP_ABS 0x4EF9
 
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	1
+#define SEMAPHORE_VERSION	2
 
 typedef struct Wedge
 {
@@ -40,6 +40,8 @@ STATIC PatchEntry PatchTable[] =
 	NULL,	(LONG)&LVOResetMenuStrip,		(APTR)MMResetMenuStrip, 	&OldResetMenuStrip,
 	NULL,	(LONG)&LVOActivateWindow,		(APTR)MMActivateWindow, 	&OldActivateWindow,
 	NULL,	(LONG)&LVOWindowToFront,		(APTR)MMWindowToFront,		&OldWindowToFront,
+	NULL,	(LONG)&LVOModifyIDCMP,			(APTR)MMModifyIDCMP,		&OldModifyIDCMP,
+	NULL,	(LONG)&LVOObtainGIRPort,		(APTR)MMObtainGIRPort,		&OldObtainGIRPort,
 };
 
 #define PATCHCOUNT (sizeof(PatchTable) / sizeof(PatchEntry))

@@ -60,7 +60,8 @@ struct MMPrefs DefaultPrefs =
     {0x00000000, 0x00000000, 0x00000000},           /* DarkEdge */
     {0x95000000, 0x95000000, 0x95000000},           /* Background */
     {0x00000000, 0x00000000, 0x00000000},           /* TextCol */
-    {0xffffffff, 0xffffffff, 0xffffffff},           /* HiCol */
+//  {0xffffffff, 0xffffffff, 0xffffffff},           /* HiCol */
+    {0x00000000, 0x00000000, 0x00000000},           /* HiCol */
     {0x3b000000, 0x67000000, 0xA3000000},           /* FillCol */
     {0x60000000, 0x60000000, 0x60000000},           /* GhostLoCol */
     {0xaf000000, 0xaf000000, 0xaf000000},           /* GhostHiCol */

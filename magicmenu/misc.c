@@ -20,6 +20,7 @@ ULONG __asm CallCloseWindow (register __a0 struct Window *W);
 ULONG __asm CallActivateWindow (register __a0 struct Window *W);
 ULONG __asm CallWindowToFront (register __a0 struct Window *W);
 BOOL __asm CallModifyIDCMP (register __a0 struct Window *window, register __d0 ULONG flags);
+struct RastPort * __asm CallObtainGIRPort (register __a0 struct GadgetInfo *GInfo);
 
 /*****************************************************************************************/
 
@@ -69,6 +70,8 @@ MMOpenWindow (register __a0 struct NewWindow * NW)
 {
   ULONG Win;
 
+  DB(kprintf("|%s| in OpenWindow patch\n",FindTask(NULL)->tc_Node.ln_Name));
+
   if (MMCheckScreen ())
   {
     Win = CallOpenWindow (NW);
@@ -94,6 +97,8 @@ MMOpenWindowTagList (register __a0 struct NewWindow * NW,
 
 {
   ULONG Win;
+
+  DB(kprintf("|%s| in OpenWindowTagList patch\n",FindTask(NULL)->tc_Node.ln_Name));
 
   if (MMCheckScreen ())
   {
@@ -121,6 +126,8 @@ MMClearMenuStrip (register __a0 struct Window * W)
 {
   ULONG Res;
 
+  DB(kprintf("|%s| in ClearMenuStrip patch\n",FindTask(NULL)->tc_Node.ln_Name));
+
   if (MMCheckWindow (W))
   {
     Res = CallClearMenuStrip (W);
@@ -139,6 +146,8 @@ MMSetMenuStrip (register __a0 struct Window * W,
 
 {
   ULONG Res;
+
+  DB(kprintf("|%s| in SetMenuStrip patch\n",FindTask(NULL)->tc_Node.ln_Name));
 
   if (MMCheckWindow (W))
   {
@@ -163,6 +172,8 @@ MMResetMenuStrip (register __a0 struct Window * W,
 {
   ULONG Res;
 
+  DB(kprintf("|%s| in ResetMenuStrip patch\n",FindTask(NULL)->tc_Node.ln_Name));
+
   if (MMCheckWindow (W))
   {
     Res = CallResetMenuStrip (W, MI);
@@ -183,6 +194,8 @@ MMCloseWindow (register __a0 struct Window * W)
 {
   ULONG Res;
 
+  DB(kprintf("|%s| in CloseWindow patch\n",FindTask(NULL)->tc_Node.ln_Name));
+
   if (MMCheckScreen ())
   {
     ClearRemember (W);
@@ -197,7 +210,7 @@ MMCloseWindow (register __a0 struct Window * W)
 
   /*****************************************************************************************/
 
-        DiscardWindowGlyphs(W);
+  DiscardWindowGlyphs(W);
 
   /*****************************************************************************************/
 
@@ -210,6 +223,8 @@ MMActivateWindow (register __a0 struct Window * W)
 
 {
   ULONG Result;
+
+  DB(kprintf("|%s| in ActivateWindow patch\n",FindTask(NULL)->tc_Node.ln_Name));
 
   if (AttemptSemaphore (MenuActSemaphore))
   {
@@ -227,6 +242,8 @@ MMWindowToFront (register __a0 struct Window * W)
 
 {
   ULONG Result;
+
+  DB(kprintf("|%s| in WindowToFront patch\n",FindTask(NULL)->tc_Node.ln_Name));
 
   if (AttemptSemaphore (MenuActSemaphore))
   {
@@ -246,6 +263,8 @@ MMModifyIDCMP (register __a0 struct Window * window,
 {
   BOOL Result;
 
+  DB(kprintf("|%s| in ModifyIDCMP patch\n",FindTask(NULL)->tc_Node.ln_Name));
+
   if (MMCheckWindow (window))
   {
     Result = CallModifyIDCMP(window,flags);
@@ -258,165 +277,267 @@ MMModifyIDCMP (register __a0 struct Window * window,
   return (Result);
 }
 
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Verschiedenes                                                */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-
-UWORD
-GetCol (struct DrawInfo * DrawInfo, UWORD PenNum, UWORD Default)
-
-
+struct RastPort * __asm __saveds
+MMObtainGIRPort(register __a0 struct GadgetInfo *GInfo)
 {
-  UWORD Pen;
+	DB(kprintf("|%s| in ObtainGIRPort patch\n",FindTask(NULL)->tc_Node.ln_Name));
 
-  Pen = DrawInfo->dri_Pens[PenNum] & 0xff;
-  return ((UWORD) ((Pen <= 31) ? Pen : Default));
+	if(!AktPrefs.mmp_NonBlocking && GInfo)	/* GInfo kann tatsächlich (!) NULL sein. */
+	{
+		SafeObtainSemaphoreShared (GetPointerSemaphore);
+
+		if(MenScr == GInfo->gi_Screen)
+		{
+			struct RastPort *Result;
+
+			ReleaseSemaphore (GetPointerSemaphore);
+
+			if(AttemptSemaphore (MenuActSemaphore))
+			{
+				Result = CallObtainGIRPort(GInfo);
+
+				ReleaseSemaphore (MenuActSemaphore);
+			}
+			else
+				Result = NULL;
+
+			return(Result);
+		}
+
+		ReleaseSemaphore (GetPointerSemaphore);
+	}
+
+	return(CallObtainGIRPort(GInfo));
 }
 
-LONG
-MyObtainPen(struct Screen *Screen, ULONG R, ULONG G, ULONG B)
+	/* A couple of useful minterms. */
 
+#define MINTERM_ZERO		0
+#define MINTERM_ONE		ABC | ABNC | ANBC | ANBNC | NABC | NABNC | NANBC | NANBNC
+#define MINTERM_COPY		ABC | ABNC | NABC | NABNC
+#define MINTERM_NOT_C		ABNC | ANBNC | NABNC | NANBNC
+#define MINTERM_B_AND_C		ABC | NABC
+#define MINTERM_NOT_B_AND_C	ANBC | NANBC
+#define MINTERM_B_OR_C		ABC | ABNC | NABC | NABNC | ANBC | NANBC
+
+	/* CreateBitMapFromImage(struct Image *Image,struct BitMap *BitMap):
+	 *
+	 *	Turn an Intuition Image into a Gfx BitMap.
+	 */
+
+VOID
+CreateBitMapFromImage(const struct Image *Image,struct BitMap *BitMap)
 {
-    LONG   Best;
-    ULONG   Diff, MinDiff, Sum;
-    LONG   Col, z1;
+	PLANEPTR Data;
+	ULONG Modulo;
+	LONG i,Mask;
 
-    if(GfxVersion >= 39)
-        return(ObtainBestPen(Screen->ViewPort.ColorMap,R,G,B,
-                                OBP_Precision,      PRECISION_GUI,
-                                TAG_DONE));
-    else
-    {
-        R >>= 28;
-        G >>= 28;
-        B >>= 28;
-        Best = 0;
-        MinDiff = ~0;
-        for(z1=0; z1 < Screen->RastPort.BitMap->Depth; z1++)
-        {
-            Col = GetRGB4(Screen->ViewPort.ColorMap,z1);
-            Diff = iabs(B - (Col & 0xf));
-            Sum = Diff * Diff;
-            Diff = iabs(G - ((Col >> 4) & 0xf));
-            Sum += (Diff * Diff);
-            Diff = iabs(R - ((Col >> 8) & 0xf));
-            Sum += (Diff * Diff);
-            if(Sum == 0)
-                return(z1);
-            else if(Sum < MinDiff)
-            {
-                MinDiff = Sum;
-                Best = z1;
-            }
-        }
-        return(Best);
-    }
+	InitBitMap(BitMap,Image->Depth,Image->Width,Image->Height);
+
+	Modulo	= BitMap->BytesPerRow * BitMap->Rows;
+	Data	= (PLANEPTR)Image->ImageData;
+
+	for(i = 0 ; i < BitMap->Depth ; i++)
+	{
+		Mask = (1 << i);
+
+		if(Image->PlanePick & Mask)
+		{
+			BitMap->Planes[i] = Data;
+
+			Data += Modulo;
+		}
+		else
+		{
+			if(Image->PlaneOnOff & Mask)
+				BitMap->Planes[i] = (PLANEPTR)~0;
+		}
+	}
 }
 
+	/* RecolourBitMap():
+	 *
+	 *	Remap a BitMap to use a different colour selection.
+	 */
 
-void
-MyReleasePen(struct Screen *Screen, ULONG Pen)
-
+BOOL
+RecolourBitMap(struct BitMap *Src,struct BitMap *Dst,UBYTE *Mapping,LONG DestDepth,LONG Width,LONG Height)
 {
-    if(GfxVersion >= 39)
-        ReleasePen(Screen->ViewPort.ColorMap,Pen);
+	struct BitMap *SingleMap;
+
+		/* Create a single bitplane bitmap. */
+
+	if(SingleMap = allocBitMap(1,Width,Height,NULL,TRUE))
+	{
+		struct BitMap *FullMap;
+
+			/* Create a dummy bitmap. */
+
+		if(FullMap = (struct BitMap *)AllocVecPooled(sizeof(struct BitMap),MEMF_ANY))
+		{
+			LONG i,Mask = (1L << Src->Depth) - 1;
+
+				/* Make the dummy bitmap use the
+				 * single bitmap in all planes.
+				 */
+
+			InitBitMap(FullMap,DestDepth,Width,Height);
+
+			for(i = 0 ; i < DestDepth ; i++)
+				FullMap->Planes[i] = SingleMap->Planes[0];
+
+				/* Clear the destination bitmap. */
+
+			BltBitMap(Dst,0,0,Dst,0,0,Width,Height,MINTERM_ZERO,0xFF,NULL);
+
+				/* Is colour zero to be mapped to a non-zero colour? */
+
+			if(Mapping[0])
+			{
+					/* Clear the single plane bitmap. */
+
+				BltBitMap(SingleMap,0,0,SingleMap,0,0,Width,Height,MINTERM_ZERO,1,NULL);
+
+					/* Merge all source bitplane data. */
+
+				BltBitMap(Src,0,0,FullMap,0,0,Width,Height,MINTERM_B_OR_C,Mask,NULL);
+
+					/* Invert the single plane bitmap, to give us
+					 * the zero colour bitmap we can work with.
+					 */
+
+				BltBitMap(SingleMap,0,0,SingleMap,0,0,Width,Height,MINTERM_NOT_C,1,NULL);
+
+					/* Now set all the bits for colour zero. */
+
+				BltBitMap(FullMap,0,0,Dst,0,0,Width,Height,MINTERM_B_OR_C,Mapping[0],NULL);
+			}
+
+				/* Run down the colours. */
+
+			for(i = 1 ; i <= Mask ; i++)
+			{
+					/* Set the single plane bitmap to all 1's. */
+
+				BltBitMap(SingleMap,0,0,SingleMap,0,0,Width,Height,MINTERM_ONE,1,NULL);
+
+					/* Isolate the pixels to match the colour
+					 * specified in `i'.
+					 */
+
+				BltBitMap(Src,0,0,FullMap,0,0,Width,Height,MINTERM_B_AND_C,i,NULL);
+
+				if(Mask ^ i)
+					BltBitMap(Src,0,0,FullMap,0,0,Width,Height,MINTERM_NOT_B_AND_C,Mask ^ i,NULL);
+
+					/* Set the pixels in the destination bitmap,
+					 * use the designated colour.
+					 */
+
+				BltBitMap(FullMap,0,0,Dst,0,0,Width,Height,MINTERM_B_OR_C,Mapping[i],NULL);
+			}
+
+				/* Free the temporary bitmap. */
+
+			FreeVecPooled(FullMap);
+
+				/* Free the single plane bitmap. */
+
+			disposeBitMap(SingleMap,Width,Height,TRUE);
+
+				/* Return the result. */
+
+			return(TRUE);
+		}
+
+		disposeBitMap(SingleMap,Width,Height,TRUE);
+	}
+
+	return(FALSE);
 }
-
-
-void
-ComplementImage (struct Image *Image)
-
-{
-  UWORD Words, z1;
-
-  Words = (Image->Width + 15) / 16 * Image->Height * Image->Depth;
-  for (z1 = 0; z1 < Words; z1++)
-    Image->ImageData[z1] ^= 0xffff;
-}
-
 
 BOOL
 MakeRemappedImage (struct Image **DestImage, struct Image *SrcImage,
-                   UWORD SrcDepth, UWORD Depth, UBYTE *RemapArray)
+                   UWORD Depth, UBYTE *RemapArray)
 
 {
-  UWORD WordsPerLine;
-  ULONG PlaneSize, PlaneOffs;
-  UBYTE SrcPlanes, Plane;
-  UWORD Line, Column, Color, NewColor;
+	if(Depth > 8)
+		Depth = 8;
 
-  if (*DestImage = (struct Image *) AllocVecPooled (sizeof (struct Image), MEMF_PUBLIC))
-  {
-    **DestImage = *SrcImage;
-    (*DestImage)->ImageData = NULL;
-    if (SrcImage->Depth == 0 || SrcImage->ImageData == NULL)
-    {
-      (*DestImage)->Depth = 0;
-      (*DestImage)->PlaneOnOff = RemapArray[SrcImage->PlaneOnOff];
-      return (TRUE);
-    }
-    (*DestImage)->PlanePick = 0xff;
-    (*DestImage)->PlaneOnOff = 0;
+	if(*DestImage = (struct Image *)AllocVecPooled(sizeof(struct Image),MEMF_ANY | MEMF_CLEAR))
+	{
+		(*DestImage)->LeftEdge	= SrcImage->LeftEdge;
+		(*DestImage)->TopEdge	= SrcImage->TopEdge;
+		(*DestImage)->Width	= SrcImage->Width;
+		(*DestImage)->Height	= SrcImage->Height;
+		(*DestImage)->Depth	= Depth;
 
-    WordsPerLine = (SrcImage->Width + 15) / 16;
-    PlaneSize = WordsPerLine * SrcImage->Height;
-    SrcPlanes = SrcImage->Depth;
-    if(SrcPlanes > SrcDepth)
-      SrcPlanes = SrcDepth;
-    if ((*DestImage)->ImageData =
-        (UWORD *) AllocVec (PlaneSize * Depth * sizeof (UWORD), MEMF_CHIP | MEMF_PUBLIC | MEMF_CLEAR))
-    {
-      (*DestImage)->Depth = Depth;
-      for (Line = 0; Line < SrcImage->Height; Line++)
-        for (Column = 0; Column < SrcImage->Width; Column++)
-        {
-          PlaneOffs = Line * WordsPerLine + Column / 16;
-          Color = 0;
-          for (Plane = 0; Plane < SrcPlanes; Plane++)
-            Color |= ((SrcImage->ImageData[Plane * PlaneSize + PlaneOffs] >> (15 - Column % 16)) & 1) << Plane;
+		if(SrcImage->PlanePick || SrcImage->Depth == -1)
+		{
+			struct BitMap Dst;
 
-          NewColor = RemapArray[Color];
+			(*DestImage)->PlanePick = (1L << Depth) - 1;
 
-          if(NewColor)
-          {
-              for (Plane = 0; Plane < Depth && NewColor != 0; Plane++)
-              {
-                if (NewColor & 1)
-                  (*DestImage)->ImageData[Plane * PlaneSize + PlaneOffs] |= (1 << (15 - Column % 16));
-                NewColor >>= 1;
-              }
-          }
-        }
-      return (TRUE);
-    }
-    else
-    {
-      FreeVecPooled (*DestImage);
-      *DestImage = NULL;
-      return (FALSE);
-    }
-  }
-  else
-    return (FALSE);
+			InitBitMap(&Dst,Depth,SrcImage->Width,SrcImage->Height);
+
+			if((*DestImage)->ImageData = (UWORD *)AllocVec(Dst.BytesPerRow * Dst.Rows * Dst.Depth,MEMF_CHIP))
+			{
+				CreateBitMapFromImage(*DestImage,&Dst);
+
+				if(SrcImage->Depth == -1)
+				{
+					struct RastPort TempRPort;
+
+					InitRastPort(&TempRPort);
+
+					if(TempRPort.BitMap = allocBitMap(Depth,SrcImage->Width,SrcImage->Height,NULL,TRUE))
+					{
+						BOOL Result;
+
+						DrawImage(&TempRPort,SrcImage,-SrcImage->LeftEdge,-SrcImage->TopEdge);
+
+						Result = RecolourBitMap(TempRPort.BitMap,&Dst,RemapArray,Depth,SrcImage->Width,SrcImage->Height);
+
+						disposeBitMap(TempRPort.BitMap,SrcImage->Width,SrcImage->Height,TRUE);
+
+						if(Result)
+							return(TRUE);
+					}
+				}
+				else
+				{
+					struct BitMap Src;
+
+					CreateBitMapFromImage(SrcImage,&Src);
+
+					if(RecolourBitMap(&Src,&Dst,RemapArray,Depth,SrcImage->Width,SrcImage->Height))
+						return(TRUE);
+				}
+			}
+		}
+		else
+		{
+			(*DestImage)->PlaneOnOff = RemapArray[SrcImage->PlaneOnOff];
+
+			return(TRUE);
+		}
+
+		FreeRemappedImage(*DestImage);
+		*DestImage = NULL;
+	}
+
+	return(FALSE);
 }
 
 
-void
+VOID
 FreeRemappedImage (struct Image *Image)
-
 {
-  if(Image)
-  {
-    WaitBlit();
-    FreeVec (Image->ImageData);
-    FreeVecPooled (Image);
-  }
+	if(Image)
+	{
+		FreeVec(Image->ImageData);
+		FreeVecPooled(Image);
+	}
 }
 
 
@@ -435,13 +556,14 @@ SendTimeRequest (struct timerequest *OrigIOReq,
   if (!(NewIOReq = AllocVecPooled (sizeof (struct timerequest), MEMF_PUBLIC)))
       return (NULL);
 
-  *NewIOReq = *OrigIOReq;
+  CopyMem(OrigIOReq,NewIOReq,sizeof(struct timerequest));
 
   NewIOReq->tr_node.io_Message.mn_ReplyPort = ReplyPort;
   NewIOReq->tr_node.io_Command = TR_ADDREQUEST;
   NewIOReq->tr_time.tv_secs = Seconds;
   NewIOReq->tr_time.tv_micro = Micros;
 
+  SetSignal(0,1L << ReplyPort->mp_SigBit);
   SendIO (NewIOReq);
 
   return (NewIOReq);
@@ -586,21 +708,21 @@ CheckEnde (void)
 }
 
 void
-disposeBitMap (struct BitMap *BitMap, LONG Depth, LONG Width, LONG Height)
+disposeBitMap (struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem)
 
 {
-  LONG z1, NWidth;
+  LONG z1;
 
-  if (GfxVersion >= 39)
+  WaitBlit();
+
+  if (GfxVersion >= 39 && !IsChipMem)
     FreeBitMap (BitMap);
   else
   {
-    NWidth = (((Width - 1) / 64) + 1) * 64;
-
-    for (z1 = 0; z1 < Depth; z1++)
+    for (z1 = 0; z1 < BitMap->Depth; z1++)
     {
       if (BitMap->Planes[z1])
-        FreeRaster (BitMap->Planes[z1], NWidth, Height);
+        FreeRaster (BitMap->Planes[z1], Width, Height);
     }
 
     FreeVecPooled (BitMap);
@@ -609,16 +731,16 @@ disposeBitMap (struct BitMap *BitMap, LONG Depth, LONG Width, LONG Height)
 
 
 struct BitMap *
-allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend)
+allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem)
 
 {
   struct BitMap *BitMap;
   BOOL Error;
-  LONG z1, NWidth;
+  LONG z1;
 
   Error = FALSE;
 
-  if (GfxVersion >= 39)
+  if (GfxVersion >= 39 && !WantChipMem)
     return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth > 8) ? BMF_MINPLANES : NULL, Friend));
   else
   {
@@ -626,17 +748,15 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend)
     {
       InitBitMap (BitMap, Depth, Width, Height);
 
-      NWidth = (((Width - 1) / 64) + 1) * 64;
-
       for (z1 = 0; z1 < Depth; z1++)
       {
-        if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (NWidth, Height)))
+        if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
           Error = TRUE;
       }
 
       if (Error)
       {
-        disposeBitMap (BitMap, Depth, Width, Height);
+        disposeBitMap (BitMap, Width, Height, TRUE);
         return (NULL);
       }
 
@@ -670,19 +790,28 @@ FreeRPort (struct RastPort *RastPort,
       FreeVecPooled (RastPort);
   }
 
-  WaitBlit ();                  /* Well, strange, aber ohne gehts nicht... */
+//  WaitBlit ();                  /* Well, strange, aber ohne gehts nicht... */
 
   if (LayerInfo)
     DisposeLayerInfo (LayerInfo);
 
   if (BitMap)
-    disposeBitMap (BitMap, Depth, Width + 10, Height + 10);
+    disposeBitMap (BitMap, Width + 10, Height + 10, FALSE);
 }
 
 
 STATIC ULONG Dummy(VOID) { return(0); }
 
 STATIC struct Hook DummyHook = {{NULL}, (HOOKFUNC)Dummy};
+
+struct Hook *
+GetNOPFillHook()
+{
+	if(LayersBase -> lib_Version >= 39)
+		return(LAYERS_NOBACKFILL);
+	else
+		return(&DummyHook);
+}
 
 BOOL
 InstallRPort (LONG Depth, LONG Width, LONG Height,
@@ -697,20 +826,13 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
   *RastPort = NULL;
   *Layer = NULL;
   *LayerInfo = NULL;
-  if ((*BitMap = allocBitMap (Depth, Width + 10, Height + 10, Friend)) != NULL)
+  if ((*BitMap = allocBitMap (Depth, Width + 10, Height + 10, Friend, FALSE)) != NULL)
   {
     if (AktPrefs.mmp_UseLayer)
     {
       if (*LayerInfo = NewLayerInfo ())
       {
-        struct Hook *Hook;
-
-        if(LayersBase -> lib_Version >= 39)
-                Hook = LAYERS_NOBACKFILL;
-        else
-                Hook = &DummyHook;
-
-        if (*Layer = CreateUpfrontHookLayer (*LayerInfo, *BitMap, 0, 0, Width, Height, LAYERSIMPLE, Hook, NULL))        // Olsen
+        if (*Layer = CreateUpfrontHookLayer (*LayerInfo, *BitMap, 0, 0, Width, Height, LAYERSIMPLE, GetNOPFillHook(), NULL))        // Olsen
         {
           *RastPort = (*Layer)->rp;
           return (TRUE);
@@ -727,7 +849,7 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
         return (TRUE);
       }
     }
-    disposeBitMap (*BitMap, Depth, Width + 10, Height + 10);
+    disposeBitMap (*BitMap, Width + 10, Height + 10,FALSE);
   }
   return (FALSE);
 }
@@ -788,53 +910,103 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
     return;
 
   if (Upward)
-    SetAPen (rp, MenLightEdge);
+    SetFgPen (rp, MenLightEdge);	// Olsen
   else
-    SetAPen (rp, MenDarkEdge);
+    SetFgPen (rp, MenDarkEdge);		// Olsen
 
   if (HiRes && (! LookMC))
   {
+	//	2<------1-
+	//	|4
+	//	||
+	//	||
+	//	|v
+	//	v5
+	//	3
+
     Move (rp, x + Width - 2, y);
     Draw (rp, x, y);
     Draw (rp, x, y + Height - 1);
-    Move (rp, x + 1, y);
+    Move (rp, x + 1, y + 1);		// Olsen
     Draw (rp, x + 1, y + Height - 2);
     if (DoubleBorder)
     {
-      Move (rp, x + Width - 3, y + 2);
+	//	2<------1-
+	//	|4    96
+	//	||    ||
+	//	||    ||
+	//	||    v|
+	//	|v    av
+	//	v58<---7
+	//	3
+
+      Move (rp, x + Width - 3, y + 1);		// Olsen
       Draw (rp, x + Width - 3, y + Height - 2);
       Draw (rp, x + 3, y + Height - 2);
-      Move (rp, x + Width - 4, y + 3);
+      Move (rp, x + Width - 4, y + 2);		// Olsen
       Draw (rp, x + Width - 4, y + Height - 2);
     }
   }
   else
   {
+	//	2<----1
+	//	|
+	//	|
+	//	|
+	//	|
+	//	v
+	//	3
+
     Move (rp, x + Width - 1, y);
     Draw (rp, x, y);
-    Draw (rp, x, y + Height - 2);
+    Draw (rp, x, y + Height - 1);		// Olsen
     if (DoubleBorder)
     {
-      Move (rp, x + Width - 2, y + 2);
+	//	2<----1
+	//	|    4
+	//	|    |
+	//	|    |
+	//	|    v
+	//	v6<--5
+	//	3
+
+      Move (rp, x + Width - 2, y + 1);		// Olsen
       Draw (rp, x + Width - 2, y + Height - 2);
       Draw (rp, x + 1, y + Height - 2);
     }
   }
 
   if (Upward)
-    SetAPen (rp, MenDarkEdge);
+    SetFgPen (rp, MenDarkEdge);		// Olsen
   else
-    SetAPen (rp, MenLightEdge);
+    SetFgPen (rp, MenLightEdge);	// Olsen
 
   if (HiRes && (! LookMC))
   {
+	//	           3
+	//	          5^
+	//	          ^|
+	//	          ||
+	//	          ||
+	//	          4|
+	//	-1-------->2
+
     Move (rp, x + 1, y + Height - 1);
     Draw (rp, x + Width - 1, y + Height - 1);
     Draw (rp, x + Width - 1, y);
-    Move (rp, x + Width - 2, y + Height - 1);
+    Move (rp, x + Width - 2, y + Height - 2);	// Olsen
     Draw (rp, x + Width - 2, y + 1);
     if (DoubleBorder)
     {
+	//	           3
+	//	  7---->8 5^
+	//	  ^a      ^|
+	//	  |^      ||
+	//	  ||      ||
+	//	  |9      ||
+	//	  6       4|
+	//	-1-------->2
+
       Move (rp, x + 2, y + Height - 2);
       Draw (rp, x + 2, y + 1);
       Draw (rp, x + Width - 4, y + 1);
@@ -844,11 +1016,27 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
   }
   else
   {
-    Move (rp, x, y + Height - 1);
+	//	           |
+	//	           3
+	//	           ^
+	//	           |
+	//	           |
+	//	           |
+	//	-1-------->2
+
+    Move (rp, x + 1, y + Height - 1);	// Olsen
     Draw (rp, x + Width - 1, y + Height - 1);
     Draw (rp, x + Width - 1, y + 1);
     if (DoubleBorder)
     {
+	//	           |
+	//	 5------->63
+	//	 ^         ^
+	//	 |         |
+	//	 |         |
+	//	 4         |
+	//	-1-------->2
+
       Move (rp, x + 1, y + Height - 2);
       Draw (rp, x + 1, y + 1);
       Draw (rp, x + Width - 2, y + 1);
@@ -864,7 +1052,14 @@ DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   if (Width <= 0 || Height <= 0)
     return;
 
-  SetAPen (rp, MenBackGround);
+  SetFgPen (rp, MenBackGround);	// Olsen
+
+	//	1-------->2
+	//	^         |
+	//	|         |
+	//	|         |
+	//	|         v
+	//	4<--------3
 
   Move (rp, x, y);
   Draw (rp, x + Width - 1, y);
@@ -882,13 +1077,20 @@ GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
     return;
 
   SetAfPt (rp, DitherPattern, 1);
-  SetAPen (rp, MenBackGround);
-  SetDrMd (rp, JAM1);
+
+      // Hier gibt es ein Konsistenzproblem. Das Ghosting der Menüs,
+      // wie es Intuition durchführt, ist an sich schon inkonsistent
+      // mit dem von Gadgets. Macht man es wie Intuition, muß man
+      // hier den Pen MenBackGround nehmen. Versucht man es konsistent
+      // zu halten, sollte man eigentlich MenDarkEdge nehmen.
+      //    -olsen
+
+  SetPens(rp,MenBackGround,0,JAM1);	// Olsen
 
   RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 
   SetAfPt (rp, NULL, 0);
-  SetAPen (rp, MenTextCol);
+  SetFgPen (rp, MenTextCol);	// Olsen
 }
 
 
@@ -899,12 +1101,11 @@ CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   if (Width <= 0 || Height <= 0)
     return;
 
-  SetWrMsk (rp, MenComplMsk);
-  SetDrMd (rp, COMPLEMENT);
-  SetAPen (rp, MenComplMsk);
+  SetDrawMask (rp, MenComplMsk);	// Olsen
+  SetPens(rp,MenComplMsk,0,COMPLEMENT);	// Olsen
   RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 
-  SetWrMsk (rp, 0xff);
+  SetDrawMask (rp, ~0);			// Olsen
   SetDrMd (rp, JAM1);
 }
 
@@ -916,8 +1117,7 @@ HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highl
   if (Width <= 0 || Height <= 0)
     return;
 
-  SetDrMd (rp, JAM1);
-  SetAPen (rp, (Highlited) ? MenFillCol : MenBackGround);
+  SetPens(rp,(Highlited) ? MenFillCol : MenBackGround,0,JAM1);	// Olsen
   RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 }
 
@@ -928,6 +1128,7 @@ MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent * Event, str
 {
   struct InputEvent *MyNewEvent;
   struct IEPointerPixel *MyNewPPixel;
+  BOOL success = FALSE;
 
   if (MyNewPPixel = AllocVecPooled (sizeof (struct IEPointerPixel), MEMF_PUBLIC | MEMF_CLEAR))
   {
@@ -938,41 +1139,35 @@ MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent * Event, str
       MyNewPPixel->iepp_Position.Y = NewY;
       MyNewEvent->ie_Class = IECLASS_NEWPOINTERPOS;
       MyNewEvent->ie_SubClass = IESUBCLASS_PIXEL;
-      MyNewEvent->ie_Qualifier = NULL;
       MyNewEvent->ie_Code = IECODE_NOBUTTON;
       MyNewEvent->ie_EventAddress = (APTR) MyNewPPixel;
-      MyNewEvent->ie_NextEvent = NULL;
-
-      InputIO->io_Data = (APTR) MyNewEvent;
-      InputIO->io_Length = sizeof (struct InputEvent);
 
       InputIO->io_Command = IND_WRITEEVENT;
+      InputIO->io_Data = (APTR) MyNewEvent;
+      InputIO->io_Length = sizeof (struct InputEvent);
       DoIO ((struct IORequest *) InputIO);
 
       if (AddEvent)
       {
-        *MyNewEvent = *Event;
+        CopyMem(Event,MyNewEvent,sizeof(struct InputEvent));
         MyNewEvent->ie_NextEvent = NULL;
 
         InputIO->io_Data = (APTR) MyNewEvent;
         InputIO->io_Length = sizeof (struct InputEvent);
-
         InputIO->io_Command = IND_WRITEEVENT;
         DoIO ((struct IORequest *) InputIO);
       }
 
-      FreeVecPooled (MyNewEvent);
-      FreeVecPooled (MyNewPPixel);
+      success = TRUE;
+
+      FreeVecPooled (MyNewEvent);	// Olsen
     }
-    else
-      return (FALSE);
+
+    FreeVecPooled (MyNewPPixel);
   }
-  else
-    return (FALSE);
 
-  return (TRUE);
+  return (success);
 }
-
 
 VOID __stdargs
 SPrintf(STRPTR buffer, STRPTR formatString,...)
@@ -1000,6 +1195,43 @@ SetPens(struct RastPort *RPort,ULONG FgPen,ULONG BgPen,ULONG DrawMode)
 		if(DrawMode != RPort->DrawMode)
 			SetDrMd(RPort,DrawMode);
 	}
+}
+
+VOID
+SetFgPen(struct RastPort *rp,LONG pen)
+{
+	LONG old;
+
+	if(GfxVersion >= 39)
+		old = GetAPen(rp);
+	else
+		old = rp->FgPen;
+
+	if(old != pen)
+		SetAPen(rp,pen);
+}
+
+VOID
+SetDrawMode(struct RastPort *rp,LONG mode)
+{
+	LONG old;
+
+	if(GfxVersion >= 39)
+		old = GetDrMd(rp);
+	else
+		old = rp->DrawMode;
+
+	if(old != mode)
+		SetDrMd(rp,mode);
+}
+
+VOID
+SetDrawMask(struct RastPort *rp,LONG mask)
+{
+	if(GfxVersion >= 39)
+		SetWriteMask(rp,mask);
+	else
+		rp->Mask = mask;
 }
 
 ULONG

@@ -336,6 +336,7 @@ extern ULONG OldCloseWindow;
 extern ULONG OldActivateWindow;
 extern ULONG OldWindowToFront;
 extern ULONG OldModifyIDCMP;
+extern ULONG OldObtainGIRPort;
 
 extern LONG Cx_Pri;
 extern BOOL Cx_Popup;

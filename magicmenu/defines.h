@@ -18,8 +18,6 @@
 #define     MAGIC_MENU_DESCR  "Improves the Intuition menus"
 
 #define     INPUTNAME         "input.device"
-#define     WB_TASKNAME       "Workbench"
-#define     PS_TASKNAME       "PageStream2"
 
 #define     ANSWER_LEN        10
 #define     LONGANSWER_LEN    99
@@ -67,6 +65,7 @@ extern LONG __far LVOCloseWindow;
 extern LONG __far LVOActivateWindow;
 extern LONG __far LVOWindowToFront;
 extern LONG __far LVOModifyIDCMP;
+extern LONG __far LVOObtainGIRPort;
 
 #define     CHECKIMGWIDTH           (CHECKWIDTH - 4)
 #define     LOWCHECKIMGWIDTH        (LOWCHECKWIDTH - 4)
@@ -74,3 +73,6 @@ extern LONG __far LVOModifyIDCMP;
 #define PORTMASK(p)	(1L<<((p)->mp_SigBit))
 
 #define MAX_FILENAME_LENGTH	256
+
+#define DB(x)	;
+/*#define DB(x)	x*/

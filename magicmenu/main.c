@@ -20,8 +20,6 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #define  PROCESSOR   "68000"
 #endif // _M68030
 
-#define MAJORVERS      "2.0"
-
 VOID
 Activate (VOID)
 {
@@ -579,8 +577,6 @@ ResetMenu (struct Menu *Menu, BOOL MenNull)
 VOID
 CleanUpMenu (VOID)
 {
-  struct Message *msg;
-
   CleanUpMenuSubBox ();
   CleanUpMenuBox ();
   CleanUpMenuStrip ();
@@ -594,33 +590,7 @@ CleanUpMenu (VOID)
 
   MenWin->Flags &= ~WFLG_MENUSTATE;
 
-  if (CxChanged)
-  {
-    ActivateCxObj (Broker, FALSE);
-
-    SetFilterIX (MouseFilter, &MouseIX);
-
-    DeleteCxObjAll (MouseMoveFilter);
-
-    DeleteCxObjAll (ActKbdFilter);
-
-    DeleteCxObjAll (TickFilter);
-
-    if(TickSigNum != -1)
-	FreeSignal(TickSigNum);
-
-    TickSigNum = -1;
-
-    while (msg = GetMsg (CxMsgPort))
-    {
-      if (!CheckReply (msg))
-	ReplyMsg (msg);
-    }
-
-    ActivateCxObj (Broker, TRUE);
-
-    CxChanged = FALSE;
-  }
+  ResetBrokerSetup();
 }
 
 BOOL
@@ -1219,6 +1189,7 @@ ProcessIntuiMenu (VOID)
 
   Ende = FALSE;
   TickReceived = FALSE;
+  Cancel = FALSE;
 
   TimeReq = SendTimeRequest (TimerIO, AktPrefs.mmp_TimeOut, 0, CxMsgPort);
   LLayerTimeReq = SendTimeRequest(TimerIO, 0, 500000, CxMsgPort);
@@ -1301,6 +1272,8 @@ ProcessIntuiMenu (VOID)
     {
       Signals = Wait (SigMask);
     }
+    else
+      Signals = NULL;
 
     if((Signals & TickSigMask) != 0)
 	TickReceived = TRUE;
@@ -1335,7 +1308,7 @@ ProcessIntuiMenu (VOID)
 }
 
 VOID
-EndIntuiMenu(VOID)
+EndIntuiMenu(BOOL ReleaseMenuAct)
 {
 	ObtainSemaphore (GetPointerSemaphore);
 
@@ -1345,7 +1318,8 @@ EndIntuiMenu(VOID)
 
 	ReleaseSemaphore (GetPointerSemaphore);
 
-	ReleaseSemaphore (MenuActSemaphore);
+	if(ReleaseMenuAct)
+		ReleaseSemaphore (MenuActSemaphore);
 }
 
 
@@ -1702,20 +1676,27 @@ ProcessCommodity (VOID)
     while(IMsg = (struct IntuiMessage *)GetMsg(IMsgReplyPort))
     {
         /* Wer zu spät kommt, den bestraft das Leben. Hier werden die
-         * zu spät beantworteten IDCMP_MENUVERIFY-Messages des aktiven
-         * Fensters abgewickelt.
+         * zu spät beantworteten IDCMP_MENUVERIFY-Messages
+         * abgewickelt.
          */
-        if(IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUWAITING))
+        if(IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUCANCEL))
         {
             ULONG IntuiLock;
 
-            /* Nötig für RealWindow(). */
+            /* Nötig für RealWindow() und damit das Fenster bis zum Schluß vorhanden bleibt. */
             IntuiLock = LockIBase(NULL);
 
             /* Gibt es das Fenster noch? */
             if(RealWindow(IMsg->IDCMPWindow))
             {
                 UWORD Code;
+
+                /* Falls das Menü abgebrochen wurde, kommt zuerst IDCMP_MOUSEBUTTONS. */
+                if(IMsg->Code == MENUCANCEL && (IMsg->IDCMPWindow->IDCMPFlags & IDCMP_MOUSEBUTTONS))
+                {
+                  Code = MENUUP;
+                  SendIntuiMessage(IDCMP_MOUSEBUTTONS,&Code,PeekQualifier(),NULL,IMsg->IDCMPWindow,NULL,FALSE);
+                }
 
                 /* Standardbehandlung... */
                 Code = MENUNULL;
@@ -1878,7 +1859,123 @@ BOOL LoadPrefs(char *ConfigFile, BOOL Report)
     }
 }
 
+VOID
+ResetBrokerSetup()
+{
+	if(CxChanged)
+	{
+		struct Message *msg;
 
+		ActivateCxObj (Broker, FALSE);
+
+		SetFilterIX (MouseFilter, &MouseIX);
+
+		RemoveCxObj (ActKbdFilter);
+		RemoveCxObj (MouseMoveFilter);
+		RemoveCxObj (TickFilter);
+
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+				ReplyMsg (msg);
+		}
+
+		ActivateCxObj (Broker, TRUE);
+
+		CxChanged = FALSE;
+	}
+}
+
+VOID
+ChangeBrokerSetup()
+{
+	if(!CxChanged)
+	{
+		struct Message *msg;
+
+		ActivateCxObj (Broker, FALSE);
+
+		SetFilterIX (MouseFilter, &ActiveMouseIX);
+
+		AttachCxObj (Broker, ActKbdFilter);
+		AttachCxObj (Broker, MouseMoveFilter);
+		AttachCxObj (Broker, TickFilter);
+
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+				ReplyMsg (msg);
+		}
+
+		ActivateCxObj (Broker, TRUE);
+		CxChanged = TRUE;
+	}
+}
+
+VOID
+CleanupMenuActiveData()
+{
+	if(CxBase)
+	{
+		DeleteCxObjAll(ActKbdFilter);
+		ActKbdFilter = NULL;
+
+		DeleteCxObjAll(MouseMoveFilter);
+		MouseMoveFilter = NULL;
+
+		DeleteCxObjAll(TickFilter);
+		TickFilter = NULL;
+
+		FreeSignal(TickSigNum);
+		TickSigNum = -1;
+	}
+}
+
+BOOL
+SetupMenuActiveData()
+{
+	if(!(ActKbdFilter = CxFilter (MouseKey)))
+		return(FALSE);
+
+	SetFilterIX(ActKbdFilter, &ActiveKbdIX);
+
+	if (!(ActKbdSender = CxSender(CxMsgPort, EVT_KEYBOARD)))
+		return(FALSE);
+
+	AttachCxObj(ActKbdFilter, ActKbdSender);
+
+	if (!(ActKbdTransl = CxTranslate (NULL)))
+		return(FALSE);
+
+	AttachCxObj(ActKbdFilter, ActKbdTransl);
+
+	if (!(MouseMoveFilter = CxFilter (MouseKey)))
+		return(FALSE);
+
+	SetFilterIX(MouseMoveFilter, &ActiveMouseMoveIX);
+
+	if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
+		return(FALSE);
+
+	AttachCxObj(MouseMoveFilter, MouseMoveSender);
+
+	if (!(TickFilter = CxFilter (MouseKey)))
+		return(FALSE);
+
+	SetFilterIX(TickFilter, &TickIX);
+
+	if((TickSigNum = AllocSignal(-1)) == -1)
+		return(FALSE);
+
+	TickSigMask = 1L << TickSigNum;
+
+	if (!(TickSignal = CxSignal(FindTask(NULL), TickSigNum)))
+		return(FALSE);
+
+	AttachCxObj(TickFilter, TickSignal);
+
+	return(TRUE);
+}
 
 VOID
 CloseAll (VOID)
@@ -1912,6 +2009,8 @@ CloseAll (VOID)
       DeleteMsgPort(MMMsgPort);
       MMMsgPort = NULL;
   }
+
+  CleanupMenuActiveData();
 
   if (Broker)
   {
@@ -2021,6 +2120,7 @@ CloseAll (VOID)
     MenuActSemaphore = NULL;
   }
 
+  StopHihoTask();
 
   if (KeymapBase)
   {
@@ -2139,6 +2239,8 @@ main (int argc, char **argv)
 
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ((char *) "graphics.library", 37)))
       ErrorPrc ("Can't open graphics library!");
+
+  StartHihoTask();
 
   GfxVersion = GfxBase->LibNode.lib_Version;
 
@@ -2269,7 +2371,7 @@ main (int argc, char **argv)
 
   ReleaseSemaphore (RememberSemaphore);
 
-  SPrintf (TitleText, "MagicMenu " MAJORVERS " Rev. %ld.%ld (%s):",VERSION,REVISION,DATE);
+  SPrintf (TitleText, "MagicMenu %ld.%ld (%s):",VERSION,REVISION,DATE);
   NewBroker.nb_Title = TitleText;
 
   NewBroker.nb_Port = CxMsgPort;
@@ -2320,6 +2422,9 @@ main (int argc, char **argv)
   if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
     ErrorPrc ("Popup hotkey sequence invalid");
   AttachCxObj (Broker, PrefsFilter);
+
+  if(!(SetupMenuActiveData()))
+    ErrorPrc ("Can't set up active menu data!");
 
   Activate ();
 
