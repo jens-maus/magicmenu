@@ -364,10 +364,10 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       }
       else
       {
-      if (Item->Flags & CHECKED)
-        WhichImage = MXImage;
-      else
-        WhichImage = NoMXImage;
+        if (Item->Flags & CHECKED)
+          WhichImage = MXImage;
+        else
+          WhichImage = NoMXImage;
       }
 
       DrawImage (rp, WhichImage, StartX, StartY + (short) ImageYOffs - (WhichImage->Height / 2));
@@ -460,15 +460,9 @@ CleanUpMenuSubBox (void)
         SubBoxWin = NULL;
       }
     }
-    else if (AktPrefs.mmp_DirectDraw)
-    {
-      BltBitMap (SubBoxBitMap, SubBoxDrawOffs, 0, ScrRPort.BitMap, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-    }
     else
     {
-      SwapBitsRastPortClipRect (&ScrRPort, SubBoxCRect);
-      WaitBlit ();
+      SwapRPortClipRect (&ScrRPort, SubBoxCRect);
       FreeVecPooled (SubBoxCRect);
       SubBoxCRect = NULL;
     }
@@ -478,7 +472,7 @@ CleanUpMenuSubBox (void)
 
   if (SubBoxRPort)
   {
-    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer, SubBoxWidth + SubBoxDrawOffs + 16, SubBoxHeight);
+    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer, SubBoxWidth, SubBoxHeight);
     SubBoxRPort = NULL;
   }
 
@@ -722,116 +716,61 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   if (SubBoxTop < 0 || SubBoxLeft < 0)
     return (FALSE);
 
-  if (AktPrefs.mmp_NonBlocking)
-    SubBoxDrawOffs = 0;
-  else
-    SubBoxDrawOffs = SubBoxLeft % 16;
-
   SubBoxRightEdge = SubBoxWidth - SubBoxLeftBorder * 2;
 
-  if (!(AktPrefs.mmp_DirectDraw && AktPrefs.mmp_NonBlocking))
+  if (AktPrefs.mmp_NonBlocking)
   {
-    if (!InstallRPort (SubBoxDepth, SubBoxWidth + SubBoxDrawOffs + 16, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer,
-                       MenScr->RastPort.BitMap))
+    LONG windowWidth, windowHeight;
+
+    ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, &windowWidth, &windowHeight);
+
+    if (!(SubBoxWin = OpenWindowTags (NULL,
+                                      WA_Left, SubBoxLeft,
+                                      WA_Top, SubBoxTop,
+                                      WA_Width, windowWidth,
+                                      WA_Height, windowHeight,
+                                      WA_CustomScreen, MenScr,
+                                      WA_Borderless, TRUE,
+                                      WA_Activate, FALSE,
+                                      WA_RMBTrap, TRUE,
+                                      WA_ScreenTitle, MenWin->ScreenTitle,
+                                      WA_BackFill, GetNOPFillHook (),
+                                      TAG_DONE)))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
     }
-  }
 
-  if (AktPrefs.mmp_DirectDraw)
-  {
-    if (AktPrefs.mmp_NonBlocking)
-    {
-      LONG windowWidth, windowHeight;
+    SubBoxDrawRPort = SubBoxWin->RPort;
+    SubBoxDrawLeft = 0;
+    SubBoxDrawTop = 0;
 
-      ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, &windowWidth, &windowHeight);
-
-      if (!(SubBoxWin = OpenWindowTags (NULL,
-                                        WA_Left, SubBoxLeft,
-                                        WA_Top, SubBoxTop,
-                                        WA_Width, windowWidth,
-                                        WA_Height, windowHeight,
-                                        WA_CustomScreen, MenScr,
-                                        WA_Borderless, TRUE,
-                                        WA_Activate, FALSE,
-                                        WA_RMBTrap, TRUE,
-                                        WA_ScreenTitle, MenWin->ScreenTitle,
-                                        WA_BackFill, GetNOPFillHook (),
-                                        TAG_DONE)))
-      {
-        CleanUpMenuSubBox ();
-        return (FALSE);
-      }
-
-      SubBoxDrawRPort = SubBoxWin->RPort;
-      SubBoxDrawLeft = 0;
-      SubBoxDrawTop = 0;
-
-      if (LookMC)
-        AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight);
-    }
-    else
-    {
-      BltBitMap (ScrRPort.BitMap, SubBoxLeft, SubBoxTop, SubBoxBitMap, SubBoxDrawOffs, 0, SubBoxWidth, SubBoxHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-      SubBoxDrawRPort = &ScrRPort;
-      SubBoxDrawLeft = SubBoxLeft;
-      SubBoxDrawTop = SubBoxTop;
-    }
+    if (LookMC)
+      AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight);
 
     DrawMenuSubBoxContents (Item, SubBoxDrawRPort, SubBoxDrawLeft, SubBoxDrawTop);
   }
   else
   {
-    DrawMenuSubBoxContents (Item, SubBoxRPort, SubBoxDrawOffs, 0);
-
-    if (AktPrefs.mmp_NonBlocking)
+    if (!InstallRPort (SubBoxDepth, SubBoxWidth, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer,
+                       MenScr->RastPort.BitMap))
     {
-      LONG windowWidth, windowHeight;
-
-      ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, &windowWidth, &windowHeight);
-
-      if (!(SubBoxWin = OpenWindowTags (NULL,
-                                        WA_Left, SubBoxLeft,
-                                        WA_Top, SubBoxTop,
-                                        WA_Width, windowWidth,
-                                        WA_Height, windowHeight,
-                                        WA_CustomScreen, MenScr,
-                                        WA_Borderless, TRUE,
-                                        WA_Activate, FALSE,
-                                        WA_RMBTrap, TRUE,
-                                        WA_ScreenTitle, MenWin->ScreenTitle,
-                                        WA_BackFill, GetNOPFillHook (),
-                                        TAG_DONE)))
-      {
-        CleanUpMenuSubBox ();
-        return (FALSE);
-      }
-
-      SubBoxDrawRPort = SubBoxWin->RPort;
-      SubBoxDrawLeft = 0;
-      SubBoxDrawTop = 0;
-
-      BltBitMapRastPort (SubBoxBitMap, 0, 0, SubBoxDrawRPort, 0, 0, SubBoxWidth, SubBoxHeight, 0xC0);
-
-      if (LookMC)
-        AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight);
+      CleanUpMenuSubBox ();
+      return (FALSE);
     }
-    else
+
+    DrawMenuSubBoxContents (Item, SubBoxRPort, 0, 0);
+
+    if (!(SubBoxCRect = GetClipRect (SubBoxBitMap, SubBoxLeft, SubBoxTop, SubBoxLeft + SubBoxWidth - 1, SubBoxTop + SubBoxHeight - 1)))
     {
-      if (!(SubBoxCRect = GetClipRect (SubBoxBitMap, SubBoxLeft, SubBoxTop, SubBoxLeft + SubBoxWidth - 1, SubBoxTop + SubBoxHeight - 1)))
-      {
-        CleanUpMenuSubBox ();
-        return (FALSE);
-      }
-
-      SwapBitsRastPortClipRect (&ScrRPort, SubBoxCRect);
-      WaitBlit ();
-      SubBoxDrawRPort = &ScrRPort;
-      SubBoxDrawLeft = SubBoxLeft;
-      SubBoxDrawTop = SubBoxTop;
+      CleanUpMenuSubBox ();
+      return (FALSE);
     }
+
+    SwapRPortClipRect (&ScrRPort, SubBoxCRect);
+    SubBoxDrawRPort = &ScrRPort;
+    SubBoxDrawLeft = SubBoxLeft;
+    SubBoxDrawTop = SubBoxTop;
   }
 
   SetFont (SubBoxDrawRPort, MenFont);
@@ -894,15 +833,9 @@ CleanUpMenuBox (void)
         BoxWin = NULL;
       }
     }
-    else if (AktPrefs.mmp_DirectDraw)
-    {
-      BltBitMap (BoxBitMap, BoxDrawOffs, 0, ScrRPort.BitMap, BoxLeft, BoxTop, BoxWidth, BoxHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-    }
     else
     {
-      SwapBitsRastPortClipRect (&ScrRPort, BoxCRect);
-      WaitBlit ();
+      SwapRPortClipRect (&ScrRPort, BoxCRect);
       FreeVecPooled (BoxCRect);
       BoxCRect = NULL;
     }
@@ -911,7 +844,7 @@ CleanUpMenuBox (void)
 
   if (BoxRPort)
   {
-    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer, BoxWidth + BoxDrawOffs + 16, BoxHeight);
+    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer, BoxWidth, BoxHeight);
     BoxRPort = NULL;
   }
 
@@ -1200,120 +1133,63 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   if (BoxWidth > MenScr->Width || BoxHeight > MenScr->Height)
     return (FALSE);
 
-  if (AktPrefs.mmp_NonBlocking)
-    BoxDrawOffs = 0;
-  else
-    BoxDrawOffs = BoxLeft % 16;
-
   BoxRightEdge = BoxWidth - BoxLeftBorder * 2;
 
-  if (!(AktPrefs.mmp_DirectDraw && AktPrefs.mmp_NonBlocking))
+  BoxGhosted = !(Menu->Flags & MENUENABLED);
+
+  if (AktPrefs.mmp_NonBlocking)
   {
-    if (!InstallRPort (BoxDepth, BoxWidth + BoxDrawOffs + 16, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer,
-                       MenScr->RastPort.BitMap))
+    LONG windowWidth, windowHeight;
+
+    ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, &windowWidth, &windowHeight);
+
+    if (!(BoxWin = OpenWindowTags (NULL,
+                                   WA_Left, BoxLeft,
+                                   WA_Top, BoxTop,
+                                   WA_Width, windowWidth,
+                                   WA_Height, windowHeight,
+                                   WA_CustomScreen, MenScr,
+                                   WA_Borderless, TRUE,
+                                   WA_Activate, FALSE,
+                                   WA_RMBTrap, TRUE,
+                                   WA_ScreenTitle, MenWin->ScreenTitle,
+                                   WA_BackFill, GetNOPFillHook (),
+                                   TAG_DONE)))
     {
       CleanUpMenuBox ();
       return (FALSE);
     }
-  }
 
-  BoxGhosted = !(Menu->Flags & MENUENABLED);
+    BoxDrawRPort = BoxWin->RPort;
+    BoxDrawLeft = 0;
+    BoxDrawTop = 0;
 
-  if (AktPrefs.mmp_DirectDraw)
-  {
-    if (AktPrefs.mmp_NonBlocking)
-    {
-      LONG windowWidth, windowHeight;
-
-      ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, &windowWidth, &windowHeight);
-
-      if (!(BoxWin = OpenWindowTags (NULL,
-                                     WA_Left, BoxLeft,
-                                     WA_Top, BoxTop,
-                                     WA_Width, windowWidth,
-                                     WA_Height, windowHeight,
-                                     WA_CustomScreen, MenScr,
-                                     WA_Borderless, TRUE,
-                                     WA_Activate, FALSE,
-                                     WA_RMBTrap, TRUE,
-                                     WA_ScreenTitle, MenWin->ScreenTitle,
-                                     WA_BackFill, GetNOPFillHook (),
-                                     TAG_DONE)))
-      {
-        CleanUpMenuBox ();
-        return (FALSE);
-      }
-
-      BoxDrawRPort = BoxWin->RPort;
-      BoxDrawLeft = 0;
-      BoxDrawTop = 0;
-
-      if (LookMC)
-        AddShadow (BoxDrawRPort, BoxWidth, BoxHeight);
-    }
-    else
-    {
-      BltBitMap (ScrRPort.BitMap, BoxLeft, BoxTop, BoxBitMap, BoxDrawOffs, 0, BoxWidth, BoxHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-      BoxDrawRPort = &ScrRPort;
-      BoxDrawLeft = BoxLeft;
-      BoxDrawTop = BoxTop;
-    }
+    if (LookMC)
+      AddShadow (BoxDrawRPort, BoxWidth, BoxHeight);
 
     DrawMenuBoxContents (Menu, BoxDrawRPort, BoxDrawLeft, BoxDrawTop);
   }
   else
   {
-    DrawMenuBoxContents (Menu, BoxRPort, BoxDrawOffs, 0);
-
-    if (AktPrefs.mmp_NonBlocking)
+    if (!InstallRPort (BoxDepth, BoxWidth, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer,
+                       MenScr->RastPort.BitMap))
     {
-      LONG windowWidth, windowHeight;
-
-      ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, &windowWidth, &windowHeight);
-
-      if (!(BoxWin = OpenWindowTags (NULL,
-                                     WA_Left, BoxLeft,
-                                     WA_Top, BoxTop,
-                                     WA_Width, windowWidth,
-                                     WA_Height, windowHeight,
-                                     WA_CustomScreen, MenScr,
-                                     WA_Borderless, TRUE,
-                                     WA_Activate, FALSE,
-                                     WA_RMBTrap, TRUE,
-                                     WA_ScreenTitle, MenWin->ScreenTitle,
-                                     WA_BackFill, GetNOPFillHook (),
-                                     TAG_DONE)))
-      {
-        CleanUpMenuBox ();
-        return (FALSE);
-      }
-
-      BoxDrawRPort = BoxWin->RPort;
-      BoxDrawLeft = 0;
-      BoxDrawTop = 0;
-
-      BltBitMapRastPort (BoxBitMap, 0, 0, BoxDrawRPort, 0, 0, BoxWidth, BoxHeight, 0xC0);
-
-      if (LookMC)
-        AddShadow (BoxDrawRPort, BoxWidth, BoxHeight);
+      CleanUpMenuBox ();
+      return (FALSE);
     }
-    else
+
+    DrawMenuBoxContents (Menu, BoxRPort, 0, 0);
+
+    if (!(BoxCRect = GetClipRect (BoxBitMap, BoxLeft, BoxTop, BoxLeft + BoxWidth - 1, BoxTop + BoxHeight - 1)))
     {
-      if (!(BoxCRect = GetClipRect (BoxBitMap, BoxLeft, BoxTop, BoxLeft + BoxWidth - 1, BoxTop + BoxHeight - 1)))
-      {
-        CleanUpMenuBox ();
-        return (FALSE);
-      }
-
-      SwapBitsRastPortClipRect (&ScrRPort, BoxCRect);
-
-      WaitBlit ();
-
-      BoxDrawRPort = &ScrRPort;
-      BoxDrawLeft = BoxLeft;
-      BoxDrawTop = BoxTop;
+      CleanUpMenuBox ();
+      return (FALSE);
     }
+
+    SwapRPortClipRect (&ScrRPort, BoxCRect);
+    BoxDrawRPort = &ScrRPort;
+    BoxDrawLeft = BoxLeft;
+    BoxDrawTop = BoxTop;
   }
 
   SetFont (BoxDrawRPort, MenFont);
@@ -1600,15 +1476,9 @@ CleanUpMenuStrip (void)
         CloseWindow (StripWin);
       StripWin = NULL;
     }
-    else if (AktPrefs.mmp_DirectDraw)
-    {
-      BltBitMap (StripBitMap, StripDrawOffs, 0, ScrRPort.BitMap, StripLeft, StripTop, StripWidth, StripHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-    }
     else
     {
-      SwapBitsRastPortClipRect (&ScrRPort, StripCRect);
-      WaitBlit ();
+      SwapRPortClipRect (&ScrRPort, StripCRect);
       FreeVecPooled (StripCRect);
       StripCRect = NULL;
     }
@@ -1617,7 +1487,7 @@ CleanUpMenuStrip (void)
 
   if (StripRPort)
   {
-    FreeRPort (StripBitMap, StripLayerInfo, StripLayer, StripWidth + StripDrawOffs + 16, StripHeight);
+    FreeRPort (StripBitMap, StripLayerInfo, StripLayer, StripWidth, StripHeight);
     StripRPort = NULL;
   }
 
@@ -2355,14 +2225,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   struct ColorMap *ColorMap;
   BOOL Ok, UseLow;
   BOOL DoFlipCheck, DoFlipCommand, DoFlipMX, DoFlipSubArrow;
-  UWORD z1;
   WORD ZwWert;
-  ULONG *LPtrD, *LPtrD2, *LPtrD3, *LPtrS;
   struct Menu *ZwMenu;
   UWORD *Pens;
 
-  for (LPtrD = (ULONG *) StdRemapArray, z1 = 0; z1 < 256 / 4; z1++)
-    *LPtrD++ = 0;
+  memset(StdRemapArray,0,sizeof(StdRemapArray));
 
   MenuStripSwapped = FALSE;
 
@@ -2535,11 +2402,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       StdRemapArray[10] = MenStdGrey1;
       StdRemapArray[11] = MenStdGrey2;
 
-      for (LPtrD = (ULONG *) DreiDRemapArray,
-           LPtrD2 = (ULONG *) DreiDGhostedRemapArray,
-           LPtrD3 = (ULONG *) DreiDActiveRemapArray,
-           LPtrS = (ULONG *) StdRemapArray, z1 = 0; z1 < 256 / 4; z1++)
-        *LPtrD3++ = *LPtrD2++ = *LPtrD++ = *LPtrS++;
+      memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
+      memcpy(DreiDGhostedRemapArray,StdRemapArray,sizeof(StdRemapArray));
+      memcpy(DreiDActiveRemapArray,StdRemapArray,sizeof(StdRemapArray));
 
       DreiDRemapArray[MenMenuTextCol] = MenTextCol;
       DreiDRemapArray[MenMenuBackCol] = MenBackGround;
@@ -2557,8 +2422,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       StdRemapArray[2] = MenLightEdge;
       StdRemapArray[3] = MenFillCol;
 
-      for (LPtrD = (ULONG *) DreiDRemapArray, LPtrS = (ULONG *) StdRemapArray, z1 = 0; z1 < 256 / 4; z1++)
-        *LPtrD++ = *LPtrS++;
+      memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
 
       DreiDRemapArray[MenMenuTextCol] = MenTextCol;
       DreiDRemapArray[MenMenuBackCol] = MenBackGround;
@@ -2995,7 +2859,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     StripMinWidth = 0;
     StripLeft = 0;
     StripTop = 0;
-    StripDrawOffs = 0;
   }
   else
   {
@@ -3044,118 +2907,61 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       StripTop = MenScr->Height - StripHeight - 1;
     if (StripLeft + StripWidth >= MenScr->Width)
       StripLeft = MenScr->Width - StripWidth - 1;
-
-    if (!AktPrefs.mmp_NonBlocking)
-      StripDrawOffs = StripLeft % 16;
-    else
-      StripDrawOffs = 0;
   }
 
-  if (!(AktPrefs.mmp_DirectDraw && AktPrefs.mmp_NonBlocking))
+  if (AktPrefs.mmp_NonBlocking)
   {
-    if (!InstallRPort (StripDepth, StripWidth + StripDrawOffs + 16, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer,
-                       MenScr->RastPort.BitMap))
+    LONG windowWidth, windowHeight;
+
+    ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, &windowWidth, &windowHeight);
+
+    if (!(StripWin = OpenWindowTags (NULL,
+                                     WA_Left, StripLeft,
+                                     WA_Top, StripTop,
+                                     WA_Width, windowWidth,
+                                     WA_Height, windowHeight,
+                                     WA_CustomScreen, MenScr,
+                                     WA_Borderless, TRUE,
+                                     WA_Activate, FALSE,
+                                     WA_RMBTrap, TRUE,
+                                     WA_ScreenTitle, MenWin->ScreenTitle,
+                                     WA_BackFill, GetNOPFillHook (),
+                                     TAG_DONE)))
     {
       CleanUpMenuStrip ();
       return (FALSE);
     }
-  }
 
-  if (AktPrefs.mmp_DirectDraw)
-  {
-    if (AktPrefs.mmp_NonBlocking)
-    {
-      LONG windowWidth, windowHeight;
+    StripDrawRPort = StripWin->RPort;
+    StripDrawLeft = 0;
+    StripDrawTop = 0;
 
-      ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, &windowWidth, &windowHeight);
-
-      if (!(StripWin = OpenWindowTags (NULL,
-                                       WA_Left, StripLeft,
-                                       WA_Top, StripTop,
-                                       WA_Width, windowWidth,
-                                       WA_Height, windowHeight,
-                                       WA_CustomScreen, MenScr,
-                                       WA_Borderless, TRUE,
-                                       WA_Activate, FALSE,
-                                       WA_RMBTrap, TRUE,
-                                       WA_ScreenTitle, MenWin->ScreenTitle,
-                                       WA_BackFill, GetNOPFillHook (),
-                                       TAG_DONE)))
-      {
-        CleanUpMenuStrip ();
-        return (FALSE);
-      }
-
-      StripDrawRPort = StripWin->RPort;
-      StripDrawLeft = 0;
-      StripDrawTop = 0;
-
-      if (LookMC && StripPopUp)
-        AddShadow (StripDrawRPort, StripWidth, StripHeight);
-    }
-    else
-    {
-      BltBitMap (ScrRPort.BitMap, StripLeft, StripTop, StripBitMap, StripDrawOffs, 0, StripWidth, StripHeight, 0xc0, 0xffff, NULL);
-      WaitBlit ();
-
-      StripDrawRPort = &ScrRPort;
-      StripDrawLeft = StripLeft;
-      StripDrawTop = StripTop;
-    }
+    if (LookMC && StripPopUp)
+      AddShadow (StripDrawRPort, StripWidth, StripHeight);
 
     DrawMenuStripContents (StripDrawRPort, StripDrawLeft, StripDrawTop);
   }
   else
   {
-    DrawMenuStripContents (StripRPort, StripDrawOffs, 0);
-
-    if (AktPrefs.mmp_NonBlocking)
+    if (!InstallRPort (StripDepth, StripWidth, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer,
+                       MenScr->RastPort.BitMap))
     {
-      LONG windowWidth, windowHeight;
-
-      ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, &windowWidth, &windowHeight);
-
-      if (!(StripWin = OpenWindowTags (NULL,
-                                       WA_Left, StripLeft,
-                                       WA_Top, StripTop,
-                                       WA_Width, windowWidth,
-                                       WA_Height, windowHeight,
-                                       WA_CustomScreen, MenScr,
-                                       WA_Borderless, TRUE,
-                                       WA_Activate, FALSE,
-                                       WA_RMBTrap, TRUE,
-                                       WA_ScreenTitle, MenWin->ScreenTitle,
-                                       WA_BackFill, GetNOPFillHook (),
-                                       TAG_DONE)))
-      {
-        CleanUpMenuStrip ();
-        return (FALSE);
-      }
-
-      StripDrawRPort = StripWin->RPort;
-      StripDrawLeft = 0;
-      StripDrawTop = 0;
-
-      BltBitMapRastPort (StripBitMap, 0, 0, StripDrawRPort, 0, 0, StripWidth, StripHeight, 0xC0);
-
-      if (LookMC && StripPopUp)
-        AddShadow (StripDrawRPort, StripWidth, StripHeight);
+      CleanUpMenuStrip ();
+      return (FALSE);
     }
-    else
+
+    DrawMenuStripContents (StripRPort, 0, 0);
+
+    if (!(StripCRect = GetClipRect (StripBitMap, StripLeft, StripTop, StripLeft + StripWidth - 1, StripTop + StripHeight - 1)))
     {
-      if (!(StripCRect = GetClipRect (StripBitMap, StripLeft, StripTop, StripLeft + StripWidth - 1, StripTop + StripHeight - 1)))
-      {
-        CleanUpMenuStrip ();
-        return (FALSE);
-      }
-
-      SwapBitsRastPortClipRect (&ScrRPort, StripCRect);
-      WaitBlit ();
-
-      StripDrawRPort = &ScrRPort;
-      StripDrawLeft = StripLeft;
-      StripDrawTop = StripTop;
+      CleanUpMenuStrip ();
+      return (FALSE);
     }
+
+    SwapRPortClipRect (&ScrRPort, StripCRect);
+    StripDrawRPort = &ScrRPort;
+    StripDrawLeft = StripLeft;
+    StripDrawTop = StripTop;
   }
 
   SetFont (StripDrawRPort, MenFont);

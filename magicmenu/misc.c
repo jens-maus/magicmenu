@@ -409,14 +409,6 @@ MMCreateUpfrontLayer (
 
 /*****************************************************************************************/
 
-#define MINTERM_ZERO		0
-#define MINTERM_ONE		ABC | ABNC | ANBC | ANBNC | NABC | NABNC | NANBC | NANBNC
-#define MINTERM_COPY		ABC | ABNC | NABC | NABNC
-#define MINTERM_NOT_C		ABNC | ANBNC | NABNC | NANBNC
-#define MINTERM_B_AND_C		ABC | NABC
-#define MINTERM_NOT_B_AND_C	ANBC | NANBC
-#define MINTERM_B_OR_C		ABC | ABNC | NABC | NABNC | ANBC | NANBC
-
 VOID
 CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
 {
@@ -475,7 +467,7 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 
       /* Clear the destination bitmap. */
 
-      BltBitMap (Dst, 0, 0, Dst, 0, 0, Width, Height, MINTERM_ZERO, 0xFF, NULL);
+      BltBitMap (Dst, 0, 0, Dst, 0, 0, Width, Height, MINTERM_ZERO, ~0, NULL);
 
       /* Is colour zero to be mapped to a non-zero colour? */
 
@@ -640,7 +632,7 @@ SendTimeRequest (struct timerequest *OrigIOReq,
   if (!(NewIOReq = AllocVecPooled (sizeof (struct timerequest), MEMF_PUBLIC)))
       return (NULL);
 
-  CopyMem (OrigIOReq, NewIOReq, sizeof (struct timerequest));
+  memcpy (NewIOReq, OrigIOReq, sizeof (struct timerequest));
 
   NewIOReq->tr_node.io_Message.mn_ReplyPort = ReplyPort;
   NewIOReq->tr_node.io_Command = TR_ADDREQUEST;
@@ -822,7 +814,8 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
   Error = FALSE;
 
   if (V39 && !WantChipMem)
-    return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth > 8) ? BMF_MINPLANES : NULL, Friend));
+/*  return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth >= 8) ? BMF_MINPLANES : NULL, Friend));*/
+    return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
   else
   {
     if (BitMap = AllocVecPooled (sizeof (struct BitMap), NULL))
@@ -909,7 +902,7 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
   {
     if (LayerInfo = NewLayerInfo ())
     {
-      if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width, Height, LAYERSIMPLE, GetNOPFillHook (), NULL))
+      if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL))
       {
         *BitMapPtr = BitMap;
         *RastPortPtr = Layer->rp;
@@ -926,6 +919,32 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
   return (FALSE);
 }
 
+void
+SwapRPortClipRect(struct RastPort *RPort,struct ClipRect *ClipRect)
+{
+	struct BitMap *Temp;
+	LONG Left,Top,Width,Height;
+
+	Left	= ClipRect->bounds.MinX;
+	Top	= ClipRect->bounds.MinY;
+	Width	= ClipRect->bounds.MaxX - ClipRect->bounds.MinX + 1;
+	Height	= ClipRect->bounds.MaxY - ClipRect->bounds.MinY + 1;
+
+	if(Temp = allocBitMap(GetBitMapDepth(RPort->BitMap),Width,Height,RPort->BitMap,FALSE))
+	{
+		BltBitMap(RPort->BitMap,Left,Top,Temp,0,0,Width,Height,MINTERM_COPY,~0,NULL);
+		BltBitMap(ClipRect->BitMap,0,0,RPort->BitMap,Left,Top,Width,Height,MINTERM_COPY,~0,NULL);
+		BltBitMap(Temp,0,0,ClipRect->BitMap,0,0,Width,Height,MINTERM_COPY,~0,NULL);
+
+		disposeBitMap(Temp,Width,Height,FALSE);
+	}
+	else
+	{
+		BltBitMap(RPort->BitMap,Left,Top,ClipRect->BitMap,0,0,Width,Height,MINTERM_B_XOR_C,~0,NULL);
+		BltBitMap(ClipRect->BitMap,0,0,RPort->BitMap,Left,Top,Width,Height,MINTERM_B_XOR_C,~0,NULL);
+		BltBitMap(RPort->BitMap,Left,Top,ClipRect->BitMap,0,0,Width,Height,MINTERM_B_XOR_C,~0,NULL);
+	}
+}
 
 struct ClipRect *
 GetClipRect (struct BitMap *BitMap,
@@ -934,7 +953,7 @@ GetClipRect (struct BitMap *BitMap,
 {
   struct ClipRect *CRect;
 
-  if (CRect = AllocVecPooled (sizeof (struct ClipRect) + 200, MEMF_CLEAR))
+  if (CRect = AllocVecPooled (sizeof (struct ClipRect), MEMF_CLEAR))
   {
     CRect->BitMap = BitMap;
     CRect->bounds.MinX = x1;
@@ -1217,7 +1236,7 @@ HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highl
 
 
 BOOL
-MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr)
+MoveMouse (LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr)
 
 {
   struct InputEvent *MyNewEvent;
@@ -1229,8 +1248,8 @@ MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent *Event, stru
     if (MyNewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
     {
       MyNewPPixel->iepp_Screen = Scr;
-      MyNewPPixel->iepp_Position.X = NewX;
-      MyNewPPixel->iepp_Position.Y = NewY;
+      MyNewPPixel->iepp_Position.X = max(0,NewX);
+      MyNewPPixel->iepp_Position.Y = max(0,NewY);
       MyNewEvent->ie_Class = IECLASS_NEWPOINTERPOS;
       MyNewEvent->ie_SubClass = IESUBCLASS_PIXEL;
       MyNewEvent->ie_Code = IECODE_NOBUTTON;
@@ -1243,7 +1262,7 @@ MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent *Event, stru
 
       if (AddEvent)
       {
-        CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
+        memcpy (MyNewEvent, Event, sizeof (struct InputEvent));
         MyNewEvent->ie_NextEvent = NULL;
 
         InputIO->io_Data = (APTR) MyNewEvent;

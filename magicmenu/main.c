@@ -1847,7 +1847,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
 
   if (Len == sizeof (struct MMPrefs) && ZwPrefs.mmp_Version == MMP_MAGIC)
   {
-    CopyMem (&ZwPrefs, &AktPrefs, sizeof (struct MMPrefs));
+    memcpy(&AktPrefs, &ZwPrefs, sizeof (struct MMPrefs));
     return (TRUE);
   }
   else
