@@ -1003,10 +1003,10 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
               BltBitMap(Friend,Left,Top + OriginalHeight,BitMap,0,OriginalHeight,Width,Height - OriginalHeight,MINTERM_COPY,~0,NULL);
 
             if(OriginalWidth < Width)
-              DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+              DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1, RIGHT_PART);
 
             if(OriginalHeight < Height)
-              DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+              DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1, BOTTOM_PART);
 
             SetAfPt (RPort, NULL, 0);
           }
@@ -1792,10 +1792,33 @@ CreateBackgroundCover(
 	return(bgc);
 }
 
+STATIC VOID
+DarkenPixelBufferRect(UBYTE * pix,LONG left,LONG top,LONG width,LONG height,LONG mod,LONG delta)
+{
+	UBYTE * p;
+	LONG x,y;
+
+	pix += 3*left + mod*top;
+
+	for(y = 0 ; y < height ; y++)
+	{
+		p = pix;
+
+		for(x = 0 ; x < width ; x++)
+		{
+			(*p) = max(0,((WORD)(*p)) - delta); p++;
+			(*p) = max(0,((WORD)(*p)) - delta); p++;
+			(*p) = max(0,((WORD)(*p)) - delta); p++;
+		}
+
+		pix += mod;
+	}
+}
+
 /******************************************************************************/
 
 VOID
-DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY)
+DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,LONG part)
 {
 	BOOL done = FALSE;
 
@@ -1810,7 +1833,19 @@ DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY)
 		{
 			ReadPixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 
-			DarkenPixelBuffer(ShadowBuffer,width,height);
+			if(part == RIGHT_PART)
+			{
+				DarkenPixelBufferRect(ShadowBuffer,0,1,width-1,height-1,width*3,63);
+				DarkenPixelBufferRect(ShadowBuffer,0,0,width-1,1,width*3,31);
+				DarkenPixelBufferRect(ShadowBuffer,width-1,1,1,height-1,width*3,31);
+			}
+			else
+			{
+				DarkenPixelBufferRect(ShadowBuffer,1,0,width-2,height-1,width*3,63);
+				DarkenPixelBufferRect(ShadowBuffer,0,0,1,height-1,width*3,31);
+				DarkenPixelBufferRect(ShadowBuffer,width-1,0,1,height-1,width*3,31);
+				DarkenPixelBufferRect(ShadowBuffer,1,height-1,width-2,1,width*3,31);
+			}
 
 			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 			done = TRUE;

@@ -191,10 +191,10 @@ OpenCommonWindow(
 				SetAfPt(RPort, Crosshatch, 1);
 
 				if(OriginalWidth < Width)
-					DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+					DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1, RIGHT_PART);
 
 				if(OriginalHeight < Height)
-					DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+					DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1, BOTTOM_PART);
 
 				SetAfPt (RPort, NULL, 0);
 			}
