@@ -948,7 +948,7 @@ DrawMenuSubBoxContents (struct MenuItem *Item, struct RastPort *RPort, UWORD Lef
   FillBackground(RPort, Left, Top, Left + SubBoxWidth - 1, Top + SubBoxHeight - 1,SubBoxBackground);
 
   SetFont (RPort, MenFont);
-  Draw3DRect (RPort, Left, Top, SubBoxWidth, SubBoxHeight, TRUE, ScrHiRes, DblBorder);
+  DrawSmooth3DRect (RPort, Left, Top, SubBoxWidth, SubBoxHeight, TRUE, ScrHiRes, DblBorder);
 
   SubBoxGhosted = BoxGhosted || !(Item->Flags & ITEMENABLED);
 
@@ -1331,7 +1331,7 @@ DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWOR
   FillBackground(RPort, Left, Top, Left + BoxWidth - 1, Top + BoxHeight - 1,BoxBackground);
 
   SetFont (RPort, MenFont);
-  Draw3DRect (RPort, Left, Top, BoxWidth, BoxHeight, TRUE, ScrHiRes, DblBorder);
+  DrawSmooth3DRect (RPort, Left, Top, BoxWidth, BoxHeight, TRUE, ScrHiRes, DblBorder);
 
   SetPens (RPort, MenBackGround, 0, JAM1);
 
@@ -2563,7 +2563,7 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
   SetFont (RPort, MenFont);
 
   if (StripPopUp)
-    Draw3DRect (RPort, Left, Top, StripWidth, StripHeight, TRUE, ScrHiRes, DblBorder);
+    DrawSmooth3DRect (RPort, Left, Top, StripWidth, StripHeight, TRUE, ScrHiRes, DblBorder);
   else
   {
     if (LookMC)

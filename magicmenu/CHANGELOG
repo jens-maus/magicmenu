@@ -466,3 +466,8 @@ MagicMenu 2.23
   will insure that it stays the owner of the first patch code
   to be invoked. This will hopefully fix all known lockup
   problems.
+
+MagicMenu 2.24
+==============
+
+- Implemented Mario's new multicolour 3D frames.

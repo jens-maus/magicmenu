@@ -81,6 +81,7 @@ void SwapRPortClipRect(struct RastPort *RPort, struct ClipRect *ClipRect);
 struct ClipRect *GetClipRect(struct BitMap *BitMap, LONG x1, LONG y1, LONG x2, LONG y2);
 void CheckDispClipVisible(WORD MinX, WORD MinY, WORD MaxX, WORD MaxY);
 void Draw3DRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Upward, BOOL HiRes, BOOL DoubleBorder);
+void DrawSmooth3DRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Upward, BOOL HiRes, BOOL DoubleBorder);
 void DrawNormRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void GhostRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void CompRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);

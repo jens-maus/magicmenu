@@ -1263,6 +1263,36 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
 }
 
 void
+DrawSmooth3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
+                  BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
+{
+  Draw3DRect (rp,x,y,Width,Height,Upward,HiRes,DoubleBorder);
+
+  if (LookMC && !DoubleBorder)
+  {
+    if(Upward)
+      SetFgPen (rp, MenStdGrey0);
+    else
+      SetFgPen (rp, MenStdGrey2);
+
+    DrawLinePairs(rp, 3,
+      x+2,y+Height-2,
+      x+Width-2,y+Height-2,
+      x+Width-2,y+2);
+
+    if(Upward)
+      SetFgPen (rp, MenStdGrey2);
+    else
+      SetFgPen (rp, MenStdGrey0);
+      
+    DrawLinePairs(rp, 3,
+      x+Width-3,y+1,
+      x+1,y+1,
+      x+1,y+Height-3);
+  }
+}
+
+void
 DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
   if (Width <= 0 || Height <= 0)
@@ -1583,23 +1613,18 @@ BOOL
 AllocateShadowBuffer(LONG width,LONG height)
 {
 	LONG bytesNeeded = 3 * width * height;
-	BOOL success = TRUE;
+	BOOL success;
 
-	if(ShadowBufferSize < bytesNeeded)
+	if(ShadowBuffer == NULL || ShadowBufferSize < bytesNeeded)
 	{
 		FreeVecPooled(ShadowBuffer);
 
 		ShadowBuffer = AllocVecPooled(bytesNeeded,MEMF_ANY);
 		if(ShadowBuffer != NULL)
-		{
 			ShadowBufferSize = bytesNeeded;
-		}
-		else
-		{
-			ShadowBufferSize = 0;
-			success = FALSE;
-		}
 	}
+
+	success = (BOOL)(ShadowBuffer != NULL);
 
 	return(success);
 }
@@ -1647,10 +1672,10 @@ GetAverageLine(UBYTE *pix,LONG mod)
 	int sum;
 
 	sum = ((UWORD)pix[-mod-3]) + ((UWORD)pix[-mod]) + ((UWORD)pix[-mod+3]) +
-	      ((UWORD)pix[    -3]) +                    + ((UWORD)pix[    +3]) +
+	      ((UWORD)pix[    -3]) + ((UWORD)pix[   0]) + ((UWORD)pix[    +3]) +
 	      ((UWORD)pix[ mod-3]) + ((UWORD)pix[ mod]) + ((UWORD)pix[ mod+3]);
 
-	return((sum + 7) / 8);
+	return((sum + 8) / 9);
 }
 
 STATIC VOID
@@ -1831,20 +1856,22 @@ DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,LONG par
 
 		if(AllocateShadowBuffer(width,height) && GetCyberMapAttr(rp->BitMap,CYBRMATTR_DEPTH) >= 15)
 		{
+			const int shadowLevel = 256/4;
+
 			ReadPixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 
 			if(part == RIGHT_PART)
 			{
-				DarkenPixelBufferRect(ShadowBuffer,0,1,width-1,height-1,width*3,63);
-				DarkenPixelBufferRect(ShadowBuffer,0,0,width-1,1,width*3,31);
-				DarkenPixelBufferRect(ShadowBuffer,width-1,1,1,height-1,width*3,31);
+				DarkenPixelBufferRect(ShadowBuffer,0,1,width-1,height-1,width*3,shadowLevel-1);
+				DarkenPixelBufferRect(ShadowBuffer,0,0,width-1,1,width*3,(shadowLevel/2)-1);
+				DarkenPixelBufferRect(ShadowBuffer,width-1,1,1,height-1,width*3,(shadowLevel/2)-1);
 			}
 			else
 			{
-				DarkenPixelBufferRect(ShadowBuffer,1,0,width-2,height-1,width*3,63);
-				DarkenPixelBufferRect(ShadowBuffer,0,0,1,height-1,width*3,31);
-				DarkenPixelBufferRect(ShadowBuffer,width-1,0,1,height-1,width*3,31);
-				DarkenPixelBufferRect(ShadowBuffer,1,height-1,width-2,1,width*3,31);
+				DarkenPixelBufferRect(ShadowBuffer,1,0,width-2,height-1,width*3,shadowLevel-1);
+				DarkenPixelBufferRect(ShadowBuffer,0,0,1,height-1,width*3,(shadowLevel/2)-1);
+				DarkenPixelBufferRect(ShadowBuffer,width-1,0,1,height-1,width*3,(shadowLevel/2)-1);
+				DarkenPixelBufferRect(ShadowBuffer,1,height-1,width-2,1,width*3,(shadowLevel/2)-1);
 			}
 
 			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
