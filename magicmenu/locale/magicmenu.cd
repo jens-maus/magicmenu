@@ -1,6 +1,6 @@
 ;
 ; MagicMenu catalog description
-; $VER: magicmenu.cd 1.11 (11.10.99)
+; $VER: magicmenu.cd 1.12 (20.11.01)
 ;
 ; $Id$
 ;
@@ -273,4 +273,10 @@ Verify patches:
 ;
 MSG_FIX_PATCHES_GAD (//)
 Fix patches:
+;
+MSG_BACKFILL_GAD (//)
+Backfillimage:
+;
+MSG_CANNOT_LOAD_BACKFILL (//)
+Can't load backfillimage
 ;

@@ -93,6 +93,7 @@ struct MMPrefs DefaultPrefs =
 	0,					/* SeparatorBarStyle */
 	FALSE,					/* VerifyPatches */
 	FALSE,					/* FixPatches */
+	""
 };
 
 struct MMPrefs CurrentPrefs;
@@ -163,6 +164,7 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,	SIT_UBYTE,	"SeparatorBarStyle"),
 	DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
 	DECLARE_ITEM(MMPrefs,mmp_FixPatches,		SIT_BOOLEAN,	"FixPatches"),
+	DECLARE_ITEM(MMPrefs,mmp_BackFill,		SIT_TEXT,	"Backfill"),
 };
 
 /******************************************************************************/
@@ -223,7 +225,8 @@ enum
 	GAD_Transparency,
 	GAD_SeparatorBarStyle,
 	GAD_VerifyPatches,
-	GAD_FixPatches
+	GAD_FixPatches,
+	GAD_BackFillStr
 };
 
 enum
@@ -1965,6 +1968,15 @@ OpenAll(struct WBStartup *StartupMsg)
 						TAG_DONE);
 
 						LT_New(Handle,
+							LA_Type,	STRING_KIND,
+							LA_ID,		GAD_BackFillStr,
+							LA_LabelID,	MSG_BACKFILL_GAD,
+							LA_Chars,	20,
+							LA_STRPTR,	CurrentPrefs.mmp_BackFill,
+							GTST_MaxChars,	199,
+						TAG_DONE);
+
+						LT_New(Handle,
 							LA_Type,BLANK_KIND,
 						TAG_DONE);
 
@@ -2469,7 +2481,7 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	if(!(Window = LT_Build(Handle,
 		LAWN_TitleText,		WindowTitle,
-		LAWN_IDCMP,		IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_MENUPICK,
+		LAWN_IDCMP,		IDCMP_MOUSEMOVE | IDCMP_MOUSEBUTTONS | IDCMP_MENUPICK | IDCMP_RAWKEY,
 		LAWN_SmartZoom,		TRUE,
 		LAWN_AutoRefresh,	TRUE,
 		LAWN_MaxPen,		-1,
@@ -2562,6 +2574,10 @@ UpdateSettings(struct MMPrefs *Prefs)
 		GTST_String,	Prefs->mmp_KCKeyStr,
 	TAG_DONE);
 
+	LT_SetAttributes(Handle,GAD_BackFillStr,
+		GTST_String,	Prefs->mmp_BackFill,
+	TAG_DONE);
+
 	CopyMem(&Prefs->mmp_LightEdge,&CurrentPrefs.mmp_LightEdge,6 * sizeof(CurrentPrefs.mmp_LightEdge));
 
 	if(GotPens)
@@ -2627,6 +2643,26 @@ EventLoop(struct WBStartup *StartupMsg)
 
 				switch(MsgClass)
 				{
+					case IDCMP_RAWKEY:
+						if( MsgCode == 0x5f ) // HELP
+						{
+							BPTR	fh;
+
+							if( fh = Open( "NIL:", MODE_NEWFILE ) )
+							{
+								if( SystemTags( "MultiView HELP:MagicMenu.guide",
+									SYS_Input, fh,
+									SYS_Output, NULL,
+									SYS_Asynch, TRUE,
+									NP_StackSize, 8192L,
+									TAG_DONE ) == -1L )
+								{
+									Close( fh );
+								}
+							}
+						}
+						break;
+
 					case IDCMP_CLOSEWINDOW:
 
 						Done = TRUE;

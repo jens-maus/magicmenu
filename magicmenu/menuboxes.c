@@ -391,7 +391,7 @@ LocalDrawImage(
 		x = left + image->LeftEdge;
 		y = top + image->TopEdge;
 
-		if(image->NextImage == (struct Image *)IMAGE_MAGIC && (NOT V39 || (GetBitMapAttr(rp->BitMap,BMA_FLAGS) & BMF_INTERLEAVED) == 0))
+		if(image->NextImage == (struct Image *)IMAGE_MAGIC)// && (NOT V39 || (GetBitMapAttr(rp->BitMap,BMA_FLAGS) & BMF_INTERLEAVED) == 0))
 		{
 			SHOWMSG("has magic");
 			SHOWVALUE(image->PlanePick);
@@ -406,7 +406,33 @@ LocalDrawImage(
 					struct BitMap bm;
 
 					CreateBitMapFromImage(image,&bm);
-					BltMaskBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,ABC|ABNC|ANBC,mask);
+
+#define MINTERM_B_EQUALS_C (ABC|ANBNC|NABC|NANBNC)
+
+			    /* This is to work around a fat bug in BltMaskBitMapRastPort() under V39 and V40.
+			     * If the source is interleaved, BltMaskBitMapRastPort() will work to the effect
+			     * that the mask should be interleaved as well. Difficult for a single plane mask,
+			     * isn't it? Fixing up the modulo might help, but then not every mask qualifies
+			     * for that.
+			     */
+					if(V39 && ((GetBitMapAttr(rp->BitMap,BMA_FLAGS) & BMF_INTERLEAVED) != 0))
+					{
+						struct BitMap	maskbm;
+						LONG				i;
+
+				    	InitBitMap( &maskbm, 8, image->Width, image->Height );
+
+				    	for( i = 0; i < 8; i++ )
+				    		maskbm.Planes[i] = mask;
+
+			       	BltBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,MINTERM_B_EQUALS_C);
+			        	BltBitMapRastPort(&maskbm,0,0,rp,x,y,image->Width,image->Height,MINTERM_B_OR_C);
+        				BltBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,MINTERM_B_EQUALS_C);
+					}
+					else
+					{
+						BltMaskBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,ABC|ABNC|ANBC,mask);
+					}
 				}
 			}
 		}

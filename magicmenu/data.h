@@ -16,6 +16,11 @@
 
 ***************************************************************************/
 
+#ifdef AMITHLON
+extern call_native	BlurAndTintPixelBufferX86;
+extern elfObject	x86elf;
+#endif
+
 extern struct Task *ThisTask;
 
 extern struct Library *CyberGfxBase;
@@ -34,6 +39,7 @@ extern struct Library *UtilityBase;
 #ifdef __MIXEDBINARY__
 extern struct Library *PowerPCBase;
 #endif
+extern struct Library *DataTypesBase;
 extern struct Library *LocaleBase;
 extern struct Catalog *Catalog;
 
@@ -447,3 +453,6 @@ extern UWORD Crosshatch[2];
 /******************************************************************************/
 
 extern BOOL GlobalPopUp;
+
+extern struct BitMap			* BackFillBM;
+extern UWORD BFWidth, BFHeight;

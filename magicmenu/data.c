@@ -20,6 +20,11 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+#ifdef AMITHLON
+call_native	BlurAndTintPixelBufferX86;
+elfObject	x86elf;
+#endif
+
 struct Task *ThisTask;
 
 struct Library *CyberGfxBase;
@@ -36,6 +41,7 @@ struct Library *UtilityBase;
 struct Library	*PowerPCBase;
 #endif
 struct Library *LocaleBase;
+struct Library *DataTypesBase;
 struct Catalog *Catalog;
 
 BOOL V39;
@@ -1269,3 +1275,7 @@ UWORD Crosshatch[2] = {0x5555, 0xAAAA};
 /******************************************************************************/
 
 BOOL GlobalPopUp;
+
+struct BitMap			* BackFillBM;
+UWORD						  BFWidth;
+UWORD						  BFHeight;

@@ -18,6 +18,7 @@
 
 #include <exec/memory.h>
 #include <exec/semaphores.h>
+#include <exec/execbase.h>
 
 #include <clib/alib_protos.h>
 #include <clib/exec_protos.h>
@@ -57,7 +58,8 @@ AllocVecPooled (ULONG Size, ULONG Flags)
     Size = (Size + 7) & ~7;
 
     ObtainSemaphore (&MemorySemaphore);
-    Chunk = (ULONG *) AsmAllocPooled (MemoryPool, sizeof (ULONG) + Size, SysBase);
+    if (SysBase->LibNode.lib_Version >= 39L)	Chunk = (ULONG *) AllocPooled (MemoryPool, sizeof (ULONG) + Size);
+    else Chunk = (ULONG *) AsmAllocPooled (MemoryPool, sizeof (ULONG) + Size, SysBase);
     ReleaseSemaphore (&MemorySemaphore);
 
     if (Chunk)
@@ -89,7 +91,8 @@ FreeVecPooled (APTR Memory)
     ULONG *Chunk = Memory;
 
     ObtainSemaphore (&MemorySemaphore);
-    AsmFreePooled (MemoryPool, &Chunk[-1], Chunk[-1], SysBase);
+    if (SysBase->LibNode.lib_Version >= 39L) FreePooled (MemoryPool, &Chunk[-1], Chunk[-1]);
+    else AsmFreePooled (MemoryPool, &Chunk[-1], Chunk[-1], SysBase);
     ReleaseSemaphore (&MemorySemaphore);
   }
 }
@@ -99,7 +102,8 @@ MemoryExit (VOID)
 {
   if (MemoryPool)
   {
-    AsmDeletePool (MemoryPool, SysBase);
+    if (SysBase->LibNode.lib_Version >= 39L) DeletePool (MemoryPool);
+    else AsmDeletePool (MemoryPool, SysBase);
 
     MemoryPool = NULL;
   }
@@ -110,8 +114,8 @@ MemoryInit (VOID)
 {
   InitSemaphore (&MemorySemaphore);
 
-  if (!(MemoryPool = AsmCreatePool (MEMF_ANY | MEMF_PUBLIC, 8192, 8192, SysBase)))
-    return (FALSE);
-  else
-    return (TRUE);
+  if (SysBase->LibNode.lib_Version >= 39L) MemoryPool = CreatePool (MEMF_ANY | MEMF_PUBLIC, 8192, 8192);
+  else MemoryPool = AsmCreatePool (MEMF_ANY | MEMF_PUBLIC, 8192, 8192, SysBase);
+
+  return (MemoryPool!=NULL);
 }

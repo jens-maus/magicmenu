@@ -1,8 +1,19 @@
+2002-01-13  Stephan Rupprecht <mail@stephan-rupprecht.de>
+ 
+  * added PPCDIRECT tooltype. When set to YES, the PPC will
+    read from and write to the bitmaps.
+  * implemented Amithlon support.
+  * instead of having the background transparent, you can now
+    have a backdrop image.
+  * transparency didn't work when blocking mode was enabled and
+    cast shadows off (two uninitialized variables) <Sensei>.
+
 2001-11-15  Stephan Rupprecht <mail@stephan-rupprecht.de>
   
   * fixed PPC support (didn't work well on some systems).
   * fixed the "Checkmark leaves garbage" bug reported by Andreas
-    Kürzinger. At least I hope so (no answer yet).
+    Kürzinger. At least I hope so (no answer yet). Got an answer
+    bug is not fixed (2001-18-01:(
   * bumped version to 2.33.
   * MagicMenuPrefs: fixed compiler specific problem with the
     displayhook of the slidergadget.

@@ -40,6 +40,9 @@
 #include <graphics/gfxbase.h>
 #include <graphics/modeid.h>
 
+#include <datatypes/datatypes.h>
+#include <datatypes/pictureclass.h>
+
 #include <libraries/commodities.h>
 #include <libraries/gadtools.h>
 #include <libraries/locale.h>
@@ -73,6 +76,7 @@
 #include <clib/asl_protos.h>
 #include <clib/graphics_protos.h>
 #include <clib/colorwheel_protos.h>
+#include <clib/datatypes_protos.h>
 
 #include <pragmas/commodities_pragmas.h>
 #include <pragmas/gadtools_pragmas.h>
@@ -85,6 +89,7 @@
 #include <pragmas/input_pragmas.h>
 #include <pragmas/timer_pragmas.h>
 #include <pragmas/icon_pragmas.h>
+#include <pragmas/datatypes_pragmas.h>
 #ifdef __STORM__ 
 #include <pragmas/exec_pragmas.h>
 #else
@@ -105,6 +110,10 @@
 /*#include <math.h>*/
 
 /*#include <ctype.h>*/
+#ifdef AMITHLON
+#include <stdio.h>
+#include <amielf.h>
+#endif
 
 #include "libraries/gtlayout.h"
 #include "clib/gtlayout_protos.h"

@@ -67,6 +67,8 @@ struct MMPrefs
   UBYTE mmp_SeparatorBarStyle;
   BOOLEAN mmp_VerifyPatches;
   BOOLEAN mmp_FixPatches;
+  
+  char mmp_BackFill[256];
 };
 
 enum

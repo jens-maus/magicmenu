@@ -39,6 +39,9 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 /******************************************************************************/
 #ifdef __STORMGCC__
 long __stacksize = 8192;
+
+#undef BltBitMap
+#undef WritePixelArray
 #else
 long __stack = 8192;
 #endif
@@ -205,6 +208,134 @@ GetString (ULONG ID)
 	}
 
 	return (Builtin);
+}
+
+/******************************************************************************/
+
+void LoadBackFill( STRPTR backfill )
+{
+	if (BackFillBM != NULL)
+	{
+		WaitBlit();
+		FreeBitMap(BackFillBM);
+		BackFillBM = NULL;
+	}
+
+	if (DataTypesBase != NULL && backfill[0] != '\0' && CyberGfxBase != NULL)
+	{
+		Object	*BackFillObj;
+
+		if (BackFillObj = NewDTObject(backfill,
+			DTA_SourceType, DTST_FILE,
+			DTA_GroupID, GID_PICTURE,
+			PDTA_Remap, FALSE,
+			PDTA_DestMode, PMODE_V43,
+			TAG_DONE))
+		{
+			struct BitMap			*bm;
+			struct BitMapHeader	*bmh;
+
+			GetDTAttrs (BackFillObj,
+				PDTA_BitMap, (ULONG) &bm,
+				PDTA_BitMapHeader, (ULONG) &bmh,
+				TAG_DONE);
+
+			if( BackFillBM = AllocBitMap( bmh->bmh_Width, bmh->bmh_Height, 24L, SHIFT_PIXFMT(PIXFMT_RGB24)|BMF_MINPLANES|BMF_SPECIALFMT, NULL ) )
+			{
+				BFWidth = bmh->bmh_Width;
+				BFHeight = bmh->bmh_Height;
+
+				if(bm != NULL)
+				{
+					LONG	depth;
+
+					if( ( depth = GetBitMapAttr(bm, BMA_DEPTH) ) > 8L )
+					{
+						BltBitMap( bm, 0,0, BackFillBM, 0,0, bmh->bmh_Width, bmh->bmh_Height, 0xc0, 0xff, NULL );
+					}
+					/* Wandle Daten nach 24bit, normalerweise macht das eigentlich der pictdt
+					 * auch für uns. Nur leider nicht die cgx version :(
+					 */
+					else
+					{
+						UBYTE	*chunky, *cmap;
+
+						GetAttr( PDTA_ColorRegisters, BackFillObj, (ULONG *) &cmap );
+
+						if( chunky = AllocVecPooled( bmh->bmh_Width*4, MEMF_ANY ) )
+						{
+							struct BitMap	*tbm;
+
+							if( tbm = AllocBitMap( bmh->bmh_Width, 1L, depth, BMF_CLEAR, bm ) )
+							{
+								struct RastPort	 trp, rp;
+								UBYTE					*rgb = &chunky[bmh->bmh_Width];
+								WORD					 x, y;
+
+								InitRastPort( &trp );
+								trp.BitMap = tbm;
+								rp = trp;
+
+								for( y = 0; y < bmh->bmh_Height; y++ )
+								{
+									UBYTE	*p = rgb;
+
+									rp.BitMap = bm;
+									ReadPixelLine8( &rp, 0,y, bmh->bmh_Width, chunky, &trp );
+
+									for( x = 0; x < bmh->bmh_Width; x++ )
+									{
+										UWORD	num = chunky[ x ] * 3;
+
+										*p++ = cmap[ num ];
+										*p++ = cmap[ num + 1 ];
+										*p++ = cmap[ num + 2 ];
+									}
+
+									rp.BitMap = BackFillBM;
+									WritePixelArray( rgb, 0,0,0, &rp, 0,y, bmh->bmh_Width, 1L, RECTFMT_RGB );
+								}
+
+								WaitBlit();
+								FreeBitMap( tbm );
+							}
+
+							FreeVecPooled( chunky );
+						}
+					}
+				}
+				else
+				{
+					UBYTE	*rgb;
+					/* Hiermit ersparen wir uns ein Layout, wenn _nicht_ der
+					 * cgx pictdt installiert ist (dieser liefert sofort
+					 * eine 24bit BitMap bei hi-/truecolor Daten).
+					 */
+					if( rgb = AllocVecPooled( bmh->bmh_Width * 3, MEMF_ANY ) )
+					{
+						struct RastPort	rp;
+						UWORD					y;
+
+						InitRastPort( &rp );
+						rp.BitMap = BackFillBM;
+
+						for( y = 0; y < bmh->bmh_Height; y++ )
+						{
+							DoMethod( BackFillObj, PDTM_READPIXELARRAY,
+								(ULONG) rgb, PBPAFMT_RGB, 0, 0,y, bmh->bmh_Width, 1L );
+
+							WritePixelArray( rgb, 0,0,0, &rp, 0,y, bmh->bmh_Width, 1L, RECTFMT_RGB );
+						}
+
+						FreeVecPooled( rgb );
+					}
+				}
+			}
+
+			DisposeDTObject( BackFillObj );
+		}
+		else Complain( GetString( MSG_CANNOT_LOAD_BACKFILL ) );
+	}
 }
 
 /******************************************************************************/
@@ -1720,6 +1851,11 @@ CheckMMMsgPort (struct MMMessage * MMMsg)
 			}
 		}
 
+		if (Stricmp (((struct MMPrefs *) MMMsg->Ptr1)->mmp_BackFill, AktPrefs.mmp_BackFill))
+		{
+			LoadBackFill( ((struct MMPrefs *) MMMsg->Ptr1)->mmp_BackFill );
+		}
+
 		AktPrefs = *(struct MMPrefs *) MMMsg->Ptr1;
 
 		if (MMMsg->Ptr2)
@@ -1988,12 +2124,16 @@ CheckArguments (struct WBStartup * startupMsg)
 			MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
 #ifdef __MIXEDBINARY__
 			{
-			char EnablePPC[ANSWER_LEN + 1];
+			extern BOOL PPCDirect;
+			char answer[ANSWER_LEN + 1];
 
-			MyArgString (EnablePPC, DiskObj, "ENABLEPPC", "YES", ANSWER_LEN, FALSE);
+			MyArgString (answer, DiskObj, "ENABLEPPC", "YES", ANSWER_LEN, FALSE);
 
-			if (!Stricmp (EnablePPC, "YES"))
+			if (!Stricmp (answer, "YES"))
 				PowerPCBase = OpenLibrary("powerpc.library",14);
+
+			MyArgString (answer, DiskObj, "PPCDIRECT", "NO", ANSWER_LEN, FALSE);
+			PPCDirect = (Stricmp (answer, "YES") == 0L);
 			}
 #endif
 			if (!Stricmp (Cx_PopupStr, "YES"))
@@ -2060,6 +2200,7 @@ LoadPrefs (char *Name, BOOL Report)
 		DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,		SIT_UBYTE,		"SeparatorBarStyle"),
 		DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,			SIT_BOOLEAN,	"VerifyPatches"),
 		DECLARE_ITEM(MMPrefs,mmp_FixPatches,			SIT_BOOLEAN,	"FixPatches"),
+		DECLARE_ITEM(MMPrefs,mmp_BackFill,				SIT_TEXT,		"BackFill"),
 	};
 
 	struct MMPrefs LocalPrefs;
@@ -2267,6 +2408,10 @@ CloseAll (VOID)
 	struct Message *msg;
 	struct MMMessage *MMMsg;
 
+#ifdef AMITHLON
+	if( x86elf != NULL ) close_elf( x86elf );
+#endif
+
 /*  StopHihoTask ();*/
 
 	if (LocaleBase)
@@ -2399,6 +2544,16 @@ CloseAll (VOID)
 	if (PowerPCBase)
 		CloseLibrary(PowerPCBase);
 #endif
+	if (DataTypesBase)
+	{
+		if (BackFillBM)
+		{
+			WaitBlit();
+			FreeBitMap(BackFillBM);
+			BackFillBM = NULL;
+		}
+		CloseLibrary(DataTypesBase);
+	}
 	/*****************************************************************************************/
 
 	MemoryExit ();
@@ -2503,6 +2658,8 @@ main (int argc, char **argv)
 	if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
 		ErrorPrc ("utility.library V37");
 
+	DataTypesBase = OpenLibrary ("datatypes.library", 39);
+
 	V39 = (BOOL) (GfxBase->LibNode.lib_Version >= 39);
 
 	if (!MemoryInit ())
@@ -2603,6 +2760,15 @@ main (int argc, char **argv)
 	CxChanged = FALSE;
 	TickSigNum = -1;
 
+	LoadBackFill( AktPrefs.mmp_BackFill );
+#ifdef AMITHLON
+	if (check_emulation() != 0L)
+	{
+		if( x86elf = open_elf("PROGDIR:mmx86.elf") )
+			BlurAndTintPixelBufferX86 = find_slowcall( x86elf, "BlurAndTintPixelBufferX86" );
+		else Complain( "Can't load x86 support code" );
+	}
+#endif
 	ObtainSemaphore (RememberSemaphore);
 
 	if (InstallPatches ())

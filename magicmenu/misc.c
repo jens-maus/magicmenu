@@ -599,6 +599,15 @@ MMLendMenus (
 
 /*****************************************************************************************/
 
+
+struct FatImage {
+	struct Image	Image;
+	struct Image	Mask;
+	UWORD				BytesPerRow;
+	UWORD				Rows;
+};
+
+
 VOID
 CreateBitMapFromImage (struct Image * Image, struct BitMap * BitMap)
 {
@@ -651,7 +660,7 @@ MakeRemappedImage(
 	if (Depth > 8)
 		Depth = 8;
 
-	(*DestImage) = (struct Image *) AllocVecPooled (2 * sizeof (struct Image), MEMF_ANY | MEMF_CLEAR);
+	(*DestImage) = (struct Image *) AllocVecPooled (sizeof (struct FatImage), MEMF_ANY | MEMF_CLEAR);
 	if ((*DestImage) != NULL)
 	{
 		struct Image * image;
@@ -680,8 +689,15 @@ MakeRemappedImage(
 			memset(&Dst,0,sizeof(Dst));
 			InitBitMap (&Dst, Depth, SrcImage->Width, SrcImage->Height);
 
-			image->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP);
-			mask->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows, MEMF_CHIP);
+			//image->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP);
+			//mask->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows, MEMF_CHIP);
+			/* Stephan: Mittels AllocRaster können wir auch FASTRAM bekommen */
+			image->ImageData = (UWORD *) AllocRaster( Dst.BytesPerRow * 8 * Dst.Depth, Dst.Rows );
+			mask->ImageData = (UWORD *) AllocRaster( Dst.BytesPerRow * 8, Dst.Rows );
+
+			((struct FatImage *)image)->BytesPerRow = Dst.BytesPerRow;
+			((struct FatImage *)image)->Rows = Dst.Rows;
+
 			if (image->ImageData != NULL && mask->ImageData != NULL)
 			{
 				STATIC UBYTE MaskRemapArray[16] =
@@ -754,8 +770,11 @@ FreeRemappedImage(struct Image * Image)
 	{
 		WaitBlit();
 
-		FreeVec(Image[0].ImageData);
-		FreeVec(Image[1].ImageData);
+		//FreeVec(Image[0].ImageData);
+		//FreeVec(Image[1].ImageData);
+
+		FreeRaster( Image[0].ImageData, ((struct FatImage *)Image)->BytesPerRow * 8 * Image[0].Depth, ((struct FatImage *)Image)->Rows );
+		FreeRaster( Image[1].ImageData, ((struct FatImage *)Image)->BytesPerRow * 8, ((struct FatImage *)Image)->Rows );
 
 		FreeVecPooled(Image);
 	}
@@ -1020,6 +1039,9 @@ InstallRPort (
 	else
 	{
 		ShadowSize = 0;
+
+		OriginalWidth  = Width;
+		OriginalHeight = Height;
 	}
 
 	(*BitMapPtr) = NULL;
@@ -1908,8 +1930,78 @@ TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 }
 
 #ifdef __MIXEDBINARY__
+struct BlitArgs {
+	UBYTE	*src;
+	ULONG	 srcmod, srcfmt;
+	LONG	 srcx, srcy;
+
+	UBYTE	*dst;
+	ULONG	 dstmod, dstfmt;
+	LONG	 dstx, dsty;
+
+	LONG	 width, height;
+
+	UBYTE	*buf;
+};
+
+BOOL PPCDirect = FALSE;
+
 extern VOID BlurAndTintPixelBufferPPC(UBYTE * pix,LONG width,LONG height,int r,int g,int b);
+extern VOID BlurAndTintPixelBufferPPCDirect(struct BlitArgs *blit, int r,int g,int b);
 #endif
+
+
+#define MOD(x,y) ((UWORD)(x) % (UWORD)(y))
+#define MIN(x,y)	((x)>(y)?(y):(x))
+#define RECTSIZEX(r) ((r)->MaxX-(r)->MinX+1)
+#define RECTSIZEY(r) ((r)->MaxY-(r)->MinY+1)
+
+
+void CopyTiledBitMap(struct BitMap *Src, WORD SrcOffsetX, WORD SrcOffsetY, WORD SrcSizeX, WORD SrcSizeY, struct BitMap *Dst, struct Rectangle *DstBounds)
+{
+	WORD FirstSizeX;				   /* the width of the rectangle to blit as the first column */
+	WORD FirstSizeY;				   /* the height of the rectangle to blit as the first row */
+	WORD SecondMinX;				   /* the left edge of the second column */
+	WORD SecondMinY;				   /* the top edge of the second column */
+	WORD SecondSizeX;				   /* the width of the second column */
+	WORD SecondSizeY;				   /* the height of the second column */
+	WORD Pos;						   /* used as starting position in the "exponential" blit */
+	WORD Size;						   /* used as bitmap size in the "exponential" blit */
+
+	FirstSizeX = MIN(SrcSizeX - SrcOffsetX, RECTSIZEX(DstBounds));		/* the width of the first tile, this is either the rest of the tile right to SrcOffsetX or the width of the dest rect, if the rect is narrow */
+	SecondMinX = DstBounds->MinX + FirstSizeX;	/* the start for the second tile (if used) */
+	SecondSizeX = MIN(SrcOffsetX, DstBounds->MaxX - SecondMinX + 1);	/* the width of the second tile (we want the whole tile to be SrcSizeX pixels wide, if we use SrcSizeX-SrcOffsetX pixels for the left part we'll use SrcOffsetX for the right part) */
+
+	FirstSizeY = MIN(SrcSizeY - SrcOffsetY, RECTSIZEY(DstBounds));		/* the same values are calculated for y direction */
+	SecondMinY = DstBounds->MinY + FirstSizeY;
+	SecondSizeY = MIN(SrcOffsetY, DstBounds->MaxY - SecondMinY + 1);
+
+	BltBitMap(Src, SrcOffsetX, SrcOffsetY, Dst, DstBounds->MinX, DstBounds->MinY, FirstSizeX, FirstSizeY, 0xC0, -1, NULL);		/* blit the first piece of the tile */
+	if (SecondSizeX > 0)			   /* if SrcOffset was 0 or the dest rect was to narrow, we won't need a second column */
+		BltBitMap(Src, 0, SrcOffsetY, Dst, SecondMinX, DstBounds->MinY, SecondSizeX, FirstSizeY, 0xC0, -1, NULL);
+	if (SecondSizeY > 0)			   /* is a second row necessary? */
+	{
+		BltBitMap(Src, SrcOffsetX, 0, Dst, DstBounds->MinX, SecondMinY, FirstSizeX, SecondSizeY, 0xC0, -1, NULL);
+		if (SecondSizeX > 0)
+			BltBitMap(Src, 0, 0, Dst, SecondMinX, SecondMinY, SecondSizeX, SecondSizeY, 0xC0, -1, NULL);
+	}
+
+  /* this loop generates the first row of the tiles */
+	for (Pos = DstBounds->MinX + SrcSizeX, Size = MIN(SrcSizeX, DstBounds->MaxX - Pos + 1); Pos <= DstBounds->MaxX;)
+	{
+		BltBitMap(Dst, DstBounds->MinX, DstBounds->MinY, Dst, Pos, DstBounds->MinY, Size, MIN(SrcSizeY, RECTSIZEY(DstBounds)), 0xC0, -1, NULL);
+		Pos += Size;
+		Size = MIN(Size << 1, DstBounds->MaxX - Pos + 1);
+	}
+
+  /* this loop blit the first row down several times to fill the whole dest rect */
+	for (Pos = DstBounds->MinY + SrcSizeY, Size = MIN(SrcSizeY, DstBounds->MaxY - Pos + 1); Pos <= DstBounds->MaxY;)
+	{
+		BltBitMap(Dst, DstBounds->MinX, DstBounds->MinY, Dst, DstBounds->MinX, Pos, RECTSIZEX(DstBounds), Size, 0xC0, -1, NULL);
+		Pos += Size;
+		Size = MIN(Size << 1, DstBounds->MaxY - Pos + 1);
+	}
+}
 
 struct BackgroundCover *
 CreateBackgroundCover(
@@ -1922,7 +2014,7 @@ CreateBackgroundCover(
 {
 	struct BackgroundCover * bgc = NULL;
 
-	if(/*GlobalPopUp &&*/AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	if(/*GlobalPopUp &&*/(AktPrefs.mmp_Transparency || BackFillBM != NULL) && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
 	{
 		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
 		if(bgc != NULL)
@@ -1937,6 +2029,15 @@ CreateBackgroundCover(
 
 				InitRastPort(&rp);
 				rp.BitMap = bgc->bgc_BitMap;
+
+				if (BackFillBM != NULL)
+				{
+					struct Rectangle	rect = {
+						0,0, width-1, height-1
+					};
+					CopyTiledBitMap( BackFillBM, 0,0, BFWidth,BFHeight, bgc->bgc_BitMap, &rect );
+					return bgc;
+				}
 				/* Fülle den Hintergrund mit BARBLOCKPEN, wenn wir den
 				 * MenuStrip eines PullDownMenüs haben. Dies sieht (wohl?)
 				 * besser aus, da der Titeltext nicht mehr durchscheint.
@@ -1956,27 +2057,82 @@ CreateBackgroundCover(
 
 					return bgc;
 				}
-#if 0
-				BltBitMap( friend, left,top, bgc->bgc_BitMap, 0,0, width,height, 0xc0, 0xff, NULL );
-				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
-#else
-				rp.BitMap = friend;
-				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
-#endif
 #ifdef __MIXEDBINARY__
 				if(PowerPCBase != NULL)
 				{
-					BlurAndTintPixelBufferPPC(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+					if( PPCDirect )
+					{
+						struct BlitArgs blit;
+						APTR	 handle, handle2;
+
+						if(handle = LockBitMapTags(bgc->bgc_BitMap,
+							LBMI_PIXFMT, &blit.dstfmt,
+							LBMI_BYTESPERROW, &blit.dstmod,
+							LBMI_BASEADDRESS, &blit.dst,
+							TAG_DONE))
+						{
+							if(handle2 = LockBitMapTags(friend,
+								LBMI_PIXFMT, &blit.srcfmt,
+								LBMI_BYTESPERROW, &blit.srcmod,
+								LBMI_BASEADDRESS, &blit.src,
+								TAG_DONE))
+							{
+								blit.width = width;
+								blit.height = height;
+								blit.srcx = left;
+								blit.srcy = top;
+								blit.dstx = 0;
+								blit.dsty = 0;
+								blit.buf = ShadowBuffer;
+
+								BlurAndTintPixelBufferPPCDirect(&blit, AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+
+								UnLockBitMap(handle2);
+							}
+
+							UnLockBitMap(handle);
+						}
+					}
+					else
+					{
+						rp.BitMap = friend;
+						ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
+						BlurAndTintPixelBufferPPC(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+						rp.BitMap = bgc->bgc_BitMap;
+						WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+					}
 				}
 				else
 #endif
 				{
-					BlurPixelBuffer(ShadowBuffer,width,height);
-					TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
-				}
+#if 0
+					BltBitMap( friend, left,top, bgc->bgc_BitMap, 0,0, width,height, 0xc0, 0xff, NULL );
+					ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+#else
+					rp.BitMap = friend;
+					ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
+#endif
+#ifdef AMITHLON
+					if( BlurAndTintPixelBufferX86 != NULL )
+					{
+						ULONG	rgb;
 
-				rp.BitMap = bgc->bgc_BitMap;
-				WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+						rgb  = ( AktPrefs.mmp_Background.R >> 8  ) & 0x00ff0000;
+						rgb |= ( AktPrefs.mmp_Background.G >> 16 ) & 0x0000ff00;
+						rgb |= ( AktPrefs.mmp_Background.B >> 24 ) & 0x000000ff;
+
+						BlurAndTintPixelBufferX86(ShadowBuffer,(width<<16)|height,rgb);
+					}
+					else
+#endif
+					{
+						BlurPixelBuffer(ShadowBuffer,width,height);
+						TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+					}
+
+					rp.BitMap = bgc->bgc_BitMap;
+					WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+				}
 			}
 			else
 			{
