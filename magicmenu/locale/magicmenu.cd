@@ -1,4 +1,8 @@
+;
+; MagicMenu catalog description
 ; $VER: magicmenu.cd 1.11 (11.10.99)
+;
+; $Id$
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>

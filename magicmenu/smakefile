@@ -6,7 +6,7 @@
 
 .c.o:
 	sc $(CFLAGS) $<
-	@ctags $< >tagfiles/$>.c
+#	 @ctags $< >tagfiles/$>.c
 
 .a.o:
 	asm $(AFLAGS) $<
@@ -73,16 +73,16 @@ SOURCE = \
 
 ###############################################################################
 
-all: tagfiles $(GSTFILE) protos.h MagicMenu.h MagicMenu MagicMenuPrefs
+all: $(GSTFILE) protos.h MagicMenu.h MagicMenu MagicMenuPrefs
 
 ###############################################################################
 
 MagicMenu: $(MAIN_OBJS) Assert.o
 	slink lib:c.o $(MAIN_OBJS) to $@.debug lib $(LIBS) Assert.o $(LFLAGS)
 	slink $@.debug to $@ noicons nodebug
-	@type "tagfiles/\#?" >t:tags
-	@copy t:tags tags
-	@delete quiet t:tags
+#	 @type "tagfiles/\#?" >t:tags
+#	 @copy t:tags tags
+#	 @delete quiet t:tags
 
 MagicMenuPrefs: $(PREFS_OBJS) Assert.o
 	slink lib:c.o $(PREFS_OBJS) to $@.debug lib $(LIBS) Assert.o $(LFLAGS)
@@ -96,14 +96,14 @@ $(GSTFILE): system_headers.c system_headers.h
 
 ###############################################################################
 
-tagfiles:
-	makedir $@
+#tagfiles:
+#	 makedir $@
 
-RCS:
-	makedir $@
+#RCS:
+#	 makedir $@
 
-protos.h: $(MAIN_SOURCE)
-	mkptypes -c >protos.h $(MAIN_SOURCE)
+#protos.h: $(MAIN_SOURCE)
+#	 mkptypes -c >protos.h $(MAIN_SOURCE)
 
 ###############################################################################
 
@@ -138,53 +138,38 @@ install: MagicMenu MagicMenuPrefs
 
 ###############################################################################
 
-mkid:
-	mkid -v \#?.(c|h|a|i)
+#mkid:
+#	 mkid -v \#?.(c|h|a|i)
 
-update:
-	mkid -v -u
+#update:
+#	 mkid -v -u
 
-xref:
-	cxref -xref \#?.c
-	cxref -xref -index -html \#?.c
+#xref:
+#	 cxref -xref \#?.c
+#	 cxref -xref -index -html \#?.c
 
-xref-update:
-	cxref -xref -index -html \#?.c
+#xref-update:
+#	 cxref -xref -index -html \#?.c
 
-xref-clean:
-	-delete \#?.html cxref.\#?
-
-###############################################################################
-
-checkin: RCS
-	ci -M -d -l$(VERSION) -m. -t-. $(SOURCE)
-
-lock: RCS
-	rcs -l $(SOURCE)
-
-unlock: RCS
-	rcs -u $(SOURCE)
-
-freeze: RCS
-	rcs -q -nV$(VERSION)_`type MagicMenu_rev.rev`: $(SOURCE)
+#xref-clean:
+#	 -delete \#?.html cxref.\#?
 
 ###############################################################################
 
-#betatitle.o : betatitle.c MagicMenu_rev.h
-#dointuimenu.o : dointuimenu.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#memory.o : memory.c
-#data.o : data.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#main.o : main.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h magicmenu.h
-#misc.o : misc.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h magicmenu.h
-#menuboxes.o : menuboxes.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#remap.o : remap.a
-#sendintuimessage.o : sendintuimessage.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#stubs.o : stubs.a
-#wedge.o : wedge.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#windowglyphs.o : windowglyphs.c defines.h data.h prefs.h MagicMenu_rev.h structures.h Global.h
-#edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h
-#demoimagedata.o : demoimagedata.c
-#storage.o : storage.c storage.c
-magicmenu.h: magicmenu.cd
+#checkin: RCS
+#	 ci -M -d -l$(VERSION) -m. -t-. $(SOURCE)
+
+#lock: RCS
+#	 rcs -l $(SOURCE)
+
+#unlock: RCS
+#	 rcs -u $(SOURCE)
+
+#freeze: RCS
+#	 rcs -q -nV$(VERSION)_`type MagicMenu_rev.rev`: $(SOURCE)
+
+###############################################################################
+
+magicmenu.h: locale/magicmenu.cd
 main.o : main.c MagicMenu_rev.h
 edit.o : edit.c MagicMenuPrefs_rev.h

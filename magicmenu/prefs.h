@@ -1,110 +1,124 @@
-/*
-**	$Id$
-**
-**	:ts=8
-*/
+/***************************************************************************
+
+ MagicMenu - Intuition PopupMenu enhancement
+
+ Copyright (C) 1993-1997 by Martin Korndörfer
+ Copyright (C) 1997-2001 by Olaf `Olsen' Barthel
+ Copyright (C) 2001 by Stephan Rupprecht, Jens Langner
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+ MagicMenu Official Support Site :  http://www.magicmenu.de/
+
+ $Id$
+
+***************************************************************************/
 
 /* Magic Menu Prefs Header */
 
+typedef unsigned char BOOLEAN;
+
 struct RGBSet
 {
-    ULONG                   R,G,B;
+  ULONG R, G, B;
 };
 
-
 struct MMPrefs
-    {
-        ULONG               mmp_Version;
-        ULONG               mmp_Size;
+{
+  ULONG mmp_Magic;
+  LONG mmp_Version;
 
-        UWORD               mmp_MenuType;
+  UBYTE mmp_MenuType;
 
-        struct
-        {
-            ULONG Enabled : 1;
-            ULONG MarkSub : 1;
-            ULONG DblBorder : 1;
-            ULONG UseLayer : 1;
-            ULONG DirectDraw : 1;
-            ULONG ChunkyPlanes : 1;
-            ULONG NonBlocking : 1;
-            ULONG KCEnabled : 1;
-            ULONG KCGoTop : 1;
-            ULONG KCRAltRCommand : 1;
-            ULONG PUCenter : 1;
-            ULONG Dummy : 21;
-        } mmp_Flags;
+  BOOLEAN mmp_Enabled;
+  BOOLEAN mmp_MarkSub;
+  BOOLEAN mmp_DblBorder;
+  BOOLEAN mmp_NonBlocking;
+  BOOLEAN mmp_KCEnabled;
+  BOOLEAN mmp_KCGoTop;
+  BOOLEAN mmp_KCRAltRCommand;
+  BOOLEAN mmp_PUCenter;
+  BOOLEAN mmp_PreferScreenColours;
+  BOOLEAN mmp_Delayed;
+  BOOLEAN mmp_DrawFrames;
+  BOOLEAN mmp_CastShadows;
 
-        UWORD               mmp_PDMode;
-        UWORD               mmp_PDLook;
+  UBYTE mmp_PDMode;
+  UBYTE mmp_PDLook;
 
-        UWORD               mmp_PUMode;
-        UWORD               mmp_PULook;
+  UBYTE mmp_PUMode;
+  UBYTE mmp_PULook;
 
-        char                mmp_KCKeyStr[200];
+  char mmp_KCKeyStr[200];
 
-        UWORD               mmp_TimeOut;
+  WORD mmp_Precision;
 
-        struct RGBSet       mmp_LightEdge;
-        struct RGBSet       mmp_DarkEdge;
-        struct RGBSet       mmp_Background;
-        struct RGBSet       mmp_TextCol;
-        struct RGBSet       mmp_HiCol;
-        struct RGBSet       mmp_FillCol;
-        struct RGBSet       mmp_GhostLoCol;
-        struct RGBSet       mmp_GhostHiCol;
-    };
+  struct RGBSet mmp_LightEdge;
+  struct RGBSet mmp_DarkEdge;
+  struct RGBSet mmp_Background;
+  struct RGBSet mmp_TextCol;
+  struct RGBSet mmp_HiCol;
+  struct RGBSet mmp_FillCol;
 
-#define MMP_MAGIC           0xaf509a24
+  BOOLEAN mmp_Transparency;
+  BOOLEAN mmp_HighlightDisabled;
+  UBYTE mmp_SeparatorBarStyle;
+  BOOLEAN mmp_VerifyPatches;
+  BOOLEAN mmp_FixPatches;
+};
 
-#define mmp_Enabled mmp_Flags.Enabled
-#define mmp_MarkSub mmp_Flags.MarkSub
-#define mmp_DblBorder mmp_Flags.DblBorder
-#define mmp_UseLayer mmp_Flags.UseLayer
-#define mmp_DirectDraw mmp_Flags.DirectDraw
-#define mmp_ChunkyPlanes mmp_Flags.ChunkyPlanes
-#define mmp_NonBlocking mmp_Flags.NonBlocking
-#define mmp_KCEnabled mmp_Flags.KCEnabled
-#define mmp_KCGoTop mmp_Flags.KCGoTop
-#define mmp_KCRAltRCommand mmp_Flags.KCRAltRCommand
-#define mmp_PUCenter mmp_Flags.PUCenter
+enum
+{
+  MT_PULLDOWN,
+  MT_POPUP,
+  MT_AUTO
+};
 
-#define MT_PULLDOWN     0
-#define MT_POPUP        1
-#define MT_AUTO         2
+enum
+{
+  LOOK_2D,
+  LOOK_3D,
+  LOOK_MC
+};
 
-#define LOOK_2D         0
-#define LOOK_3D         1
-#define LOOK_MC         2
+enum
+{
+  MODE_STD,
+  MODE_STICKY,
+  MODE_SELECT,
+  MODE_KEYBOARD
+};
 
-#define MODE_STD        0
-#define MODE_STICKY     1
-#define MODE_SELECT     2
-#define MODE_KEYBOARD   3
-
-#define CONFIG_NAME     "MagicMenu.config"
-#define PATHENV         "MagicMenuPath"
+#define CONFIG_NAME "MagicMenu.config"
+#define PATHENV "MagicMenuPath"
 
 struct MMMessage
-    {
-        struct  Message     Message;
+{
+  struct Message Message;
 
-        ULONG               Class;
+  ULONG Class;
 
-        ULONG               Arg1;
-        ULONG               Arg2;
-        ULONG               Arg3;
+  ULONG Arg1;
+  ULONG Arg2;
+  ULONG Arg3;
 
-        APTR                Ptr1;
-        APTR                Ptr2;
-        APTR                Ptr3;
-    };
+  APTR Ptr1;
+  APTR Ptr2;
+  APTR Ptr3;
+};
 
-#define MMC_VOID            0
-#define MMC_NEWCONFIG       1
-#define MMC_REMOVE          2
-#define MMC_GETCONFIG       3
-#define MMC_ENABLE          4
+enum
+{
+  MMC_VOID,
+  MMC_NEWCONFIG,
+  MMC_REMOVE,
+  MMC_GETCONFIG,
+  MMC_ENABLE
+};
 
-#define MMPORT_NAME         "MagicMenu"
+#define MMPORT_NAME "MagicMenu"
 
+#define MMPREFS_MAGIC 20041970
+#define MMPREFS_VERSION 2

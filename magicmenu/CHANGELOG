@@ -1,168 +1,285 @@
-MagicMenu 2.4 (beta)
+2001-10-14  Jens Langner <Jens.Langner@htw-dresden.de>
+
+  * added new source header to every sourcefile and changed
+    directory structure a bit.
+  * migrated the rcs files to a cvs repository
+
+--------------------------------------------------------------------------
+
+MagicMenu 2.31 (2.3.2001)
+=========================
+
+- Made the 'SetFunction()' patch safer, following much good advice
+  from Harry Sintonen.
+
+MagicMenu 2.30 (7.8.2000)
+=========================
+
+- Bitmaps are now allocated in CyberGraphX V4 friendly form, which
+  permits them to be stored in video memory. The result should be
+  a noticeable speed increase.
+
+MagicMenu 2.29 (15.10.1999)
+===========================
+
+- Changed the minimum drop shadow size to 2 pixels.
+
+- Transparency is no longer allowed for the traditional pull-down
+  menus.
+
+- MagicMenu no longer resets its entire configuration if it finds
+  a configuration file that does not contain data for recently added
+  configuration items. It now retains the old data and resets the
+  new entries to defaults instead.
+
+MagicMenu 2.28 (12.10.1999)
+===========================
+
+- Reworked the transparency mode image creation code. The multicolour
+  3D mode images now come out as transparent.
+
+MagicMenu 2.27 (11.10.1999)
+===========================
+
+- Small detail: with transparency enabled, the highlight image of a tick
+  mark did not get drawn properly. Fixed.
+
+MagicMenu 2.26 (11.10.1999)
+===========================
+
+- MagicMenu no longer starts up and complains if it didn't find a hot key
+  specifier.
+
+- Menu lending is now implemented differently, regarding the IntuiMessage->IDCMPWindow
+  pointer. MagicMenu now places the Window pointer there the menus lent came from.
+  This approach will solve one or two problems but may create others.
+
+- Added new configuration options "Transparency", "Separator bar style",
+  "Highlight disabled menu items", "Verify patches" and "Fix patches".
+
+MagicMenu 2.24
+==============
+
+- Implemented Mario's new multicolour 3D frames.
+
+MagicMenu 2.23
+==============
+
+- MagicMenu now only avoids activating the multicolour mode if the
+  menu text would become unreadable due to the colours chosen, or
+  if the background and the highlighting colours are the same.
+
+- Implemented hi/truecolour shadows.
+
+- MagicMenu now plants its system patches in such a way that
+  allows it to monitor whether any other application tries to
+  put its own patches on top of them. In such a case, MagicMenu
+  will insure that it stays the owner of the first patch code
+  to be invoked. This will hopefully fix all known lockup
+  problems.
+
+MagicMenu 2.22
+==============
+
+- If launched from Workbench, MagicMenu is now quite a bit smarter
+  when trying to find its icon to read the tool types.
+
+MagicMenu 2.21
+==============
+
+- More fixes to keep WSpeed alive [Frank Mariak].
+
+MagicMenu 2.20
+==============
+
+- I got bitten by SetABPenDrMd() again. Darn. Now MagicMenu can
+  cast drop shadows under Kickstart 2.04 as it should.
+
+MagicMenu 2.19
+==============
+
+- The changes in 2.18 introduced bugs into the menu refresh code.
+  This is what I had to fix in this version.
+
+MagicMenu 2.18
+==============
+
+- Removed all the layers.library patch code. The drop shadows are
+  now rendered using a much more robust technique that does not
+  require any black magic at all. As such, it now also works
+  under Kickstart 2.04 and is no longer restricted to non-blocking
+  mode (yes kids, that's what you always wanted).
+
+MagicMenu 2.17
+==============
+
+- The layers.library patches now jump into action only if the
+  non-blocking mode and the drop shadows are enabled.
+
+MagicMenu 2.16
+==============
+
+- The size of the menu bar is now taken from the Screen data
+  structure rather than made up from the font height.
+
+MagicMenu 2.15
+==============
+
+- An invalid hotkey specification no longer keeps the main program
+  from functioning. It will complain and the feature connected with
+  the hotkey will be unavailable, but the program will continue
+  to run.
+
+- Changed the default colours for the preferences editor fallback
+  screen.
+
+- Added more patches for screen depth arrangement, opening
+  and closing.
+
+- Added Mario's new artwork.
+
+MagicMenu 2.14 (beta)
+=====================
+
+- Corrected the placement of the Command images in menu items and
+  subitems.
+
+- For the "old look" menus the separator bars now render in the
+  correct colour.
+
+- The old 3D look menu borders are now just one pixel thick,
+  regardless of the display mode used.
+
+- Changed the preferences data exchange interface between the
+  prefs editor and the main program. Now the system should no
+  longer crash if you try to change the settings of the new
+  program with an old prefs editor.
+
+- Drop shadows are now restricted to pop-up menus.
+
+- Some menus will open faster now in non-blocking mode, as they
+  will be "promoted" to simple refresh windows if possible.
+
+- Some of the patches MagicMenu installs to protect itself are
+  no longer active in non-blocking mode. This will help Workbench
+  and other applications which would otherwise get caught in
+  their display update work.
+
+- Changed the alignment rules for the checkmark, Amiga key and
+  submenu arrow images to match those Intuition uses (or would
+  use if it could).
+
+- With "mark submenus" disabled, MagicMenu would cease to render
+  submenu indicators in multicolour 3D mode. It now works again
+  as it should.
+
+MagicMenu 2.13 (beta)
+=====================
+
+- Added a new option to the prefs program. If "Prefer screen colours"
+  is enabled, MagicMenu will make up the menu colours from the screen
+  user interface colours rather than using the colours you selected
+  from the palette.
+
+- Updated the WindowToFront/WindowToBack patches to delay window
+  operations on the screen the MagicMenu menus are active on.
+
+- Added more patches to SetWindowTitles and RefreshWindowFrame.
+  I should also patch RefreshGList, RefreshGadget, NewModifyProp,
+  ModifyProp, and about seven other routines but I guess I'd
+  rather stop here. All these routines can cause deadlocks which
+  MagicMenu will back out of safely. This can be a little annoying,
+  but you can still change the MagicMenu operating mode for
+  normal operation.
+
+- The keyboard control commands now consistenly work when they are
+  enabled and go out of the way when the are disabled.
+
+- Changed the settings file format, this time hopefully for the last
+  time.
+
+- Added a new option to have menus open slightly delayed, or put
+  another way, when you have stopped moving the mouse.
+
+- Added another new option to turn off the frames drawn around the
+  active menu item.
+
+MagicMenu 2.12 (beta)
+=====================
+
+- The window depth arrangement patches were not installed correctly,
+  causing them to do nothing in most cases.
+
+- In non-blocking mode and when running under Kickstart 2.04 you
+  would still get the shadow borders. As the drop shadows do not
+  work under V37 this was not really sensible.
+
+- Added Mario's new 4 colour images. Note that you will get these
+  only with high resolution screens and fonts >= 11 points. I also
+  changed the old 3D look ghosting style.
+
+MagicMenu 2.11 (beta)
+=====================
+
+- The preferences editor now opens a custom screen with 32 colours
+  if it cannot get that many from the requested public screen.
+
+- When MagicMenu has taken control of the menus, window depth
+  arrangement calls are no longer ignored, but delayed until
+  the menu closes. Actually, I would have to add a whole lot
+  more patches to make operation halfway safe, but for now
+  I'm just plastering patches onto routines which are somewhat
+  likely to get triggered while the menus are up.
+
+MagicMenu 2.10 (beta)
+=====================
+
+- Default prefs project icon images now come from ENV:sys/def_pref.
+
+- The multicolour 3D look mode no longer requires a font of a least
+  nine pixels. Now eight pixels will do (and don't you complain if the
+  imagery is taller than the menu font).
+
+- The menu image remapping code should now be much smarter for images
+  that use the PlanePick/PlaneOnOff option.
+
+- Removed the "Remove" option from the prefs program.
+
+- The prefs editor could copy too many colours when updating
+  the program settings.
+
+- Added a "precision" slider to the prefs program. With this slider
+  you can select how much error the colour allocation routine will
+  tolerate when selecting the colours for the multicolour menu.
+
+- Rewrote all the colour management routines to be as careful as
+  possible when releasing the allocated pens. It looks as if not
+  all system configurations will treat pen #-1 as a no-op.
+
+MagicMenu 2.9 (beta)
 ====================
 
-- Improved overall stability under CyberGraphX; the menu rendering code was
-  actually peeking Screen->BitMap instead of Screen->RastPort.BitMap, which
-  among other things could screw up rendering in deep display modes. Menu
-  rendering now works consistently in display depths beyond 8 bit.
+- Moved the default imagery back into chip RAM.
 
-- Removed references to SetABPenDrMd() where they were in the wrong place.
+- When in keyboard control mode, [Shift]+[Esc] will abort
+  the entire menu operation, no matter which menu hierarchy
+  you are in.
 
-- The code that sends the IntuiMessage should be less timing critical and
-  simpler now. It fires off the message and starts to wait for a response
-  if necessary rather than allocating timer requests, message ports, etc.
-  on the spot and then jumping into action.
+- The 3D multicolour mode now requires that the menu font is
+  at least nine pixels tall. If it is smaller, you will get
+  the old 3D mode.
 
-- Removed the routine that complains about timed out IntuiMessages. It's
-  nice to know that something went wrong, but not that helpful if you
-  cannot do anything about it.
+- Reworked the menu imagery and made sure that the MX and
+  checkmark images match in size.
 
-- Since IntuiMessage processing works differently now, MagicMenu now checks
-  for pending, unreplied messages.
+- Multicolour ghosted text no longer gets rendered over and
+  over again when moving the mouse across it.
 
-- The routine that displays the menu and handles the IDCMP_MENUVERIFY
-  case should be better protected against Intuition state changes and
-  stale pointers. There is still a catch in that the Window to receive
-  the menu event may close or dispose of its menu strip before the
-  event arrives. But actually, Intuition protects itself against
-  such eventualities, anyway.
-
-- For a Window without a UserPort, MagicMenu could lose memory. This
-  has been fixed.
-
-- When an IDCMP_MENUVERIFY message times out, the window to cancel
-  it now properly receives its IDCMP_MOUSEBUTTONS/MENUUP and
-  IDCMP_MENUPICK/MENUNULL messages (as per the RKMs). When menu
-  rendering is finished the other inactive IDCMP_MENUVERIFY windows
-  on the screen now receive the proper IDCMP_MOUSEBUTTONS/MENUUP
-  messages.
-
-- Changed the way BOOPSI images in menus are handled. MagicMenu no longer
-  tries to remap them as if they were BitMap images. Right now it turns
-  them into BitMap images and then remaps them.
-
-- Redid the image remapping code. It no longer fiddles with the raw BitMap
-  data but uses the Blitter.
-
-- Added a patch for ObtainGIRPort() which should make all the SafeGIRPort
-  patches redundant that existed just in support of MagicMenu. The patch
-  checks if the screen it should work upon is currently locked by
-  MagicMenu. If so, ObtainGIRPort() will return NULL. This is a little
-  dangerous since some built-in Intuition classes do not protect themselves
-  against ObtainGIRPort() returning NULL. I can't make the patch tell
-  Intuition to wait until the screen is ready again either, as this would
-  eventually deadlock Intuition.
-
-- Changed the new 3D look text highlight colour to be more consistent with
-  the way gadget text highlighting works.
-
-- MagicMenu no longer detaches from the Shell it was started from. If
-  you need such a feature, use "run >nil: MagicMenu".
-
-- MagicMenu now works with Final Writer. Final Writer calls
-  Clear/ResetMenuStrip whilst in MENUVERIFY state. Previously,
-  MagicMenu did not allow this to happen, causing the verify message
-  to time out.
-
-- The phony IntuiMessages are now ExtIntuiMessages with a NULL tablet
-  data pointer and proper time stamp information.
-
-
-MagicMenu 2.5 (beta)
-====================
-
-- The ObtainGIRPort() patch now handles the NULL parameter case
-  gracefully. Some BOOPSI gadget dispatchers actually end up invoking
-  the draw method in the OM_NEW case with the GInfo pointer not
-  yet initialized.
-
-
-MagicMenu 2.6 (beta)
-====================
-
-- The new 3D colour mode could screw up the screen colour palette.
-  The code did not check for pen allocation failures and, since the
-  pen variables were unsigned, the deallocation code would end up
-  freeing the same pen over and over again.
-
-- Changed the commodities filter setup code. All the initializations
-  are now done at program startup time. MagicMenu enables the filter
-  later instead of building the filter when the menu comes up.
-
-- Changed the way bevel boxes are rendered. Instead of calling
-  Move..Draw..Draw over and over again it now uses RectFill()
-  where possible. For vertical and horizontal lines this is
-  actually faster than calling Move/Draw.
-
-- Made small visual changes to the menu box and title bar rendering
-  in new 3D look mode.
-
-- With the non-blocking option enabled, the new 3D look menus now
-  sport drop shadows.
-
-- In non-blocking mode MagicMenu no longer uses SuperBitMap windows.
-
-- Removed the "demo" menu from the prefs program.
-
-- Integrated Mario's new imagery, including the new colour map
-  that goes with it.
-
-
-MagicMenu 2.7 (beta)
-====================
-
-- The drop shadows no longer cause windows to be moved away from
-  the screen right and bottom edges.
-
-- Disabled menus, items and subitems are no longer rendered with
-  a frame in new 3D mode.
-
-- The drop shadows were only transparent with CyberGraphX.
-  I added another patch to allow this for any Amiga (and which
-  magically also boosts layer creation speed).
-
-- One WaitBlit() was missing in the remapped image cleanup code.
-
-- Removed the "clipping" option. It is now enabled by default in
-  order to avoid big trouble on the way.
-
-- If MagicMenu cannot reuse the patch table installed by an older
-  MagicMenu version that was removed from memory just before the
-  new one was run, it now complains and exits without crashing.
-
-- I tried to make MagicMenu safer by reducing the rendering options
-  to two alternatives only: you either select non-blocking or you
-  don't. Both options imply clipped drawing operations, making it
-  more difficult to trash memory on the way. The "direct draw"
-  option is implicitely enabled for non-blocking mode and
-  implicitely disabled for blocking mode. All this will slow down
-  menu operations a bit, but better a little slower than a little
-  sooner to crash.
-
-- No longer fakes ClipRects and uses sleight-of-hand tricks to get
-  away with it. Instead of calling SwapBitsRastPortClipRect()
-  it now uses a much simpler technique to exchange the on-screen
-  BitMap data and the menu imagery. This technique neither has
-  nor requires the side-effects SwapBitsRastPortClipRect() has.
-
-- Removed the CyberGraphX chunky option; it is now enabled all
-  the time.
-
-- New and improved colour remapping code. Much faster than the
-  old blitter based stuff.
-
-- All new preferences program. The prefs editor goes into
-  SYS:Prefs. The new configuration files go into ENVARC:.
-  Note that the new configuration files are not compatible
-  with the old ones.
-
-- Prefs program and main program now support localization.
-  No catalogs are available yet, sorry.
-
-- Non-blocking operation is now the default mode since it
-  is less likely to trash memory, freeze the machine or
-  crash it.
-
+- When running out of pens for the gradient fill slider
+  the prefs editor should now back out gracefully rather than
+  end up trying to load colour register -1 with greyscale
+  data. This could have been the reason for the inexplicable
+  prefs editor crashes.
 
 MagicMenu 2.8 (beta)
 ====================
@@ -234,291 +351,165 @@ MagicMenu 2.8 (beta)
   program is not yet running when you hit this button, the
   prefs program will try to launch it.
 
-
-MagicMenu 2.9 (beta)
+MagicMenu 2.7 (beta)
 ====================
 
-- Moved the default imagery back into chip RAM.
+- The drop shadows no longer cause windows to be moved away from
+  the screen right and bottom edges.
 
-- When in keyboard control mode, [Shift]+[Esc] will abort
-  the entire menu operation, no matter which menu hierarchy
-  you are in.
+- Disabled menus, items and subitems are no longer rendered with
+  a frame in new 3D mode.
 
-- The 3D multicolour mode now requires that the menu font is
-  at least nine pixels tall. If it is smaller, you will get
-  the old 3D mode.
+- The drop shadows were only transparent with CyberGraphX.
+  I added another patch to allow this for any Amiga (and which
+  magically also boosts layer creation speed).
 
-- Reworked the menu imagery and made sure that the MX and
-  checkmark images match in size.
+- One WaitBlit() was missing in the remapped image cleanup code.
 
-- Multicolour ghosted text no longer gets rendered over and
-  over again when moving the mouse across it.
+- Removed the "clipping" option. It is now enabled by default in
+  order to avoid big trouble on the way.
 
-- When running out of pens for the gradient fill slider
-  the prefs editor should now back out gracefully rather than
-  end up trying to load colour register -1 with greyscale
-  data. This could have been the reason for the inexplicable
-  prefs editor crashes.
+- If MagicMenu cannot reuse the patch table installed by an older
+  MagicMenu version that was removed from memory just before the
+  new one was run, it now complains and exits without crashing.
 
+- I tried to make MagicMenu safer by reducing the rendering options
+  to two alternatives only: you either select non-blocking or you
+  don't. Both options imply clipped drawing operations, making it
+  more difficult to trash memory on the way. The "direct draw"
+  option is implicitely enabled for non-blocking mode and
+  implicitely disabled for blocking mode. All this will slow down
+  menu operations a bit, but better a little slower than a little
+  sooner to crash.
 
-MagicMenu 2.10 (beta)
-=====================
+- No longer fakes ClipRects and uses sleight-of-hand tricks to get
+  away with it. Instead of calling SwapBitsRastPortClipRect()
+  it now uses a much simpler technique to exchange the on-screen
+  BitMap data and the menu imagery. This technique neither has
+  nor requires the side-effects SwapBitsRastPortClipRect() has.
 
-- Default prefs project icon images now come from ENV:sys/def_pref.
+- Removed the CyberGraphX chunky option; it is now enabled all
+  the time.
 
-- The multicolour 3D look mode no longer requires a font of a least
-  nine pixels. Now eight pixels will do (and don't you complain if the
-  imagery is taller than the menu font).
+- New and improved colour remapping code. Much faster than the
+  old blitter based stuff.
 
-- The menu image remapping code should now be much smarter for images
-  that use the PlanePick/PlaneOnOff option.
+- All new preferences program. The prefs editor goes into
+  SYS:Prefs. The new configuration files go into ENVARC:.
+  Note that the new configuration files are not compatible
+  with the old ones.
+
+- Prefs program and main program now support localization.
+  No catalogs are available yet, sorry.
+
+- Non-blocking operation is now the default mode since it
+  is less likely to trash memory, freeze the machine or
+  crash it.
 
-- Removed the "Remove" option from the prefs program.
-
-- The prefs editor could copy too many colours when updating
-  the program settings.
-
-- Added a "precision" slider to the prefs program. With this slider
-  you can select how much error the colour allocation routine will
-  tolerate when selecting the colours for the multicolour menu.
-
-- Rewrote all the colour management routines to be as careful as
-  possible when releasing the allocated pens. It looks as if not
-  all system configurations will treat pen #-1 as a no-op.
-
-
-MagicMenu 2.11 (beta)
-=====================
-
-- The preferences editor now opens a custom screen with 32 colours
-  if it cannot get that many from the requested public screen.
-
-- When MagicMenu has taken control of the menus, window depth
-  arrangement calls are no longer ignored, but delayed until
-  the menu closes. Actually, I would have to add a whole lot
-  more patches to make operation halfway safe, but for now
-  I'm just plastering patches onto routines which are somewhat
-  likely to get triggered while the menus are up.
-
-
-MagicMenu 2.12 (beta)
-=====================
-
-- The window depth arrangement patches were not installed correctly,
-  causing them to do nothing in most cases.
-
-- In non-blocking mode and when running under Kickstart 2.04 you
-  would still get the shadow borders. As the drop shadows do not
-  work under V37 this was not really sensible.
-
-- Added Mario's new 4 colour images. Note that you will get these
-  only with high resolution screens and fonts >= 11 points. I also
-  changed the old 3D look ghosting style.
-
-
-MagicMenu 2.13 (beta)
-=====================
-
-- Added a new option to the prefs program. If "Prefer screen colours"
-  is enabled, MagicMenu will make up the menu colours from the screen
-  user interface colours rather than using the colours you selected
-  from the palette.
-
-- Updated the WindowToFront/WindowToBack patches to delay window
-  operations on the screen the MagicMenu menus are active on.
-
-- Added more patches to SetWindowTitles and RefreshWindowFrame.
-  I should also patch RefreshGList, RefreshGadget, NewModifyProp,
-  ModifyProp, and about seven other routines but I guess I'd
-  rather stop here. All these routines can cause deadlocks which
-  MagicMenu will back out of safely. This can be a little annoying,
-  but you can still change the MagicMenu operating mode for
-  normal operation.
-
-- The keyboard control commands now consistenly work when they are
-  enabled and go out of the way when the are disabled.
-
-- Changed the settings file format, this time hopefully for the last
-  time.
-
-- Added a new option to have menus open slightly delayed, or put
-  another way, when you have stopped moving the mouse.
-
-- Added another new option to turn off the frames drawn around the
-  active menu item.
-
-
-MagicMenu 2.14 (beta)
-=====================
-
-- Corrected the placement of the Command images in menu items and
-  subitems.
-
-- For the "old look" menus the separator bars now render in the
-  correct colour.
-
-- The old 3D look menu borders are now just one pixel thick,
-  regardless of the display mode used.
-
-- Changed the preferences data exchange interface between the
-  prefs editor and the main program. Now the system should no
-  longer crash if you try to change the settings of the new
-  program with an old prefs editor.
-
-- Drop shadows are now restricted to pop-up menus.
-
-- Some menus will open faster now in non-blocking mode, as they
-  will be "promoted" to simple refresh windows if possible.
-
-- Some of the patches MagicMenu installs to protect itself are
-  no longer active in non-blocking mode. This will help Workbench
-  and other applications which would otherwise get caught in
-  their display update work.
-
-- Changed the alignment rules for the checkmark, Amiga key and
-  submenu arrow images to match those Intuition uses (or would
-  use if it could).
-
-- With "mark submenus" disabled, MagicMenu would cease to render
-  submenu indicators in multicolour 3D mode. It now works again
-  as it should.
-
-
-MagicMenu 2.15
-==============
-
-- An invalid hotkey specification no longer keeps the main program
-  from functioning. It will complain and the feature connected with
-  the hotkey will be unavailable, but the program will continue
-  to run.
-
-- Changed the default colours for the preferences editor fallback
-  screen.
-
-- Added more patches for screen depth arrangement, opening
-  and closing.
-
-- Added Mario's new artwork.
-
-
-MagicMenu 2.16
-==============
-
-- The size of the menu bar is now taken from the Screen data
-  structure rather than made up from the font height.
-
-
-MagicMenu 2.17
-==============
-
-- The layers.library patches now jump into action only if the
-  non-blocking mode and the drop shadows are enabled.
-
-
-MagicMenu 2.18
-==============
-
-- Removed all the layers.library patch code. The drop shadows are
-  now rendered using a much more robust technique that does not
-  require any black magic at all. As such, it now also works
-  under Kickstart 2.04 and is no longer restricted to non-blocking
-  mode (yes kids, that's what you always wanted).
-
-
-MagicMenu 2.19
-==============
-
-- The changes in 2.18 introduced bugs into the menu refresh code.
-  This is what I had to fix in this version.
-
-
-MagicMenu 2.20
-==============
-
-- I got bitten by SetABPenDrMd() again. Darn. Now MagicMenu can
-  cast drop shadows under Kickstart 2.04 as it should.
-
-
-MagicMenu 2.21
-==============
-
-- More fixes to keep WSpeed alive [Frank Mariak].
-
-
-MagicMenu 2.22
-==============
-
-- If launched from Workbench, MagicMenu is now quite a bit smarter
-  when trying to find its icon to read the tool types.
-
-MagicMenu 2.23
-==============
-
-- MagicMenu now only avoids activating the multicolour mode if the
-  menu text would become unreadable due to the colours chosen, or
-  if the background and the highlighting colours are the same.
-
-- Implemented hi/truecolour shadows.
-
-- MagicMenu now plants its system patches in such a way that
-  allows it to monitor whether any other application tries to
-  put its own patches on top of them. In such a case, MagicMenu
-  will insure that it stays the owner of the first patch code
-  to be invoked. This will hopefully fix all known lockup
-  problems.
-
-MagicMenu 2.24
-==============
-
-- Implemented Mario's new multicolour 3D frames.
-
-
-MagicMenu 2.26 (11.10.1999)
-
-- MagicMenu no longer starts up and complains if it didn't find a hot key
-  specifier.
-
-- Menu lending is now implemented differently, regarding the IntuiMessage->IDCMPWindow
-  pointer. MagicMenu now places the Window pointer there the menus lent came from.
-  This approach will solve one or two problems but may create others.
-
-- Added new configuration options "Transparency", "Separator bar style",
-  "Highlight disabled menu items", "Verify patches" and "Fix patches".
-
-
-MagicMenu 2.27 (11.10.1999)
-
-- Small detail: with transparency enabled, the highlight image of a tick
-  mark did not get drawn properly. Fixed.
-
-
-MagicMenu 2.28 (12.10.1999)
-
-- Reworked the transparency mode image creation code. The multicolour
-  3D mode images now come out as transparent.
-
-
-MagicMenu 2.29 (15.10.1999)
-
-- Changed the minimum drop shadow size to 2 pixels.
-
-- Transparency is no longer allowed for the traditional pull-down
-  menus.
-
-- MagicMenu no longer resets its entire configuration if it finds
-  a configuration file that does not contain data for recently added
-  configuration items. It now retains the old data and resets the
-  new entries to defaults instead.
-
-
-MagicMenu 2.30 (7.8.2000)
-
-- Bitmaps are now allocated in CyberGraphX V4 friendly form, which
-  permits them to be stored in video memory. The result should be
-  a noticeable speed increase.
-
-
-MagicMenu 2.31 (2.3.2001)
-
-- Made the 'SetFunction()' patch safer, following much good advice
-  from Harry Sintonen.
+MagicMenu 2.6 (beta)
+====================
+
+- The new 3D colour mode could screw up the screen colour palette.
+  The code did not check for pen allocation failures and, since the
+  pen variables were unsigned, the deallocation code would end up
+  freeing the same pen over and over again.
+
+- Changed the commodities filter setup code. All the initializations
+  are now done at program startup time. MagicMenu enables the filter
+  later instead of building the filter when the menu comes up.
+
+- Changed the way bevel boxes are rendered. Instead of calling
+  Move..Draw..Draw over and over again it now uses RectFill()
+  where possible. For vertical and horizontal lines this is
+  actually faster than calling Move/Draw.
+
+- Made small visual changes to the menu box and title bar rendering
+  in new 3D look mode.
+
+- With the non-blocking option enabled, the new 3D look menus now
+  sport drop shadows.
+
+- In non-blocking mode MagicMenu no longer uses SuperBitMap windows.
+
+- Removed the "demo" menu from the prefs program.
+
+- Integrated Mario's new imagery, including the new colour map
+  that goes with it.
+
+MagicMenu 2.5 (beta)
+====================
+
+- The ObtainGIRPort() patch now handles the NULL parameter case
+  gracefully. Some BOOPSI gadget dispatchers actually end up invoking
+  the draw method in the OM_NEW case with the GInfo pointer not
+  yet initialized.
+
+MagicMenu 2.4 (beta)
+====================
+
+- Improved overall stability under CyberGraphX; the menu rendering code was
+  actually peeking Screen->BitMap instead of Screen->RastPort.BitMap, which
+  among other things could screw up rendering in deep display modes. Menu
+  rendering now works consistently in display depths beyond 8 bit.
+
+- Removed references to SetABPenDrMd() where they were in the wrong place.
+
+- The code that sends the IntuiMessage should be less timing critical and
+  simpler now. It fires off the message and starts to wait for a response
+  if necessary rather than allocating timer requests, message ports, etc.
+  on the spot and then jumping into action.
+
+- Removed the routine that complains about timed out IntuiMessages. It's
+  nice to know that something went wrong, but not that helpful if you
+  cannot do anything about it.
+
+- Since IntuiMessage processing works differently now, MagicMenu now checks
+  for pending, unreplied messages.
+
+- The routine that displays the menu and handles the IDCMP_MENUVERIFY
+  case should be better protected against Intuition state changes and
+  stale pointers. There is still a catch in that the Window to receive
+  the menu event may close or dispose of its menu strip before the
+  event arrives. But actually, Intuition protects itself against
+  such eventualities, anyway.
+
+- For a Window without a UserPort, MagicMenu could lose memory. This
+  has been fixed.
+
+- When an IDCMP_MENUVERIFY message times out, the window to cancel
+  it now properly receives its IDCMP_MOUSEBUTTONS/MENUUP and
+  IDCMP_MENUPICK/MENUNULL messages (as per the RKMs). When menu
+  rendering is finished the other inactive IDCMP_MENUVERIFY windows
+  on the screen now receive the proper IDCMP_MOUSEBUTTONS/MENUUP
+  messages.
+
+- Changed the way BOOPSI images in menus are handled. MagicMenu no longer
+  tries to remap them as if they were BitMap images. Right now it turns
+  them into BitMap images and then remaps them.
+
+- Redid the image remapping code. It no longer fiddles with the raw BitMap
+  data but uses the Blitter.
+
+- Added a patch for ObtainGIRPort() which should make all the SafeGIRPort
+  patches redundant that existed just in support of MagicMenu. The patch
+  checks if the screen it should work upon is currently locked by
+  MagicMenu. If so, ObtainGIRPort() will return NULL. This is a little
+  dangerous since some built-in Intuition classes do not protect themselves
+  against ObtainGIRPort() returning NULL. I can't make the patch tell
+  Intuition to wait until the screen is ready again either, as this would
+  eventually deadlock Intuition.
+
+- Changed the new 3D look text highlight colour to be more consistent with
+  the way gadget text highlighting works.
+
+- MagicMenu no longer detaches from the Shell it was started from. If
+  you need such a feature, use "run >nil: MagicMenu".
+
+- MagicMenu now works with Final Writer. Final Writer calls
+  Clear/ResetMenuStrip whilst in MENUVERIFY state. Previously,
+  MagicMenu did not allow this to happen, causing the verify message
+  to time out.
+
+- The phony IntuiMessages are now ExtIntuiMessages with a NULL tablet
+  data pointer and proper time stamp information.
+ 
