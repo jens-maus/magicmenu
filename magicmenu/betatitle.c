@@ -28,6 +28,7 @@ UWORD __stdargs RangeRand( unsigned long maxValue );
 #include <pragmas/dos_pragmas.h>
 
 #include <string.h>
+#include <stdarg.h>
 
 #include "MagicMenu_rev.h"
 
@@ -35,8 +36,9 @@ extern struct IntuitionBase *IntuitionBase;
 extern struct GfxBase *GfxBase;
 extern struct ExecBase *SysBase;
 extern struct DosLibrary *DOSBase;
+extern struct Library *UtilityBase;
 
-#define SECONDS		15
+#define SECONDS		5
 
 #define FRAME_WIDTH	8
 #define FRAME_HEIGHT	8
@@ -1309,13 +1311,44 @@ HihoTaskEntry(VOID)
 	HihoTask = NULL;
 }
 
+STATIC VOID
+SPrintf (STRPTR buffer, STRPTR formatString,...)
+{
+	va_list varArgs;
+
+	va_start (varArgs, formatString);
+	RawDoFmt (formatString, varArgs, (VOID (*)())(VOID (*))"\x16\xC0\x4E\x75", buffer);
+	va_end (varArgs);
+}
+
 VOID
 StartHihoTask(VOID)
 {
+	UBYTE LocalBuffer[30];
+	UBYTE OtherBuffer[30];
+	BPTR FileHandle;
+
+	SPrintf(OtherBuffer,"%ld.%ld",VERSION,REVISION);
+
+	if(GetVar("MagicMenuBeta",LocalBuffer,sizeof(LocalBuffer),GVF_GLOBAL_ONLY) > 0)
+	{
+		if(!Stricmp(LocalBuffer,OtherBuffer))
+			return;
+	}
+
+	SetVar("MagicMenuBeta",OtherBuffer,-1,GVF_GLOBAL_ONLY);
+
+	if(FileHandle = Open("ENVARC:MagicMenuBeta",MODE_NEWFILE))
+	{
+		Write(FileHandle,OtherBuffer,strlen(OtherBuffer));
+
+		Close(FileHandle);
+	}
+
 	Forbid();
 
 	if(!HihoTask)
-		CreateTask("« Hiho »",0,HihoTaskEntry,4000);
+		CreateTask("« Hiho »",0,HihoTaskEntry,8000);
 
 	Permit();
 }

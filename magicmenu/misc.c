@@ -374,7 +374,7 @@ MMCreateUpfrontHookLayer (
   /* Bei SuperBitMap wird nichts geändert */
 
   if (Flags & LAYERSUPER)
-    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y0, Flags, Hook, Super, LayersBase);
+    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, Hook, Super, LayersBase);
   else
   {
     /* Wichtig: Der Layer wird gleich nach der
@@ -484,106 +484,13 @@ CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
   }
 }
 
-BOOL
+VOID
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
 {
-#if 1
 	extern VOID __asm RemapBitMap(REG(a0) struct BitMap *srcbm,REG(a1) struct BitMap *destbm,REG(a2) UBYTE *table,REG(d0) LONG width);
 
 	WaitBlit();
 	RemapBitMap(Src,Dst,Mapping,Width);
-
-	return(TRUE);
-#endif
-#if 0
-  struct BitMap *SingleMap;
-
-  /* Create a single bitplane bitmap. */
-
-  if (SingleMap = allocBitMap (1, Width, Height, NULL, TRUE))
-  {
-    struct BitMap *FullMap;
-
-    /* Create a dummy bitmap. */
-
-    if (FullMap = (struct BitMap *) AllocVecPooled (sizeof (struct BitMap), MEMF_ANY))
-    {
-      LONG i, Mask = (1L << Src->Depth) - 1;
-
-      /* Make the dummy bitmap use the
-       * single bitmap in all planes.
-       */
-
-      InitBitMap (FullMap, max(Src->Depth,DestDepth), Width, Height);
-
-      for (i = 0; i < FullMap->Depth; i++)
-        FullMap->Planes[i] = SingleMap->Planes[0];
-
-      /* Clear the destination bitmap. */
-
-      BltBitMap (Dst, 0, 0, Dst, 0, 0, Width, Height, MINTERM_ZERO, ~0, NULL);
-
-      /* Is colour zero to be mapped to a non-zero colour? */
-
-      if (Mapping[0])
-      {
-        /* Clear the single plane bitmap. */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ZERO, 1, NULL);
-
-        /* Merge all source bitplane data. */
-
-        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_OR_C, Mask, NULL);
-
-        /* Invert the single plane bitmap, to give us
-           * the zero colour bitmap we can work with.
-         */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_NOT_C, 1, NULL);
-
-        /* Now set all the bits for colour zero. */
-
-        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[0], NULL);
-      }
-
-      /* Run down the colours. */
-
-      for (i = 1; i <= Mask; i++)
-      {
-        /* Set the single plane bitmap to all 1's. */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ONE, 1, NULL);
-
-        /* Isolate the pixels to match the colour specified in `i'. */
-
-        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_AND_C, i, NULL);
-
-        if (Mask ^ i)
-          BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_NOT_B_AND_C, Mask ^ i, NULL);
-
-        /* Set the pixels in the destination bitmap, use the designated colour. */
-
-        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[i], NULL);
-      }
-
-      /* Free the temporary bitmap. */
-
-      FreeVecPooled (FullMap);
-
-      /* Free the single plane bitmap. */
-
-      disposeBitMap (SingleMap, Width, Height, TRUE);
-
-      /* Return the result. */
-
-      return (TRUE);
-    }
-
-    disposeBitMap (SingleMap, Width, Height, TRUE);
-  }
-
-  return (FALSE);
-#endif
 }
 
 BOOL
@@ -614,7 +521,7 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
       {
         CreateBitMapFromImage (*DestImage, &Dst);
 
-        if (SrcImage->Depth == -1)
+        if (SrcImage->Depth == -1 || ((SrcImage->PlanePick ^ (*DestImage)->PlanePick) & (*DestImage)->PlanePick))
         {
           struct RastPort TempRPort;
 
@@ -626,12 +533,11 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
             DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
 
-            Result = RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+            RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
 
             disposeBitMap (TempRPort.BitMap, SrcImage->Width, SrcImage->Height, TRUE);
 
-            if (Result)
-              return (TRUE);
+            return (TRUE);
           }
         }
         else
@@ -640,8 +546,9 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
           CreateBitMapFromImage (SrcImage, &Src);
 
-          if (RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height))
-            return (TRUE);
+          RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+
+          return (TRUE);
         }
       }
     }
@@ -870,7 +777,6 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
   Error = FALSE;
 
   if (V39 && !WantChipMem)
-/*  return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth >= 8) ? BMF_MINPLANES : NULL, Friend));*/
     return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
   else
   {

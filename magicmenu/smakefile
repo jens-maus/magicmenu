@@ -19,7 +19,7 @@ VERSION =	2
 GSTFILE =	system_headers.gst
 #OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
 CPU =		030
-#CPU =		any utillib
+#CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)

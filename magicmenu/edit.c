@@ -12,13 +12,17 @@
 
 #include "MagicMenuPrefs_rev.h"
 
-STRPTR VersTag[] = VERSTAG;
+STRPTR VersTag = VERSTAG;
 
 /******************************************************************************/
 
 #define CATCOMP_ARRAY
 
 #include "magicmenu.h"
+
+/******************************************************************************/
+
+long __stack = 16000;
 
 /******************************************************************************/
 
@@ -56,8 +60,6 @@ struct MMPrefs DefaultPrefs =
 	0x00000000, 0x00000000, 0x00000000,	/* TextCol */
 	0x00000000, 0x00000000, 0x00000000,	/* HiCol */
 	0x3B3B3B3B, 0x67676767, 0xa3a3a3a3,	/* FillCol */
-	0x60606060, 0x60606060, 0x60606060,	/* GhostLoCol */
-	0xAFAFAFAF, 0xAFAFAFAF, 0xAFAFAFAF	/* GhostHiCol */
 };
 
 struct MMPrefs CurrentPrefs;
@@ -175,7 +177,7 @@ struct ColorWheelHSB	 ColorHSB;
 /******************************************************************************/
 
 #define GRADIENT_PENS	 16
-#define COLOUR_PENS	 20
+#define COLOUR_PENS	 18
 
 WORD			 GradientPens[GRADIENT_PENS+1];
 WORD			 GradientPensUsed;
@@ -384,7 +386,16 @@ AddIcon(STRPTR Name)
 	{
 		if(IconBase = OpenLibrary("icon.library",37))
 		{
-			PutDiskObject(Name,&DefaultPrefsIcon);
+			struct DiskObject *Icon;
+
+			if(Icon = GetDiskObjectNew("sys/def_pref"))
+			{
+				PutDiskObject(Name,Icon);
+
+				FreeDiskObject(Icon);
+			}
+			else
+				PutDiskObject(Name,&DefaultPrefsIcon);
 
 			CloseLibrary(IconBase);
 		}
@@ -456,6 +467,7 @@ NewPrefs(struct MMPrefs *Prefs)
 
 	Message.Class = MMC_NEWCONFIG;
 	Message.Ptr1 = Prefs;
+	Message.Ptr2 = CX_PopKey;
 
 	Forbid();
 
@@ -585,11 +597,11 @@ ClampColour(ULONG *RGB,LONG Red,LONG Green,LONG Blue)
 VOID
 UpdateSample(struct MMPrefs *Prefs)
 {
-	struct LoadThatColour LoadTable[12+1];
+	struct LoadThatColour LoadTable[10+1];
 	struct ColorWheelRGB *Colours;
 	LONG i,Red,Green,Blue;
 
-	for(i = 0 ; i < 12 ; i++)
+	for(i = 0 ; i < 10 ; i++)
 	{
 		LoadTable[i].One	= 1;
 		LoadTable[i].Which	= Pens[8+i];
@@ -599,7 +611,7 @@ UpdateSample(struct MMPrefs *Prefs)
 
 	Colours = (struct ColorWheelRGB *)&Prefs->mmp_LightEdge;
 
-	for(i = 0 ; i < 8 ; i++)
+	for(i = 0 ; i < 6 ; i++)
 	{
 		LoadTable[i].Red	= Colours[i].cw_Red;
 		LoadTable[i].Green	= Colours[i].cw_Green;
@@ -997,113 +1009,13 @@ CreateBitMapFromImage(struct Image *Image,struct BitMap *BitMap)
 	}
 }
 
-#define MINTERM_ZERO		0
-#define MINTERM_ONE		ABC | ABNC | ANBC | ANBNC | NABC | NABNC | NANBC | NANBNC
-#define MINTERM_COPY		ABC | ABNC | NABC | NABNC
-#define MINTERM_NOT_C		ABNC | ANBNC | NABNC | NANBNC
-#define MINTERM_B_AND_C		ABC | NABC
-#define MINTERM_NOT_B_AND_C	ANBC | NANBC
-#define MINTERM_B_OR_C		ABC | ABNC | NABC | NABNC | ANBC | NANBC
-
-BOOL
+VOID
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
 {
-#if 1
 	extern VOID __asm RemapBitMap(REG(a0) struct BitMap *srcbm,REG(a1) struct BitMap *destbm,REG(a2) UBYTE *table,REG(d0) LONG width);
 
 	WaitBlit();
 	RemapBitMap(Src,Dst,Mapping,Width);
-
-	return(TRUE);
-#if 0
-  struct BitMap *SingleMap;
-
-  /* Create a single bitplane bitmap. */
-
-  if (SingleMap = CreateBitMap (1, Width, Height))
-  {
-    struct BitMap *FullMap;
-
-    /* Create a dummy bitmap. */
-
-    if (FullMap = (struct BitMap *) AllocVec (sizeof (struct BitMap), MEMF_ANY|MEMF_PUBLIC))
-    {
-      LONG i, Mask = (1L << Src->Depth) - 1;
-
-      /* Make the dummy bitmap use the
-       * single bitmap in all planes.
-       */
-
-      InitBitMap (FullMap, max(Src->Depth,DestDepth), Width, Height);
-
-      for (i = 0; i < FullMap->Depth; i++)
-        FullMap->Planes[i] = SingleMap->Planes[0];
-
-      /* Clear the destination bitmap. */
-
-      BltBitMap (Dst, 0, 0, Dst, 0, 0, Width, Height, MINTERM_ZERO, ~0, NULL);
-
-      /* Is colour zero to be mapped to a non-zero colour? */
-
-      if (Mapping[0])
-      {
-        /* Clear the single plane bitmap. */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ZERO, 1, NULL);
-
-        /* Merge all source bitplane data. */
-
-        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_OR_C, Mask, NULL);
-
-        /* Invert the single plane bitmap, to give us
-           * the zero colour bitmap we can work with.
-         */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_NOT_C, 1, NULL);
-
-        /* Now set all the bits for colour zero. */
-
-        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[0], NULL);
-      }
-
-      /* Run down the colours. */
-
-      for (i = 1; i <= Mask; i++)
-      {
-        /* Set the single plane bitmap to all 1's. */
-
-        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ONE, 1, NULL);
-
-        /* Isolate the pixels to match the colour specified in `i'. */
-
-        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_AND_C, i, NULL);
-
-        if (Mask ^ i)
-          BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_NOT_B_AND_C, Mask ^ i, NULL);
-
-        /* Set the pixels in the destination bitmap, use the designated colour. */
-
-        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[i], NULL);
-      }
-
-      /* Free the temporary bitmap. */
-
-      FreeVec (FullMap);
-
-      /* Free the single plane bitmap. */
-
-      DeleteBitMap (SingleMap, Width, Height);
-
-      /* Return the result. */
-
-      return (TRUE);
-    }
-
-    DeleteBitMap (SingleMap, Width, Height);
-  }
-
-  return (FALSE);
-#endif
 }
 
 /******************************************************************************/
@@ -1202,7 +1114,7 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	NewFileName = FALSE;
 
-	strcpy(FileName,"ENVARC:MagicMenu.prefs");
+	strcpy(FileName,"ENV:MagicMenu.prefs");
 
 	if(!(IntuitionBase = (struct IntuitionBase *)OpenLibrary("intuition.library",37)))
 		return("intuition.library V37");
@@ -1433,7 +1345,10 @@ OpenAll(struct WBStartup *StartupMsg)
 		}
 	}
 	else
-		AskPrefs(&CurrentPrefs,&MMEnabled,CX_PopKey);
+	{
+		if(!AskPrefs(&CurrentPrefs,&MMEnabled,CX_PopKey))
+			ReadPrefs(FileName,&CurrentPrefs);
+	}
 
 	if(ProgramMode != MODE_Edit)
 		return(NULL);
@@ -1556,8 +1471,6 @@ OpenAll(struct WBStartup *StartupMsg)
 				Mapping[19] = *Pen++;	/* TextCol */
 				Mapping[20] = *Pen++;	/* HiCol */
 				Mapping[21] = *Pen++;	/* FillCol */
-				Mapping[22] = *Pen++;	/* GhostLoCol */
-				Mapping[23] = *Pen++;	/* GhostHiCol */
 
 				Mapping[ 8] = *Pen++;	/* SectGrey */
 
@@ -1565,9 +1478,12 @@ OpenAll(struct WBStartup *StartupMsg)
 				Mapping[10] = *Pen++;	/* StdGrey1 */
 				Mapping[11] = *Pen;	/* StdGrey2 */
 
+				Mapping[22] = Mapping[ 9];
+				Mapping[23] = Mapping[11];
+
 				CreateBitMapFromImage(WhichImage,&WhichBitMap);
 
-				GotPens = RecolourBitMap(&WhichBitMap,SampleMenu,Mapping,MaxDepth,SampleMenuWidth,SampleMenuHeight);
+				RecolourBitMap(&WhichBitMap,SampleMenu,Mapping,MaxDepth,SampleMenuWidth,SampleMenuHeight);
 			}
 			else
 				GotPens = FALSE;
@@ -1844,8 +1760,6 @@ OpenAll(struct WBStartup *StartupMsg)
 							MSG_TEXT_TXT,
 							MSG_SELECTED_TEXT_TXT,
 							MSG_SELECTED_BACKGROUND_TXT,
-							MSG_DARKER_SHADOW_TXT,
-							MSG_LIGHTER_SHADOW_TXT,
 							-1
 						};
 
@@ -2220,6 +2134,9 @@ UpdateSettings(struct MMPrefs *Prefs)
 		ChangeWheelColour(&CurrentPrefs,WhichPen);
 		UpdateRGB(&CurrentPrefs,WhichPen);
 		UpdateHSB(&CurrentPrefs,WhichPen);
+
+		UpdateSample(&CurrentPrefs);
+		UpdateGradient(&CurrentPrefs,WhichPen);
 	}
 }
 
@@ -2287,6 +2204,7 @@ EventLoop(VOID)
 
 							case GAD_Use:
 
+								WritePrefs("ENV:MagicMenu.prefs",&CurrentPrefs);
 								NewPrefs(&CurrentPrefs);
 
 							case GAD_Cancel:
@@ -2558,7 +2476,10 @@ main(int argc,char **argv)
 				if(Error = WritePrefs("ENVARC:MagicMenu.prefs",&CurrentPrefs))
 					ShowError(MSG_ERROR_WRITING_PREFERENCES_TXT,Error);
 				else
+				{
+					WritePrefs("ENV:MagicMenu.prefs",&CurrentPrefs);
 					NewPrefs(&CurrentPrefs);
+				}
 
 				break;
 

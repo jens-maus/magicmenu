@@ -1,5 +1,6 @@
 
 /* main.c */
+VOID AttachCLI(struct WBStartup *Startup);
 STRPTR GetString(ULONG ID);
 VOID Activate(VOID);
 VOID Deactivate(VOID);

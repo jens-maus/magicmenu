@@ -31,9 +31,18 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     return (TRUE);
   }
 
-  /* MenScr und MenStrip übernehmen. */
-  MenScr = MenWin->WScreen;
   MenStrip = MenWin->MenuStrip;
+
+  /* Ist mit diesem Fenster etwas zu machen? */
+  if ((!MenStrip) || (MenWin->Flags & WFLG_RMBTRAP) || (MenWin->ReqCount != 0))
+  {
+    /* Intuition wieder starten. */
+    UnlockIBase (IBaseLock);
+    ReleaseSemaphore (GetPointerSemaphore);
+    return (FALSE);
+  }
+
+  MenScr = MenWin->WScreen;
 
   /* Ab jetzt kann wieder lesend auf MenWin, MenScr, MenStrip
    * zugegriffen werden.
@@ -49,16 +58,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   MenuNum = NOMENU;
   ItemNum = NOITEM;
   SubItemNum = NOSUB;
-
-  /* Ist mit diesem Fenster etwas zu machen? */
-  if ((!MenStrip) || (MenWin->Flags & WFLG_RMBTRAP) || (MenWin->ReqCount != 0))
-  {
-    /* Intuition wieder starten. */
-    UnlockIBase (IBaseLock);
-    /* MenWin, MenScr, MenStrip löschen. */
-    EndIntuiMenu (FALSE);
-    return (FALSE);
-  }
 
   if (MenWin->IDCMPFlags & IDCMP_MENUVERIFY)
   {

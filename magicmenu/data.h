@@ -46,6 +46,10 @@ extern CxObj *ActKbdSender;
 extern CxObj *ActKbdTransl;
 extern CxObj *MouseMoveFilter;
 extern CxObj *MouseMoveSender;
+extern CxObj *MousePositionFilter;
+extern CxObj *MousePositionSender;
+extern CxObj *MouseNewPositionFilter;
+extern CxObj *MouseNewPositionSender;
 extern CxObj *TickFilter;
 extern CxObj *TickSignal;
 extern struct MsgPort *CxMsgPort;
@@ -109,6 +113,10 @@ extern UWORD MenSectGrey;
 extern UWORD MenStdGrey0;
 extern UWORD MenStdGrey1;
 extern UWORD MenStdGrey2;
+
+extern UWORD MenActiveGrey0;
+extern UWORD MenActiveGrey1;
+extern UWORD MenActiveGrey2;
 
 extern UBYTE SelBoxOffs;
 extern BOOL Look3D;
@@ -221,6 +229,9 @@ extern struct InputXpression ActiveMouseMoveIX;
 
 extern struct InputXpression ActiveKbdIX;
 
+extern struct InputXpression ActiveMousePositionIX;
+extern struct InputXpression ActiveMouseNewPositionIX;
+
 extern UWORD DitherPattern[];
 
 extern UWORD __chip MXImage1PlPattern[];
@@ -302,6 +313,8 @@ extern struct Image MXUpGhosted;
 
 extern struct Image Amiga8_Normal;
 extern struct Image Amiga8_Ghosted;
+extern struct Image Arrow8_Normal;
+extern struct Image Arrow8_Ghosted;
 extern struct Image Check8_Normal;
 extern struct Image Check8_Ghosted;
 extern struct Image MXDown8_Normal;

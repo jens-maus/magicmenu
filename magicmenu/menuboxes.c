@@ -47,7 +47,7 @@ ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height
 
 /******************************************************************************/
 
-#define NUM_MENU_PENS 20
+#define NUM_MENU_PENS 21
 
 static ULONG MenuColours[NUM_MENU_PENS * 3];
 static ULONG *MenuColour;
@@ -90,9 +90,9 @@ AddMenuColour8 (LONG red, LONG green, LONG blue)
   else if (blue < 0)
     blue = 0;
 
-  *MenuColour++ = red * 0x01010101;
-  *MenuColour++ = green * 0x01010101;
-  *MenuColour++ = blue * 0x01010101;
+  *MenuColour++ = 0x01010101UL * red;
+  *MenuColour++ = 0x01010101UL * green;
+  *MenuColour++ = 0x01010101UL * blue;
 }
 
 static void
@@ -115,7 +115,7 @@ AllocateMenuColours (struct ColorMap *cmap)
 {
   static Tag Tags[] =
   {
-    OBP_Precision, PRECISION_IMAGE,
+    OBP_Precision, PRECISION_GUI,
     OBP_FailIfBad, TRUE,
 
     TAG_DONE
@@ -189,12 +189,12 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
         if (LookMC && Ghosted)
         {
           MyText.DrawMode = JAM1;
-          MyText.FrontPen = MenGhostHiCol;
+          MyText.FrontPen = MenStdGrey2;
 
           PrintIText (rp, &MyText, StartX + 1, StartY + 1);
 
           MyText.DrawMode = JAM1;
-          MyText.FrontPen = MenGhostLoCol;
+          MyText.FrontPen = MenStdGrey0;
 
           PrintIText (rp, &MyText, StartX, StartY);
         }
@@ -387,9 +387,9 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       if (Ghosted)
       {
         DrawImage (rp, CommandImageGhosted, z1 - CommandImageGhosted->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImageGhosted->Height / 2));
-        CommandText.FrontPen = MenGhostHiCol;
+        CommandText.FrontPen = MenStdGrey2;
         PrintIText (rp, &CommandText, z1 - CmdOffs + 1, StartY + 1);
-        CommandText.FrontPen = MenGhostLoCol;
+        CommandText.FrontPen = MenStdGrey0;
         CommandText.DrawMode = JAM1;
         PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
       }
@@ -1289,12 +1289,12 @@ DrawHiMenu (struct Menu * Menu)
         {
           HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, FALSE);
 
-          SetFgPen (StripDrawRPort, MenGhostHiCol);
+          SetFgPen (StripDrawRPort, MenStdGrey2);
 
           Move (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1);
           Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
 
-          SetFgPen (StripDrawRPort, MenGhostLoCol);
+          SetFgPen (StripDrawRPort, MenStdGrey0);
 
           Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
           Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
@@ -1378,12 +1378,12 @@ DrawNormMenu (struct Menu *Menu)
         }
         else
         {
-          SetFgPen (StripDrawRPort, MenGhostHiCol);
+          SetFgPen (StripDrawRPort, MenStdGrey2);
 
           Move (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1);
           Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
 
-          SetFgPen (StripDrawRPort, MenGhostLoCol);
+          SetFgPen (StripDrawRPort, MenStdGrey0);
 
           Move (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline);
           Text (StripDrawRPort, Menu->MenuName, strlen (Menu->MenuName));
@@ -2196,12 +2196,12 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
 
     if (LookMC && !ZwMenu->Flags & MENUENABLED)
     {
-      SetFgPen (RPort, MenGhostHiCol);
+      SetFgPen (RPort, MenStdGrey2);
 
       Move (RPort, X + 1, Y + 1);
       Text (RPort, ZwMenu->MenuName, strlen (ZwMenu->MenuName));
 
-      SetFgPen (RPort, MenGhostLoCol);
+      SetFgPen (RPort, MenStdGrey0);
     }
     else
       SetFgPen (RPort, MenTextCol);
@@ -2213,6 +2213,45 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
       GhostMenu (ZwMenu, RPort, Left, Top);
 
     ZwMenu = ZwMenu->NextMenu;
+  }
+}
+
+VOID
+SetMCPens(BOOL Vanilla)
+{
+  StdRemapArray[0] = MenXENGrey0;
+  StdRemapArray[1] = MenXENBlack;
+  StdRemapArray[2] = MenXENWhite;
+  StdRemapArray[3] = MenXENBlue;
+  StdRemapArray[4] = MenXENGrey1;
+  StdRemapArray[5] = MenXENGrey2;
+  StdRemapArray[6] = MenXENBeige;
+  StdRemapArray[7] = MenXENPink;
+  StdRemapArray[8] = MenBackGround;
+
+  StdRemapArray[9] = MenStdGrey0;
+  StdRemapArray[10] = MenStdGrey1;
+  StdRemapArray[11] = MenStdGrey2;
+
+  memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
+  memcpy(DreiDGhostedRemapArray,StdRemapArray,sizeof(StdRemapArray));
+  memcpy(DreiDActiveRemapArray,StdRemapArray,sizeof(StdRemapArray));
+
+  DreiDActiveRemapArray[ 8] = MenFillCol;
+  DreiDActiveRemapArray[ 9] = MenActiveGrey0;
+  DreiDActiveRemapArray[10] = MenActiveGrey1;
+  DreiDActiveRemapArray[11] = MenActiveGrey2;
+
+  if(Vanilla)
+  {
+    DreiDRemapArray[MenMenuTextCol] = MenTextCol;
+    DreiDRemapArray[MenMenuBackCol] = MenBackGround;
+
+    DreiDActiveRemapArray[MenMenuTextCol] = MenHiCol;
+    DreiDActiveRemapArray[MenMenuBackCol] = MenFillCol;
+
+    DreiDGhostedRemapArray[MenMenuTextCol] = MenStdGrey0;
+    DreiDGhostedRemapArray[MenMenuBackCol] = MenBackGround;
   }
 }
 
@@ -2271,7 +2310,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   ColorMap = MenScr->ViewPort.ColorMap;
 
-  if (NewLook == LOOK_MC && StripDepth >= 3 && V39 && ScrHiRes)
+  if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes)
   {
     LONG red, green, blue;
 
@@ -2302,10 +2341,16 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 	blue = AktPrefs.mmp_Background.B >> 24;
 
 	AddMenuColour8 (red - 26, green - 26, blue - 26);  // StdGrey0
-
 	AddMenuColour8 (red, green, blue);  // StdGrey1
-
 	AddMenuColour8 (red + 26, green + 26, blue + 26);  // StdGrey2
+
+	red = AktPrefs.mmp_FillCol.R >> 24;
+	green = AktPrefs.mmp_FillCol.G >> 24;
+	blue = AktPrefs.mmp_FillCol.B >> 24;
+
+	AddMenuColour8 (red - 26, green - 26, blue - 26);  // ActiveGrey0
+	AddMenuColour8 (red, green, blue);  // ActiveGrey1
+	AddMenuColour8 (red + 26, green + 26, blue + 26);  // ActiveGrey2
     }
     else
     {
@@ -2313,6 +2358,10 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // StdGrey0
 	AddMenuColour8 (0x95, 0x95, 0x95);  // StdGrey1
 	AddMenuColour8 (0xAF, 0xAF, 0xAF);  // StdGrey2
+
+	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // ActiveGrey0
+	AddMenuColour8 (0x95, 0x95, 0x95);  // ActiveGrey1
+	AddMenuColour8 (0xAF, 0xAF, 0xAF);  // ActiveGrey2
     }
 
     AddMenuColour (AktPrefs.mmp_LightEdge.R, AktPrefs.mmp_LightEdge.G, AktPrefs.mmp_LightEdge.B);
@@ -2321,8 +2370,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     AddMenuColour (AktPrefs.mmp_TextCol.R, AktPrefs.mmp_TextCol.G, AktPrefs.mmp_TextCol.B);
     AddMenuColour (AktPrefs.mmp_HiCol.R, AktPrefs.mmp_HiCol.G, AktPrefs.mmp_HiCol.B);
     AddMenuColour (AktPrefs.mmp_FillCol.R, AktPrefs.mmp_FillCol.G, AktPrefs.mmp_FillCol.B);
-    AddMenuColour (AktPrefs.mmp_GhostLoCol.R, AktPrefs.mmp_GhostLoCol.G, AktPrefs.mmp_GhostLoCol.B);
-    AddMenuColour (AktPrefs.mmp_GhostHiCol.R, AktPrefs.mmp_GhostHiCol.G, AktPrefs.mmp_GhostHiCol.B);
 
     Look3D = TRUE;
 
@@ -2347,14 +2394,16 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenStdGrey1 = *Pen++;
       MenStdGrey2 = *Pen++;
 
+      MenActiveGrey0 = *Pen++;
+      MenActiveGrey1 = *Pen++;
+      MenActiveGrey2 = *Pen++;
+
       MenLightEdge = *Pen++;
       MenDarkEdge = *Pen++;
       MenBackGround = *Pen++;
       MenTextCol = *Pen++;
       MenHiCol = *Pen++;
       MenFillCol = *Pen++;
-      MenGhostLoCol = *Pen++;
-      MenGhostHiCol = *Pen;
 
 /*
       MenXENGrey0 = 0;
@@ -2378,11 +2427,8 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenTextCol = 19;
       MenHiCol = 20;
       MenFillCol = 21;
-      MenGhostLoCol = 22;
-      MenGhostHiCol = 23;
 */
-      LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol &&
-        (MenGhostLoCol != MenBackGround || MenGhostHiCol != MenBackGround));
+      LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
 
       if(LookMC)
       {
@@ -2440,32 +2486,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   {
     if (LookMC)
     {
-      StdRemapArray[0] = MenXENGrey0;
-      StdRemapArray[1] = MenXENBlack;
-      StdRemapArray[2] = MenXENWhite;
-      StdRemapArray[3] = MenXENBlue;
-      StdRemapArray[4] = MenXENGrey1;
-      StdRemapArray[5] = MenXENGrey2;
-      StdRemapArray[6] = MenXENBeige;
-      StdRemapArray[7] = MenXENPink;
-      StdRemapArray[8] = MenBackGround;
-
-      StdRemapArray[9] = MenStdGrey0;
-      StdRemapArray[10] = MenStdGrey1;
-      StdRemapArray[11] = MenStdGrey2;
-
-      memcpy(DreiDRemapArray,StdRemapArray,sizeof(StdRemapArray));
-      memcpy(DreiDGhostedRemapArray,StdRemapArray,sizeof(StdRemapArray));
-      memcpy(DreiDActiveRemapArray,StdRemapArray,sizeof(StdRemapArray));
-
-      DreiDRemapArray[MenMenuTextCol] = MenTextCol;
-      DreiDRemapArray[MenMenuBackCol] = MenBackGround;
-
-      DreiDActiveRemapArray[MenMenuTextCol] = MenHiCol;
-      DreiDActiveRemapArray[MenMenuBackCol] = MenFillCol;
-
-      DreiDGhostedRemapArray[MenMenuTextCol] = MenGhostLoCol;
-      DreiDGhostedRemapArray[MenMenuBackCol] = MenBackGround;
+      SetMCPens(TRUE);
     }
     else
     {
@@ -2482,50 +2503,49 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
     ObtainGlyphs (MenWin, &CheckImage, &CommandImage);
 
-    if (CheckImage || CommandImage)
+    if (CheckImage)
     {
-      if (CheckImage)
+      if (Ok)
+        Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, StripDepth, DreiDRemapArray);
+      NoMXImage = &NoCheckImage2Pl;
+      CopyImageDimensions (NoMXImage, CheckImage);
+
+      if (LookMC)
       {
         if (Ok)
-          Ok = MakeRemappedImage (&CheckImageRmp, CheckImage, StripDepth, DreiDRemapArray);
-        NoMXImage = &NoCheckImage2Pl;
-        CopyImageDimensions (NoMXImage, CheckImage);
-
-        if (LookMC)
-        {
-          if (Ok)
-            MakeRemappedImage (&CheckImageGhosted, CheckImage, StripDepth, DreiDGhostedRemapArray);
-          if (Ok)
-            MakeRemappedImage (&CheckImageActive, CheckImage, StripDepth, DreiDActiveRemapArray);
-        }
-
-        CheckImage = CheckImageRmp;
-        MXImage = CheckImage;
-
-        DoFlipMX = FALSE;
-        DoFlipCheck = FALSE;
-      }
-
-      if (CommandImage)
-      {
-        DoFlipCommand = FALSE;
+          MakeRemappedImage (&CheckImageGhosted, CheckImage, StripDepth, DreiDGhostedRemapArray);
         if (Ok)
-          Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, StripDepth, DreiDRemapArray);
-        if (LookMC)
-        {
-          if (Ok)
-            Ok = MakeRemappedImage (&CommandImageGhosted, CommandImage, StripDepth, DreiDGhostedRemapArray);
-          if (Ok)
-            Ok = MakeRemappedImage (&CommandImageActive, CommandImage, StripDepth, DreiDActiveRemapArray);
-        }
-
-        CommandImage = CommandImageRmp;
+          MakeRemappedImage (&CheckImageActive, CheckImage, StripDepth, DreiDActiveRemapArray);
       }
+
+      CheckImage = CheckImageRmp;
+      MXImage = CheckImage;
+
+      DoFlipMX = FALSE;
+      DoFlipCheck = FALSE;
+    }
+
+    if (CommandImage)
+    {
+      DoFlipCommand = FALSE;
+      if (Ok)
+        Ok = MakeRemappedImage (&CommandImageRmp, CommandImage, StripDepth, DreiDRemapArray);
+      if (LookMC)
+      {
+        if (Ok)
+          Ok = MakeRemappedImage (&CommandImageGhosted, CommandImage, StripDepth, DreiDGhostedRemapArray);
+        if (Ok)
+          Ok = MakeRemappedImage (&CommandImageActive, CommandImage, StripDepth, DreiDActiveRemapArray);
+      }
+
+      CommandImage = CommandImageRmp;
     }
 
     if (LookMC)
     {
       BOOL SpecialCheckImage = (CheckImage != NULL);
+
+      SetMCPens(FALSE);
 
       Ok = TRUE;
 
@@ -2533,30 +2553,30 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       {
         if (!CommandImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageRmp, &AmigaNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageGhosted, &AmigaGhosted, MaxMapDepth, StdRemapArray);
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&CommandImageActive, &AmigaNormal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CommandImageActive, &AmigaNormal, MaxMapDepth, DreiDActiveRemapArray);
 
           CommandImage = CommandImageRmp;
         }
 
         if (!CheckImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageRmp, &CheckNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageGhosted, &CheckGhosted, MaxMapDepth, StdRemapArray);
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&CheckImageActive, &CheckNormal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CheckImageActive, &CheckNormal, MaxMapDepth, DreiDActiveRemapArray);
 
           CheckImage = CheckImageRmp;
         }
@@ -2566,22 +2586,22 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         NoCheckImage->PlaneOnOff = MenBackGround;
         CopyImageDimensions (NoCheckImage, CheckImage);
 
-        StdRemapArray[8] = MenBackGround;
+/*        StdRemapArray[8] = MenBackGround;*/
 
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageRmp, &ArrowNormal, MaxMapDepth, StdRemapArray);
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageGhosted, &ArrowGhosted, MaxMapDepth, StdRemapArray);
 
-        StdRemapArray[8] = MenFillCol;
+/*        StdRemapArray[8] = MenFillCol;*/
         if (Ok)
-          Ok = MakeRemappedImage (&SubArrowImageActive, &ArrowNormal, MaxMapDepth, StdRemapArray);
+          Ok = MakeRemappedImage (&SubArrowImageActive, &ArrowNormal, MaxMapDepth, DreiDActiveRemapArray);
 
         SubArrowImage = SubArrowImageRmp;
 
         if (!SpecialCheckImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageRmp, &MXDownNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
@@ -2594,11 +2614,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
           MXImage = MXImageRmp;
           NoMXImage = NoMXImageRmp;
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&MXImageActive, &MXDownNormal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&MXImageActive, &MXDownNormal, MaxMapDepth, DreiDActiveRemapArray);
           if (Ok)
-            Ok = MakeRemappedImage (&NoMXImageActive, &MXUpNormal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&NoMXImageActive, &MXUpNormal, MaxMapDepth, DreiDActiveRemapArray);
 
           DoFlipMX = FALSE;
         }
@@ -2607,30 +2627,30 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       {
         if (!CommandImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageRmp, &Amiga8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageGhosted, &Amiga8_Ghosted, MaxMapDepth, StdRemapArray);
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&CommandImageActive, &Amiga8_Normal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CommandImageActive, &Amiga8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
           CommandImage = CommandImageRmp;
         }
 
         if (!CheckImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageRmp, &Check8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageGhosted, &Check8_Ghosted, MaxMapDepth, StdRemapArray);
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&CheckImageActive, &Check8_Normal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&CheckImageActive, &Check8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
           CheckImage = CheckImageRmp;
         }
@@ -2640,22 +2660,22 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         NoCheckImage->PlaneOnOff = MenBackGround;
         CopyImageDimensions (NoCheckImage, CheckImage);
 
-        StdRemapArray[8] = MenBackGround;
+/*        StdRemapArray[8] = MenBackGround;*/
 
         if (Ok)
-          Ok = MakeRemappedImage (&SubArrowImageRmp, &ArrowNormal, MaxMapDepth, StdRemapArray);
+          Ok = MakeRemappedImage (&SubArrowImageRmp, &Arrow8_Normal, MaxMapDepth, StdRemapArray);
         if (Ok)
-          Ok = MakeRemappedImage (&SubArrowImageGhosted, &ArrowGhosted, MaxMapDepth, StdRemapArray);
+          Ok = MakeRemappedImage (&SubArrowImageGhosted, &Arrow8_Ghosted, MaxMapDepth, StdRemapArray);
 
-        StdRemapArray[8] = MenFillCol;
+/*        StdRemapArray[8] = MenFillCol;*/
         if (Ok)
-          Ok = MakeRemappedImage (&SubArrowImageActive, &ArrowNormal, MaxMapDepth, StdRemapArray);
+          Ok = MakeRemappedImage (&SubArrowImageActive, &Arrow8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
         SubArrowImage = SubArrowImageRmp;
 
         if (!SpecialCheckImage)
         {
-          StdRemapArray[8] = MenBackGround;
+/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageRmp, &MXDown8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
@@ -2668,11 +2688,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
           MXImage = MXImageRmp;
           NoMXImage = NoMXImageRmp;
 
-          StdRemapArray[8] = MenFillCol;
+/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
-            Ok = MakeRemappedImage (&MXImageActive, &MXDown8_Normal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&MXImageActive, &MXDown8_Normal, MaxMapDepth, DreiDActiveRemapArray);
           if (Ok)
-            Ok = MakeRemappedImage (&NoMXImageActive, &MXUp8_Normal, MaxMapDepth, StdRemapArray);
+            Ok = MakeRemappedImage (&NoMXImageActive, &MXUp8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
           DoFlipMX = FALSE;
         }
@@ -2959,6 +2979,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       StripTop = MenScr->Height - StripHeight - 1;
     if (StripLeft + StripWidth >= MenScr->Width)
       StripLeft = MenScr->Width - StripWidth - 1;
+
+    if(LookMC)
+      StripHeight++;
   }
 
   if (AktPrefs.mmp_NonBlocking)
