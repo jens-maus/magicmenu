@@ -29,11 +29,31 @@ ULONG __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags,
 ULONG __asm CallOffMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallOnMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
 LONG __asm CallLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallRefreshWindowFrame (REG(a0) struct Window *, REG(a6) struct IntuitionBase *);
+ULONG __asm CallSetWindowTitles (REG(a0) struct Window *, REG(a1) STRPTR, REG(a2) STRPTR, REG(a6) struct IntuitionBase *);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
 struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
-struct Menu *__asm CallCreateMenusA (REG(a0) struct NewMenu *newmenu, REG(a1) struct TagItem *tags, REG(a6) struct Library *GadToolsBase);
 
 /*****************************************************************************************/
+
+BOOL
+MMCheckParentScreen (struct Window *Window)
+{
+  BOOL Wait;
+
+  SafeObtainSemaphoreShared (GetPointerSemaphore);
+
+  Wait = (MenScr == Window->WScreen);
+
+  ReleaseSemaphore (GetPointerSemaphore);
+
+  if (!Wait)
+    return (FALSE);
+
+  ObtainSemaphore (MenuActSemaphore);
+
+  return (TRUE);
+}
 
 BOOL
 MMCheckScreen (void)
@@ -239,14 +259,15 @@ MMWindowToFront (REG(a0) struct Window * W)
 
   DB (kprintf ("|%s| in WindowToFront patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (AttemptSemaphore (MenuActSemaphore))
+  if (MMCheckParentScreen (W))
   {
     Result = CallWindowToFront (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
-    return (Result);
   }
   else
-    return (FALSE);
+    Result = CallWindowToFront (W, IntuitionBase);
+
+  return (Result);
 }
 
 ULONG __asm __saveds
@@ -256,31 +277,15 @@ MMWindowToBack (REG(a0) struct Window * W)
 
   DB (kprintf ("|%s| in WindowToBack patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (AttemptSemaphore (MenuActSemaphore))
+  if (MMCheckParentScreen (W))
   {
     Result = CallWindowToBack (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
-    return (Result);
   }
   else
-    return (FALSE);
-}
+    Result = CallWindowToBack (W, IntuitionBase);
 
-ULONG __asm __saveds
-MMMoveWindowInFrontOf (REG(a0) struct Window * Window,REG(a1) struct Window *Behind)
-{
-  ULONG Result;
-
-  DB (kprintf ("|%s| in MoveWindowInFrontOf patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
-  if (AttemptSemaphore (MenuActSemaphore))
-  {
-    Result = CallMoveWindowInFrontOf (Window, Behind, IntuitionBase);
-    ReleaseSemaphore (MenuActSemaphore);
-    return (Result);
-  }
-  else
-    return (FALSE);
+  return (Result);
 }
 
 ULONG __asm __saveds
@@ -374,6 +379,46 @@ MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
   }
 
   return (CallObtainGIRPort (GInfo, IntuitionBase));
+}
+
+ULONG __asm __saveds
+MMRefreshWindowFrame (REG(a0) struct Window * W)
+{
+  ULONG Result;
+
+  DB (kprintf ("|%s| in RefreshWindowFrame patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (MMCheckParentScreen (W))
+  {
+    Result = CallRefreshWindowFrame (W, IntuitionBase);
+    ReleaseSemaphore (MenuActSemaphore);
+  }
+  else
+    Result = CallRefreshWindowFrame (W, IntuitionBase);
+
+  return (Result);
+}
+
+ULONG __asm __saveds
+MMSetWindowTitles (REG(a0) struct Window * W, REG(a1) STRPTR WindowTitle, REG(a2) STRPTR ScreenTitle)
+{
+  ULONG Result;
+
+  /* Bug-Kompatibilität :( */
+  if(!RealWindow(W))
+    return(FALSE);
+
+  DB (kprintf ("|%s| in SetWindowTitles patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (MMCheckParentScreen (W))
+  {
+    Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
+    ReleaseSemaphore (MenuActSemaphore);
+  }
+  else
+    Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
+
+  return (Result);
 }
 
 struct Layer *__saveds __asm
@@ -481,112 +526,6 @@ MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 
   return (CallLendMenus (FromWindow, ToWindow, IntuitionBase));
 }
-
-#if 0
-struct Menu * __asm __saveds
-MMCreateMenusA (REG(a0) struct NewMenu *NewMenu, REG(a1) struct TagItem *Tags, REG(a6) struct Library *GadToolsBase)
-{
-	struct Menu *Result;
-
-	if(!NewMenu)
-		Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
-	else
-	{
-		struct NewMenu *Thing;
-		LONG Total;
-		BOOL GotOne;
-		BOOL GotSome;
-
-		GotSome = FALSE;
-		Total = 1;
-
-		for(Thing = NewMenu ; Thing->nm_Type != NM_END ; Thing++)
-		{
-			if((Thing->nm_Type == NM_ITEM || Thing->nm_Type == NM_SUB) && (Thing->nm_Label != NM_BARLABEL))
-			{
-				DB(kprintf("label |%s|\n",Thing->nm_Label));
-
-				if(Thing->nm_Label[0] == '~' || Thing->nm_Label[0] == '-' || Thing->nm_Label[0] == '_')
-				{
-					STRPTR Index;
-					UBYTE c;
-
-					c = Thing->nm_Label[0];
-
-					Index = &Thing->nm_Label[1];
-
-					GotOne = TRUE;
-
-					while(*Index)
-					{
-						if(*Index++ != c)
-						{
-							GotOne = FALSE;
-							break;
-						}
-					}
-
-					GotSome |= GotOne;
-				}
-			}
-
-			Total++;
-		}
-
-		DB(kprintf("gotsome %ld\n",GotSome));
-
-		if(GotSome)
-		{
-			struct NewMenu *Table;
-
-			if(Table = AllocVecPooled(sizeof(struct NewMenu) * Total,MEMF_ANY))
-			{
-				CopyMem(NewMenu,Table,sizeof(struct NewMenu) * Total);
-
-				for(Thing = Table ; Thing->nm_Type != NM_END ; Thing++)
-				{
-					if((Thing->nm_Type == NM_ITEM || Thing->nm_Type == NM_SUB) && (Thing->nm_Label != NM_BARLABEL))
-					{
-						if(Thing->nm_Label[0] == '~' || Thing->nm_Label[0] == '-' || Thing->nm_Label[0] == '_')
-						{
-							STRPTR Index;
-							UBYTE c;
-
-							c = Thing->nm_Label[0];
-
-							Index = &Thing->nm_Label[1];
-
-							GotOne = TRUE;
-
-							while(*Index)
-							{
-								if(*Index++ != c)
-								{
-									GotOne = FALSE;
-									break;
-								}
-							}
-
-							if(GotOne)
-								Thing->nm_Label = NM_BARLABEL;
-						}
-					}
-				}
-
-				Result = CallCreateMenusA(Table,Tags,GadToolsBase);
-
-				FreeVecPooled(Table);
-			}
-			else
-				Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
-		}
-		else
-			Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
-	}
-
-	return(Result);
-}
-#endif
 
 /*****************************************************************************************/
 
@@ -739,24 +678,21 @@ StopTimeRequest(struct timerequest *TimeRequest)
 	WaitIO(TimeRequest);
 }
 
-LONG
-ShowRequest(STRPTR Gadgets,STRPTR Text,...)
+VOID
+ShowRequest(STRPTR Text,...)
 {
 	struct EasyStruct Easy;
 	va_list VarArgs;
-	LONG Result;
 
 	Easy.es_StructSize	= sizeof(struct EasyStruct);
 	Easy.es_Flags		= NULL;
 	Easy.es_Title		= "MagicMenu";
 	Easy.es_TextFormat	= Text;
-	Easy.es_GadgetFormat	= Gadgets;
+	Easy.es_GadgetFormat	= "Ok";
 
 	va_start(VarArgs,Text);
-	Result = EasyRequestArgs(NULL,&Easy,NULL,(APTR)VarArgs);
+	EasyRequestArgs(NULL,&Easy,NULL,(APTR)VarArgs);
 	va_end(VarArgs);
-
-	return(Result);
 }
 
 BOOL
@@ -776,7 +712,7 @@ CheckEnde (void)
 {
   if (IMsgReplyCount > 0)
   {
-    ShowRequest ("Ok", GetString(MSG_CANNOT_UNINSTALL_TXT));
+    ShowRequest (GetString(MSG_CANNOT_UNINSTALL_TXT));
 
     return (FALSE);
   }
@@ -1181,10 +1117,20 @@ DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 void
 GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
+  static UWORD GhostPattern[] = {0x1111, 0x4444};
+  static UWORD CrosshatchPattern[] = {0x5555, 0xAAAA};
+
+  UWORD *Pattern;
+
   if (Width <= 0 || Height <= 0)
     return;
 
-  SetAfPt (rp, DitherPattern, 1);
+  if(Look3D)
+    Pattern = CrosshatchPattern;
+  else
+    Pattern = GhostPattern;
+
+  SetAfPt (rp, Pattern, 1);
 
   // Hier gibt es ein Konsistenzproblem. Das Ghosting der Menüs,
   // wie es Intuition durchführt, ist an sich schon inkonsistent

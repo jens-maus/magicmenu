@@ -11,7 +11,7 @@
 #define JMP_ABS 0x4EF9
 
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	7
+#define SEMAPHORE_VERSION	10
 
 typedef struct Wedge
 {
@@ -43,14 +43,13 @@ extern LONG __far LVOCloseWindow;
 extern LONG __far LVOActivateWindow;
 extern LONG __far LVOWindowToFront;
 extern LONG __far LVOWindowToBack;
-extern LONG __far LVOMoveWindowInFrontOf;
 extern LONG __far LVOModifyIDCMP;
 extern LONG __far LVOObtainGIRPort;
 extern LONG __far LVOLendMenus;
 extern LONG __far LVOOffMenu;
 extern LONG __far LVOOnMenu;
-
-extern LONG __far LVOCreateMenusA;
+extern LONG __far LVOSetWindowTitles;
+extern LONG __far LVORefreshWindowFrame;
 
 extern LONG __far LVOCreateUpfrontHookLayer;
 extern LONG __far LVOCreateUpfrontLayer;
@@ -66,14 +65,13 @@ STATIC PatchEntry PatchTable[] =
   &IntuitionBase, 37, NULL, (LONG) & LVOActivateWindow, (APTR) MMActivateWindow, &OldActivateWindow,
   &IntuitionBase, 37, NULL, (LONG) & LVOWindowToFront, (APTR) MMWindowToFront, &OldWindowToFront,
   &IntuitionBase, 37, NULL, (LONG) & LVOWindowToBack, (APTR) MMWindowToBack, &OldWindowToBack,
-  &IntuitionBase, 37, NULL, (LONG) & LVOMoveWindowInFrontOf, (APTR) MMMoveWindowInFrontOf, &OldMoveWindowInFrontOf,
   &IntuitionBase, 37, NULL, (LONG) & LVOModifyIDCMP, (APTR) MMModifyIDCMP, &OldModifyIDCMP,
   &IntuitionBase, 37, NULL, (LONG) & LVOObtainGIRPort, (APTR) MMObtainGIRPort, &OldObtainGIRPort,
   &IntuitionBase, 37, NULL, (LONG) & LVOOffMenu, (APTR) MMOffMenu, &OldOffMenu,
   &IntuitionBase, 37, NULL, (LONG) & LVOOnMenu, (APTR) MMOnMenu, &OldOnMenu,
+  &IntuitionBase, 37, NULL, (LONG) & LVOSetWindowTitles, (APTR) MMSetWindowTitles, &OldSetWindowTitles,
+  &IntuitionBase, 37, NULL, (LONG) & LVORefreshWindowFrame, (APTR) MMRefreshWindowFrame, &OldRefreshWindowFrame,
   &IntuitionBase, 39, NULL, (LONG) & LVOLendMenus, (APTR) MMLendMenus, &OldLendMenus,
-
-/*  &GadToolsBase, 37, NULL, (LONG) & LVOCreateMenusA, (APTR) MMCreateMenusA, &OldCreateMenusA,*/
 
   &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontHookLayer, (APTR) MMCreateUpfrontHookLayer, &OldCreateUpfrontHookLayer,
   &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontLayer, (APTR) MMCreateUpfrontLayer, &OldCreateUpfrontLayer,

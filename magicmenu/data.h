@@ -235,8 +235,6 @@ extern struct InputXpression ActiveKbdIX;
 extern struct InputXpression ActiveMousePositionIX;
 extern struct InputXpression ActiveMouseNewPositionIX;
 
-extern UWORD DitherPattern[];
-
 /*extern UWORD __chip MXImage1PlPattern[];*/
 extern struct Image MXImage1Pl;
 
@@ -327,6 +325,14 @@ extern struct Image MXUp8_Ghosted;
 
 /******************************************************************************/
 
+extern struct Image AmigaNormal4;
+extern struct Image CheckNormal4;
+extern struct Image MXDownNormal4;
+extern struct Image MXUpNormal4;
+extern struct Image ArrowNormal4;
+
+/******************************************************************************/
+
 extern ULONG OldOpenWindow;
 extern ULONG OldOpenWindowTagList;
 extern ULONG OldClearMenuStrip;
@@ -336,13 +342,13 @@ extern ULONG OldCloseWindow;
 extern ULONG OldActivateWindow;
 extern ULONG OldWindowToFront;
 extern ULONG OldWindowToBack;
-extern ULONG OldMoveWindowInFrontOf;
 extern ULONG OldModifyIDCMP;
 extern ULONG OldObtainGIRPort;
 extern ULONG OldLendMenus;
 extern ULONG OldOffMenu;
 extern ULONG OldOnMenu;
-extern ULONG OldCreateMenusA;
+extern ULONG OldSetWindowTitles;
+extern ULONG OldRefreshWindowFrame;
 
 extern ULONG OldCreateUpfrontHookLayer;
 extern ULONG OldCreateUpfrontLayer;

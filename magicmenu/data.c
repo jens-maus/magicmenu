@@ -232,6 +232,7 @@ struct MMPrefs DefaultPrefs =
 	TRUE,					/* KCGoTop */
 	TRUE,					/* KCRAltRCommand */
 	TRUE,					/* PUCenter */
+	FALSE,					/* PreferScreenColours */
 
 	MODE_STD,				/* PDMode */
 	LOOK_MC,				/* PDLook */
@@ -335,11 +336,6 @@ struct InputXpression ActiveKbdIX =
   0, IECODE_UP_PREFIX,
   0, 0, 0
 };
-
-UWORD DitherPattern[] =
-{0x1111, 0x4444};
-
-
 
 
 UWORD __chip MXImage1PlPattern[] =
@@ -933,6 +929,85 @@ struct Image ArrowGhosted =
 	NULL
 };
 /******************************************************************************/
+static __chip UWORD AmigaNormalBitMap4[22] =
+{
+	0x7FFE,0x8003,0x8007,0x8207,0x8607,0x8A07,0x8007,0x8007,
+	0x8007,0xBFFF,0x7FFE,
+
+	0x2AAA,0x2AAB,0xDFFC,0x1DA9,0xD950,0x14A9,0xDD50,0x1AA9,
+	0xC000,0x2001,0x2AAA
+};
+
+struct Image AmigaNormal4 =
+{	0,0,
+	16,11,2,
+	AmigaNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+static __chip UWORD CheckNormalBitMap4[20] =
+{
+	0x0000,0x0018,0x0038,0x0070,0x00E0,0x71C0,0x3B80,0x1F00,
+	0x0E00,0x0400,
+
+	0x0018,0x0030,0x0070,0x00E0,0x61C0,0xE380,0x7700,0x3E00,
+	0x1C00,0x0800
+};
+
+struct Image CheckNormal4 =
+{	0,0,
+	13,10,2,
+	CheckNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+static __chip UWORD MXDownNormalBitMap4[20] =
+{
+	0x1FC0,0x6000,0x4040,0x40C0,0x4D80,0x4700,0x4200,0x6000,
+	0x0000,0x0000,
+
+	0x0000,0x0030,0x00D0,0x0190,0x1B10,0x0E10,0x0410,0x0030,
+	0x1FC0,0x0000
+};
+
+struct Image MXDownNormal4 =
+{	0,0,
+	13,10,2,
+	MXDownNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+static __chip UWORD MXUpNormalBitMap4[20] =
+{
+	0x0000,0x0030,0x0010,0x0010,0x0010,0x0010,0x0010,0x0030,
+	0x1FC0,0x0000,
+
+	0x1FC0,0x6000,0x4000,0x4000,0x4000,0x4000,0x4000,0x6000,
+	0x0000,0x0000
+};
+
+struct Image MXUpNormal4 =
+{	0,0,
+	13,10,2,
+	MXUpNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+static __chip UWORD ArrowNormalBitMap4[12] =
+{
+	0x0000,0x4000,0x7000,0x7C00,0x7000,0x4000,
+
+	0xC000,0xF000,0xFC00,0xF000,0xC000,0x8000
+};
+
+struct Image ArrowNormal4 =
+{	0,0,
+	6,6,2,
+	ArrowNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+/******************************************************************************/
 
 ULONG OldOpenWindow;
 ULONG OldOpenWindowTagList;
@@ -943,13 +1018,13 @@ ULONG OldCloseWindow;
 ULONG OldActivateWindow;
 ULONG OldWindowToFront;
 ULONG OldWindowToBack;
-ULONG OldMoveWindowInFrontOf;
 ULONG OldModifyIDCMP;
 ULONG OldObtainGIRPort;
 ULONG OldLendMenus;
 ULONG OldOffMenu;
 ULONG OldOnMenu;
-ULONG OldCreateMenusA;
+ULONG OldSetWindowTitles;
+ULONG OldRefreshWindowFrame;
 
 ULONG OldCreateUpfrontHookLayer;
 ULONG OldCreateUpfrontLayer;

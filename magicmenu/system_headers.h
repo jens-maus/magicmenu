@@ -12,6 +12,7 @@
 #include <dos/datetime.h>
 #include <dos/dostags.h>
 #include <dos/dosasl.h>
+#include <dos/stdio.h>
 #include <dos/rdargs.h>
 
 #include <exec/execbase.h>
@@ -25,6 +26,7 @@
 #include <graphics/videocontrol.h>
 #include <graphics/gfxmacros.h>
 #include <graphics/gfxbase.h>
+#include <graphics/modeid.h>
 
 #include <libraries/commodities.h>
 #include <libraries/gadtools.h>

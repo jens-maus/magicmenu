@@ -23,27 +23,33 @@ void kprintf(const char *,...);
 #define SHADOW_SIZE 4
 
 STATIC VOID
-AddShadow (struct RastPort *RPort, LONG Width, LONG Height)
+AddShadow (struct RastPort *RPort, LONG Width, LONG Height, LONG ShadowSize)
 {
-  STATIC UWORD Crosshatch[2] =
-  {0x5555, 0xAAAA};
+  STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
 
   SetAfPt (RPort, Crosshatch, 1);
 
   SetFgPen (RPort, MenXENBlack);
   SetDrawMode (RPort, JAM1);
 
-  RectFill (RPort, Width, SHADOW_SIZE, Width + SHADOW_SIZE - 1, Height - 1);
-  RectFill (RPort, SHADOW_SIZE, Height, Width + SHADOW_SIZE - 1, Height + SHADOW_SIZE - 1);
+  RectFill (RPort, Width, ShadowSize, Width + ShadowSize - 1, Height - 1);
+  RectFill (RPort, ShadowSize, Height, Width + ShadowSize - 1, Height + ShadowSize - 1);
 
   SetAfPt (RPort, NULL, 0);
 }
 
 STATIC VOID
-ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height, LONG * widthPtr, LONG * heightPtr)
+ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height, LONG Level, LONG * widthPtr, LONG * heightPtr, LONG *shadowPtr)
 {
-  width += SHADOW_SIZE;
-  height += SHADOW_SIZE;
+  if(V39 && LookMC)
+  {
+    *shadowPtr = SHADOW_SIZE + Level * 2;
+
+    width += *shadowPtr;
+    height += *shadowPtr;
+  }
+  else
+    *shadowPtr = 0;
 
   if (left + width > screen->Width)
     width = screen->Width - left;
@@ -151,7 +157,7 @@ AllocateMenuColours (struct ColorMap *cmap)
 /******************************************************************************/
 
 VOID
-DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted)
+DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left,WORD Width)
 {
   struct IntuiText *Text;
   struct IntuiText MyText;
@@ -288,13 +294,29 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       {
         if (LookMC && ThatImage->PlanePick == 0 && ThatImage->Height <= 2)
         {
+          LONG Top;
+/*
           SetFgPen (rp, MenSeparatorGrey0);
           DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
-                    StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
+                    StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
+          WritePixel(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1);
 
           SetFgPen (rp, MenSeparatorGrey2);
-          DrawLine (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1,
+          DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
                         StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
+          WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
+*/
+          Top = StartY + ThatImage->TopEdge;
+
+          SetFgPen (rp, MenDarkEdge);
+          DrawLine(rp,Left + 1,Top,Left + Width - 1,Top);
+
+          SetFgPen (rp, MenLightEdge);
+          DrawLine(rp,Left,Top + 1,Left + Width - 2,Top + 1);
+
+          SetFgPen (rp, MenSectGrey);
+          WritePixel (rp,Left,Top);
+          WritePixel (rp,Left + Width - 1,Top + 1);
         }
         else
          DrawImage (rp, ThatImage, StartX, StartY);
@@ -543,12 +565,12 @@ DrawHiSubItem (struct MenuItem *Item)
           if (LookMC)
           {
             HiRect (SubBoxDrawRPort, l, t, w, h, TRUE);
-            DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE);
+            DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE, SubBoxDrawLeft, w);
           }
           else
           {
             if (HiFlags == HIGHIMAGE)
-              DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE);
+              DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE, SubBoxDrawLeft, w);
             else
               CompRect (SubBoxDrawRPort, l, t, w, h);
           }
@@ -571,7 +593,7 @@ DrawHiSubItem (struct MenuItem *Item)
         if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
-            DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE);
+            DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE, SubBoxDrawLeft, w);
           else
           {
             if (HiFlags == HIGHBOX)
@@ -614,7 +636,7 @@ DrawNormSubItem (struct MenuItem * Item)
       if (LookMC)
       {
         HiRect (SubBoxDrawRPort, l, t, w, h, FALSE);
-        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE);
+        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
       }
       else if (Look3D)
       {
@@ -622,7 +644,7 @@ DrawNormSubItem (struct MenuItem * Item)
           CompRect (SubBoxDrawRPort, l, t, w, h);
 
         DrawNormRect (SubBoxDrawRPort, l, t, w, h);
-        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE);
+        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
       }
       else
       {
@@ -636,7 +658,7 @@ DrawNormSubItem (struct MenuItem * Item)
             CompRect (SubBoxDrawRPort, l, t, w, h);
           }
         }
-        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE);
+        DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
       }
       return (TRUE);
     }
@@ -661,7 +683,7 @@ DrawMenuSubBoxContents (struct MenuItem *Item, struct RastPort *RPort, UWORD Lef
   ZwItem = SubBoxItems;
   while (ZwItem)
   {
-    DrawMenuItem (RPort, ZwItem, SubBoxLeftOffs + Left, SubBoxTopOffs + Top, SubBoxCmdOffs, SubBoxGhosted, FALSE);
+    DrawMenuItem (RPort, ZwItem, SubBoxLeftOffs + Left, SubBoxTopOffs + Top, SubBoxCmdOffs, SubBoxGhosted, FALSE, 0, SubBoxWidth);
     ZwItem = ZwItem->NextItem;
   }
 }
@@ -766,9 +788,9 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight;
+    LONG windowWidth, windowHeight, shadowSize;
 
-    ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, &windowWidth, &windowHeight);
+    ClampShadow (MenScr, SubBoxLeft, SubBoxTop, SubBoxWidth, SubBoxHeight, 2, &windowWidth, &windowHeight, &shadowSize);
 
     if (!(SubBoxWin = OpenWindowTags (NULL,
                                       WA_Left, SubBoxLeft,
@@ -792,7 +814,7 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
     SubBoxDrawTop = 0;
 
     if (LookMC)
-      AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight);
+      AddShadow (SubBoxDrawRPort, SubBoxWidth, SubBoxHeight, shadowSize);
 
     DrawMenuSubBoxContents (Item, SubBoxDrawRPort, SubBoxDrawLeft, SubBoxDrawTop);
   }
@@ -939,12 +961,12 @@ DrawHiItem (struct MenuItem *Item)
           if (LookMC)
           {
             HiRect (BoxDrawRPort, l, t, w, h, TRUE);
-            DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE);
+            DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE, BoxDrawLeft, w);
           }
           else
           {
             if (HiFlags == HIGHIMAGE)
-              DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE);
+              DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE, BoxDrawLeft, w);
             else
               CompRect (BoxDrawRPort, l, t, w, h);
           }
@@ -967,7 +989,7 @@ DrawHiItem (struct MenuItem *Item)
         if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
-            DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE);
+            DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE, BoxDrawLeft, w);
           else
           {
             if (HiFlags == HIGHBOX)
@@ -1011,14 +1033,14 @@ DrawNormItem (struct MenuItem * Item)
       if (LookMC)
       {
         HiRect (BoxDrawRPort, l, t, w, h, FALSE);
-        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE);
+        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
       }
       else if (Look3D)
       {
         if (HiFlags != HIGHIMAGE && (Item->Flags & ITEMENABLED) && (!BoxGhosted))
           CompRect (BoxDrawRPort, l, t, w, h);
         DrawNormRect (BoxDrawRPort, l, t, w, h);
-        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE);
+        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
       }
       else
       {
@@ -1031,7 +1053,7 @@ DrawNormItem (struct MenuItem * Item)
             CompRect (BoxDrawRPort, l, t, w, h);
           }
         }
-        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE);
+        DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
       }
       return (TRUE);
     }
@@ -1081,7 +1103,7 @@ DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWOR
   ZwItem = BoxItems;
   while (ZwItem)
   {
-    DrawMenuItem (RPort, ZwItem, BoxLeftOffs + Left, BoxTopOffs + Top, BoxCmdOffs, BoxGhosted, FALSE);
+    DrawMenuItem (RPort, ZwItem, BoxLeftOffs + Left, BoxTopOffs + Top, BoxCmdOffs, BoxGhosted, FALSE, 0, BoxWidth);
     ZwItem = ZwItem->NextItem;
   }
 }
@@ -1206,9 +1228,9 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight;
+    LONG windowWidth, windowHeight, shadowSize;
 
-    ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, &windowWidth, &windowHeight);
+    ClampShadow (MenScr, BoxLeft, BoxTop, BoxWidth, BoxHeight, 1, &windowWidth, &windowHeight, &shadowSize);
 
     if (!(BoxWin = OpenWindowTags (NULL,
                                    WA_Left, BoxLeft,
@@ -1232,7 +1254,7 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
     BoxDrawTop = 0;
 
     if (LookMC)
-      AddShadow (BoxDrawRPort, BoxWidth, BoxHeight);
+      AddShadow (BoxDrawRPort, BoxWidth, BoxHeight, shadowSize);
 
     DrawMenuBoxContents (Menu, BoxDrawRPort, BoxDrawLeft, BoxDrawTop);
   }
@@ -1781,10 +1803,7 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
     {
       AktItem->Flags |= HIGHITEM;
       if (MenuMode != MODE_KEYBOARD)
-      {
-        if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
-          DisplayBeep (MenScr);
-      }
+        DrawMenuSubBox (AktMenu, AktItem, TRUE);
     }
     else
     {
@@ -1922,10 +1941,7 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     if (DrawHiMenu (AktMenu = NewMenu))
     {
       if (MenuMode != MODE_KEYBOARD)
-      {
-        if (!DrawMenuBox (AktMenu, TRUE))
-          DisplayBeep (MenScr);
-      }
+        DrawMenuBox (AktMenu, TRUE);
     }
     else
     {
@@ -2015,7 +2031,7 @@ SelectPrevMenu (WORD NeuMenuNum)
 
   ZwMen = PrevMen = MenStrip;
 
-  z1 = 0;
+  PrevNum = z1 = 0;
   while (ZwMen && z1 < NeuMenuNum)
   {
     PrevMen = ZwMen;
@@ -2385,7 +2401,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   struct Menu *ZwMenu;
   UWORD *Pens;
   LONG MaxMapPen,MaxMapDepth;
-  UWORD CheckWidth,CommandWidth;
+/*  UWORD CheckWidth,CommandWidth;*/
 
   memset(StdRemapArray,0,sizeof(StdRemapArray));
 
@@ -2403,7 +2419,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   StripDepth = GetBitMapDepth (MenScr->RastPort.BitMap);
   ScrHiRes = (MenScr->Flags & SCREENHIRES) != NULL;
 
-  DrawInfo = GetScreenDrawInfo (MenScr);
+  if(!(DrawInfo = GetScreenDrawInfo (MenScr)))
+    return(FALSE);
+
   Pens = DrawInfo->dri_Pens;
 
   if (MenOpenedFont = OpenFont (MenScr->Font))
@@ -2431,7 +2449,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   ColorMap = MenScr->ViewPort.ColorMap;
 
   /* Jetzt wird die Größe der vorgegebenen Bilder ermittelt. */
-
+/*
   if(ScrHiRes)
   {
     CheckWidth = CHECKWIDTH;
@@ -2456,7 +2474,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     CommandWidth = CommandImage->Width;
     CommandImage = NULL;
   }
-
+*/
   if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes)
   {
     LONG red, green, blue;
@@ -2475,8 +2493,58 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     AddMenuColour8 (0xAA, 0x90, 0x7C);  // Beige
     AddMenuColour8 (0xFF, 0xA9, 0x97);  // Pink
 
-    if(StripDepth > 3)
+    if(AktPrefs.mmp_PreferScreenColours)
     {
+      STATIC UWORD SixPens[] = { SHINEPEN, SHADOWPEN, BACKGROUNDPEN, TEXTPEN, FILLTEXTPEN, FILLPEN};
+      ULONG Six[6][3];
+      LONG i;
+
+      for(i = 0 ; i < 6 ; i++)
+        GetRGB32(ColorMap,DrawInfo->dri_Pens[SixPens[i]],1,&Six[i][0]);
+
+      if(StripDepth > 3)
+      {
+	red = (Six[0][0] >> 24) + (Six[1][0] >> 24);
+	green = (Six[0][1] >> 24) + (Six[1][1] >> 24);
+	blue = (Six[0][2] >> 24) + (Six[1][2] >> 24);
+
+	AddMenuColour8 ((red + 1) / 2, (green + 1) / 2, (blue + 1) / 2);  // SectGrey
+
+	red = Six[2][0] >> 24;
+	green = Six[2][1] >> 24;
+	blue = Six[2][2] >> 24;
+
+	AddMenuColour8 (red - 26, green - 26, blue - 26);  // StdGrey0
+	AddMenuColour8 (red, green, blue);  // StdGrey1
+	AddMenuColour8 (red + 26, green + 26, blue + 26);  // StdGrey2
+
+	red = Six[5][0] >> 24;
+	green = Six[5][1] >> 24;
+	blue = Six[5][2] >> 24;
+
+	AddMenuColour8 (red - 26, green - 26, blue - 26);  // ActiveGrey0
+	AddMenuColour8 (red, green, blue);  // ActiveGrey1
+	AddMenuColour8 (red + 26, green + 26, blue + 26);  // ActiveGrey2
+      }
+      else
+      {
+	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // SectGrey
+	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // StdGrey0
+	AddMenuColour8 (0x95, 0x95, 0x95);  // StdGrey1
+	AddMenuColour8 (0xAF, 0xAF, 0xAF);  // StdGrey2
+
+	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // ActiveGrey0
+	AddMenuColour8 (0x95, 0x95, 0x95);  // ActiveGrey1
+	AddMenuColour8 (0xAF, 0xAF, 0xAF);  // ActiveGrey2
+      }
+
+      for(i = 0 ; i < 6 ; i++)
+        AddMenuColour (Six[i][0],Six[i][1],Six[i][2]);
+    }
+    else
+    {
+      if(StripDepth > 3)
+      {
 	red = (AktPrefs.mmp_LightEdge.R >> 24) + (AktPrefs.mmp_DarkEdge.R >> 24);
 	green = (AktPrefs.mmp_LightEdge.G >> 24) + (AktPrefs.mmp_DarkEdge.G >> 24);
 	blue = (AktPrefs.mmp_LightEdge.B >> 24) + (AktPrefs.mmp_DarkEdge.B >> 24);
@@ -2498,9 +2566,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 	AddMenuColour8 (red - 26, green - 26, blue - 26);  // ActiveGrey0
 	AddMenuColour8 (red, green, blue);  // ActiveGrey1
 	AddMenuColour8 (red + 26, green + 26, blue + 26);  // ActiveGrey2
-    }
-    else
-    {
+      }
+      else
+      {
 	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // SectGrey
 	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // StdGrey0
 	AddMenuColour8 (0x95, 0x95, 0x95);  // StdGrey1
@@ -2509,14 +2577,15 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 	AddMenuColour8 (0x7B, 0x7B, 0x7B);  // ActiveGrey0
 	AddMenuColour8 (0x95, 0x95, 0x95);  // ActiveGrey1
 	AddMenuColour8 (0xAF, 0xAF, 0xAF);  // ActiveGrey2
-    }
+      }
 
-    AddMenuColour (AktPrefs.mmp_LightEdge.R, AktPrefs.mmp_LightEdge.G, AktPrefs.mmp_LightEdge.B);
-    AddMenuColour (AktPrefs.mmp_DarkEdge.R, AktPrefs.mmp_DarkEdge.G, AktPrefs.mmp_DarkEdge.B);
-    AddMenuColour (AktPrefs.mmp_Background.R, AktPrefs.mmp_Background.G, AktPrefs.mmp_Background.B);
-    AddMenuColour (AktPrefs.mmp_TextCol.R, AktPrefs.mmp_TextCol.G, AktPrefs.mmp_TextCol.B);
-    AddMenuColour (AktPrefs.mmp_HiCol.R, AktPrefs.mmp_HiCol.G, AktPrefs.mmp_HiCol.B);
-    AddMenuColour (AktPrefs.mmp_FillCol.R, AktPrefs.mmp_FillCol.G, AktPrefs.mmp_FillCol.B);
+      AddMenuColour (AktPrefs.mmp_LightEdge.R, AktPrefs.mmp_LightEdge.G, AktPrefs.mmp_LightEdge.B);
+      AddMenuColour (AktPrefs.mmp_DarkEdge.R, AktPrefs.mmp_DarkEdge.G, AktPrefs.mmp_DarkEdge.B);
+      AddMenuColour (AktPrefs.mmp_Background.R, AktPrefs.mmp_Background.G, AktPrefs.mmp_Background.B);
+      AddMenuColour (AktPrefs.mmp_TextCol.R, AktPrefs.mmp_TextCol.G, AktPrefs.mmp_TextCol.B);
+      AddMenuColour (AktPrefs.mmp_HiCol.R, AktPrefs.mmp_HiCol.G, AktPrefs.mmp_HiCol.B);
+      AddMenuColour (AktPrefs.mmp_FillCol.R, AktPrefs.mmp_FillCol.G, AktPrefs.mmp_FillCol.B);
+    }
 
     Look3D = TRUE;
 
@@ -2850,26 +2919,52 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         else
           UseLow = (MenWin->CheckMark->Width <= 14);
 
-        if (!CheckImage)
+        if (MenFont->tf_YSize >= 11)
         {
-          CheckImage = (UseLow) ? &CheckImageLow2Pl : &CheckImage2Pl;
-          DoFlipCheck = TRUE;
-        }
+          if (!CheckImage)
+          {
+            CheckImage = &CheckNormal4;
+            DoFlipCheck = TRUE;
+          }
 
-        if (!MXImage)
+          if (!MXImage)
+          {
+            MXImage = &MXDownNormal4;
+            NoMXImage = &MXUpNormal4;
+            DoFlipMX = TRUE;
+          }
+
+          if (!CommandImage)
+          {
+            CommandImage = &AmigaNormal4;
+            DoFlipCommand = TRUE;
+          }
+
+          SubArrowImage = &ArrowNormal4;
+        }
+        else
         {
-          MXImage = (UseLow) ? &MXImageLow2Pl : &MXImage2Pl;
-          NoMXImage = (UseLow) ? &NoMXImageLow2Pl : &NoMXImage2Pl;
-          DoFlipMX = TRUE;
-        }
+          if (!CheckImage)
+          {
+            CheckImage = (UseLow) ? &CheckImageLow2Pl : &CheckImage2Pl;
+            DoFlipCheck = TRUE;
+          }
 
-        if (!CommandImage)
-        {
-          CommandImage = &AmigaImage2Pl;
-          DoFlipCommand = TRUE;
-        }
+          if (!MXImage)
+          {
+            MXImage = (UseLow) ? &MXImageLow2Pl : &MXImage2Pl;
+            NoMXImage = (UseLow) ? &NoMXImageLow2Pl : &NoMXImage2Pl;
+            DoFlipMX = TRUE;
+          }
 
-        SubArrowImage = &SubArrowImage2Pl;
+          if (!CommandImage)
+          {
+            CommandImage = &AmigaImage2Pl;
+            DoFlipCommand = TRUE;
+          }
+
+          SubArrowImage = &SubArrowImage2Pl;
+        }
       }
       else
       {
@@ -3129,9 +3224,9 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    LONG windowWidth, windowHeight;
+    LONG windowWidth, windowHeight, shadowSize;
 
-    ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, &windowWidth, &windowHeight);
+    ClampShadow (MenScr, StripLeft, StripTop, StripWidth, StripHeight, 0, &windowWidth, &windowHeight, &shadowSize);
 
     if (!(StripWin = OpenWindowTags (NULL,
                                      WA_Left, StripLeft,
@@ -3155,7 +3250,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     StripDrawTop = 0;
 
     if (LookMC && StripPopUp)
-      AddShadow (StripDrawRPort, StripWidth, StripHeight);
+      AddShadow (StripDrawRPort, StripWidth, StripHeight, shadowSize);
 
     DrawMenuStripContents (StripDrawRPort, StripDrawLeft, StripDrawTop);
   }

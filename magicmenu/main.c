@@ -777,6 +777,10 @@ MenuSelected (BOOL LastSelect)
     SelItem = AktItem;
     SubItem = FALSE;
   }
+  else
+  {
+    SubItem = FALSE;
+  }
 
   if (!SelItem)
     return (FALSE);
@@ -822,12 +826,12 @@ MenuSelected (BOOL LastSelect)
             if (SubItem)
             {
               if (GetSubItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE);
+                DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
             }
             else
             {
               if (GetItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE);
+                DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
             }
           }
 
@@ -946,16 +950,14 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
         {
           DrawHiMenu (AktMenu = SavMenu);
           MenuNum = SavMenuNum;
-          if (!DrawMenuBox (AktMenu, FALSE))
-            DisplayBeep (MenScr);
+          DrawMenuBox (AktMenu, FALSE);
 
           if (SavItem)
           {
             DrawHiItem (AktItem = SavItem);
             ItemNum = SavItemNum;
             SavItem->Flags |= HIGHITEM;
-            if (!DrawMenuSubBox (AktMenu, SavItem, FALSE))
-              DisplayBeep (MenScr);
+            DrawMenuSubBox (AktMenu, SavItem, FALSE);
 
             if (SavSubItem)
             {
@@ -1541,8 +1543,6 @@ CheckCxMsg (CxMsg * Msg)
                 DoIO ((struct IORequest *) InputIO);
                 FreeVecPooled (MyNewEvent);
               }
-              else
-                DisplayBeep (NULL);
             }
           }
 
@@ -1575,8 +1575,6 @@ CheckCxMsg (CxMsg * Msg)
 
               FreeVecPooled (MyNewEvent);
             }
-            else
-              DisplayBeep (NULL);
           }
         }
         else
@@ -1921,7 +1919,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
   if (!(FH = Open (ConfigFile, MODE_OLDFILE)))
   {
     if (Report)
-      ShowRequest ("Ok", GetString (MSG_COULD_NOT_OPEN_TXT));
+      ShowRequest (GetString (MSG_COULD_NOT_OPEN_TXT));
     return (FALSE);
   }
 
@@ -1937,7 +1935,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
   else
   {
     if (Report)
-      ShowRequest ("Ok", GetString (MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
+      ShowRequest (GetString (MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
     return (FALSE);
   }
 }
@@ -2233,7 +2231,7 @@ VOID
 ErrorPrc (char *ErrTxt)
 {
   if (IntuitionBase && ErrTxt[0])
-    ShowRequest ("Ok", GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
+    ShowRequest (GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
 
   CloseAll ();
 
@@ -2308,6 +2306,9 @@ main (int argc, char **argv)
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
     ErrorPrc ("graphics.library V37");
 
+  if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
+    ErrorPrc ("utility.library V37");
+
   V39 = (BOOL) (GfxBase->LibNode.lib_Version >= 39);
 
   if (!MemoryInit ())
@@ -2318,9 +2319,6 @@ main (int argc, char **argv)
 
   if (!(GadToolsBase = (struct Library *) OpenLibrary ("gadtools.library", 37)))
     ErrorPrc ("gadtools.library V37");
-
-  if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
-    ErrorPrc ("utility.library V37");
 
   if (!(CxBase = OpenLibrary ("commodities.library", 37L)))
     ErrorPrc ("commodities.library V37");
@@ -2459,9 +2457,12 @@ main (int argc, char **argv)
   AttachCxObj (MouseFilter, MouseTransl);
 
 
-  if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
-    ErrorPrc (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
-  AttachCxObj (Broker, KbdFilter);
+  if(AktPrefs.mmp_KCKeyStr[0])
+  {
+    if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
+      ErrorPrc (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
+    AttachCxObj (Broker, KbdFilter);
+  }
 
   if (!(StdKbdFilter = CxFilter (MouseKey)))
     ErrorPrc ("RAmiga - RCommand keyboard filter");

@@ -37,6 +37,7 @@ VOID ErrorPrc(char *ErrTxt);
 int main(int argc, char **argv);
 
 /* misc.c */
+BOOL MMCheckParentScreen(struct Window *Window);
 BOOL MMCheckScreen(void);
 BOOL MMCheckWindow(struct Window *Win);
 ULONG __asm __saveds MMOpenWindow(REG (a0 )struct NewWindow *NW);
@@ -48,22 +49,22 @@ ULONG __asm __saveds MMCloseWindow(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMActivateWindow(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMWindowToFront(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMWindowToBack(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMMoveWindowInFrontOf(REG (a0 )struct Window *Window, REG (a1 )struct Window *Behind);
 ULONG __asm __saveds MMModifyIDCMP(REG (a0 )struct Window *window, REG (d0 )ULONG flags);
 ULONG __asm __saveds MMOffMenu(REG (a0 )struct Window *window, REG (d0 )ULONG number);
 ULONG __asm __saveds MMOnMenu(REG (a0 )struct Window *window, REG (d0 )ULONG number);
 struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInfo);
+ULONG __asm __saveds MMRefreshWindowFrame(REG (a0 )struct Window *W);
+ULONG __asm __saveds MMSetWindowTitles(REG (a0 )struct Window *W, REG (a1 )STRPTR WindowTitle, REG (a2 )STRPTR ScreenTitle);
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
-struct Menu *__asm __saveds MMCreateMenusA(REG (a0 )struct NewMenu *NewMenu, REG (a1 )struct TagItem *Tags, REG (a6 )struct Library *GadToolsBase);
 VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
 BOOL MakeRemappedImage(struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
 VOID FreeRemappedImage(struct Image *Image);
 VOID StartTimeRequest(struct timerequest *TimeRequest, ULONG Seconds, ULONG Micros);
 VOID StopTimeRequest(struct timerequest *TimeRequest);
-LONG ShowRequest(STRPTR Gadgets, STRPTR Text, ...);
+VOID ShowRequest(STRPTR Text, ...);
 BOOL CheckReply(struct Message *Msg);
 BOOL CheckEnde(void);
 void disposeBitMap(struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem);
@@ -115,7 +116,7 @@ VOID MemoryExit(VOID);
 BOOL MemoryInit(VOID);
 
 /* menuboxes.c */
-VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted);
+VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
 VOID CleanUpMenuSubBox(VOID);
 BOOL DrawHiSubItem(struct MenuItem *Item);

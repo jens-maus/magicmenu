@@ -19,18 +19,13 @@
 VERSION =	2
 
 GSTFILE =	system_headers.gst
-OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
 CPU =		040
+#CPU =		030
 #CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
-
-LFLAGS =	sc sd noicons addsym
-
-#LFLAGS =	sc sd noicons addsym \
-#		define __CXM33=__UCXM33 define __CXD33=__UCXD33 \
-#		define __CXM22=__UCXM22 define __CXD22=__UCXD22
 
 LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
 #LIBS =		lib:sc.lib lib:amiga.lib
@@ -39,17 +34,19 @@ LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
 
 MAIN_SOURCE =	main.c misc.c \
 		data.c wedge.c windowglyphs.c memory.c menuboxes.c \
-		dointuimenu.c sendintuimessage.c betatitle.c remap.a
+		dointuimenu.c sendintuimessage.c betatitle.c remap.a \
+		storage.c
 
 MAIN_OBJS =	main.o stubs.o misc.o \
 		data.o wedge.o windowglyphs.o memory.o menuboxes.o \
-		dointuimenu.o sendintuimessage.o betatitle.o remap.o
+		dointuimenu.o sendintuimessage.o betatitle.o remap.o \
+		storage.o
 
 ###############################################################################
 
-PREFS_SOURCE =	edit.c demoimagedata.c remap.a
+PREFS_SOURCE =	edit.c demoimagedata.c remap.a storage.c
 
-PREFS_OBJS =	edit.o demoimagedata.o remap.o
+PREFS_OBJS =	edit.o demoimagedata.o remap.o storage.o
 
 ###############################################################################
 
@@ -60,7 +57,7 @@ SOURCE =	betatitle.c data.c data.h defines.h \
 		menuboxes.c misc.c protos.h remap.a \
 		sendintuimessage.c smakefile structures.h stubs.a \
 		system_headers.c system_headers.h wedge.c windowglyphs.c \
-		demoimagedata.c
+		demoimagedata.c storage.c storage.h
 
 ###############################################################################
 
@@ -88,7 +85,6 @@ MagicMenuPrefs: $(PREFS_OBJS)
 
 protos:
 	mkptypes -c >protos.h $(MAIN_SOURCE)
-#	mkptypes -c >prefs_protos.h $(PREFS_SOURCE)
 
 ###############################################################################
 
@@ -144,3 +140,4 @@ wedge.o : wedge.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h
 windowglyphs.o : windowglyphs.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
 edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h
 demoimagedata.o : demoimagedata.c
+storage.o : storage.c storage.c

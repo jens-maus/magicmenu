@@ -139,8 +139,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     SelectSpecial = (MenuMode == MODE_SELECT);
     ProcessIntuiMenu ();
   }
-  else
-    DisplayBeep (NULL);
 
   CleanUpMenu ();
 

@@ -1,4 +1,4 @@
-; $VER: magicmenu.cd 1.5 (7.11.96)
+; $VER: magicmenu.cd 1.7 (12.11.96)
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>
@@ -43,13 +43,13 @@ MSG_LOOKLABEL3_TXT (//)
 Multicolour 3D
 ;
 MSG_USAGE_GAD (//)
-Usage
+Usage:
 ;
 MSG_LOOK_GAD (//)
-Look
+Look:
 ;
 MSG_CENTRE_BOXES_GAD (//)
-Centre boxes
+Centre boxes:
 ;
 MSG_TYPELABEL1_TXT (//)
 Pull-down menu only
@@ -70,28 +70,28 @@ MSG_GENERAL_GROUP_TXT (//)
 General
 ;
 MSG_TYPE_GAD (//)
-Type
+Type:
 ;
 MSG_KEYBOARD_CONTROL_ENABLED_GAD (//)
-Keyboard control enabled
+Keyboard control enabled:
 ;
 MSG_MOVE_MOUSE_GAD (//)
-Move mouse pointer to menu bar
+Move mouse pointer to menu bar:
 ;
 MSG_ACTIVATE_WITH_GAD (//)
-Activate with [Right Amiga]+[Right Alt]
+Activate with [Right Amiga]+[Right Alt]:
 ;
 MSG_KEY_SHORTCUT_GAD (//)
-Keyboard shortcut
+Keyboard shortcut:
 ;
 MSG_MARK_SUBMENUS_GAD (//)
-Mark submenus
+Mark submenus:
 ;
 MSG_DOUBLE_BORDERS_GAD (//)
-Double borders
+Double borders:
 ;
 MSG_NON_BLOCKING_GAD (//)
-Non blocking
+Non blocking:
 ;
 MSG_BRIGHT_EDGES_TXT (//)
 Bright edges
@@ -112,22 +112,22 @@ MSG_SELECTED_BACKGROUND_TXT (//)
 Selected background
 ;
 MSG_RED_TXT (//)
-Red
+Red:
 ;
 MSG_GREEN_TXT (//)
-Green
+Green:
 ;
 MSG_BLUE_TXT (//)
-Blue
+Blue:
 ;
 MSG_HUE_TXT (//)
-Hue
+Hue:
 ;
 MSG_SATURATION_TXT (//)
-Saturation
+Saturation:
 ;
 MSG_BRIGHTNESS_TXT (//)
-Brightness
+Brightness:
 ;
 MSG_SAMPLE_MENU_TXT (//)
 Sample menu
@@ -174,18 +174,6 @@ RGB
 MSG_MODEL_HSB_MEN (//)
 HSB
 ;
-MSG_CONTROL_TITLE_MEN (//)
-Control
-;
-MSG_ENABLE_MEN (//)
-+\0Enable
-;
-MSG_DISABLE_MEN (//)
--\0Disable
-;
-MSG_REMOVE_MEN (//)
-Remove
-;
 MSG_ERROR_WRITING_PREFERENCES_TXT (//)
 Error writing preferences
 ;
@@ -230,7 +218,7 @@ because there are still unreplied\n\
 messages pending.
 ;
 MSG_PRECISION_GAD (//)
-Colour matching
+Colour matching precision:
 ;
 MSG_PRECISION1_TXT (//)
 Exact
@@ -243,4 +231,7 @@ MSG_PRECISION3_TXT (//)
 ;
 MSG_PRECISION4_TXT (//)
 `GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD (//)
+Prefer screen colours:
 ;

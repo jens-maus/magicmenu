@@ -1094,8 +1094,11 @@ Hiho(VOID)
 		{
 			for(i = 0 ; i < 2 ; i++)
 			{
-				ReleasePen(PubScreen->ViewPort.ColorMap,Roam[i]);
-				Roam[i] = -1;
+				if(Roam[i] != -1)
+				{
+					ReleasePen(PubScreen->ViewPort.ColorMap,Roam[i]);
+					Roam[i] = -1;
+				}
 			}
 		}
 		else
@@ -1284,7 +1287,10 @@ Hiho(VOID)
 	if(GfxBase->LibNode.lib_Version >= 39)
 	{
 		for(i = 0 ; i < 2 ; i++)
-			ReleasePen(PubScreen->ViewPort.ColorMap,Roam[i]);
+		{
+			if(Roam[i] != -1)
+				ReleasePen(PubScreen->ViewPort.ColorMap,Roam[i]);
+		}
 	}
 
 	FreeScreenDrawInfo(PubScreen,DrawInfo);

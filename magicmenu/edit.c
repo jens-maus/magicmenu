@@ -48,6 +48,7 @@ struct MMPrefs DefaultPrefs =
 	TRUE,					/* KCGoTop */
 	TRUE,					/* KCRAltRCommand */
 	TRUE,					/* PUCenter */
+	FALSE,					/* PreferScreenColours */
 
 	MODE_STD,				/* PDMode */
 	LOOK_MC,				/* PDLook */
@@ -75,7 +76,21 @@ BOOL TestPrefsValid;
 
 /******************************************************************************/
 
-#define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+UBYTE MagicColours[8][3] =
+{
+	0x95,0x95,0x95,
+	0x00,0x00,0x00,
+	0xFF,0xFF,0xFF,
+	0x3B,0x67,0xA2,
+	0x7B,0x7B,0x7B,
+	0xAF,0xAF,0xAF,
+	0xAA,0x90,0x7C,
+	0xFF,0xA9,0x97
+};
+
+/******************************************************************************/
+
+#define NUM_ELEMENTS(a) (sizeof(a) / sizeof(a[0]))
 
 #define SPREAD(c)	(0x01010101UL * (c))
 
@@ -83,8 +98,7 @@ enum
 {
 	MODE_Edit,
 	MODE_Save,
-	MODE_Use,
-	MODE_Remove
+	MODE_Use
 };
 
 #define MAX_FILENAME_LENGTH 256
@@ -92,6 +106,7 @@ enum
 #define REG(x) register __##x
 #define ASM __asm
 #define SAVE_DS __saveds
+#define STACK_ARGS __stdargs
 
 /******************************************************************************/
 
@@ -126,7 +141,8 @@ enum
 	GAD_KCGoTop,
 	GAD_KCRAltRCommand,
 	GAD_KCKeyStr,
-	GAD_Precision
+	GAD_Precision,
+	GAD_PreferScreenColours
 };
 
 enum
@@ -142,11 +158,7 @@ enum
 
 	MEN_CreateIcons,
 	MEN_RGB,
-	MEN_HSB,
-
-	MEN_Enable,
-	MEN_Disable,
-	MEN_Remove
+	MEN_HSB
 };
 
 /******************************************************************************/
@@ -210,6 +222,7 @@ UBYTE			 CX_PopKey[200];
 
 /******************************************************************************/
 
+struct Screen		*CustomScreen;
 struct Screen		*PubScreen;
 LayoutHandle		*Handle;
 struct Window		*Window;
@@ -246,10 +259,6 @@ struct Hook		 SampleRefreshHook;
 
 struct MsgPort		*ReplyPort;
 struct MsgPort		*GlobalPort;
-
-/******************************************************************************/
-
-BOOL			 MMEnabled;
 
 /******************************************************************************/
 
@@ -428,8 +437,8 @@ GetString(ULONG ID)
 
 /******************************************************************************/
 
-LONG __saveds __stdargs
-PrecisionDispFunc(struct Gadget *DummyGadget,WORD Offset)
+LONG SAVE_DS STACK_ARGS
+PrecisionDispFunc(struct Gadget *UnusedGadget,WORD Offset)
 {
 	LONG Which;
 
@@ -555,7 +564,7 @@ InitMMMessage(struct MMMessage *Message)
 }
 
 BOOL
-AskPrefs(struct MMPrefs *Prefs,BOOL *Enabled,STRPTR CxPopKey)
+AskPrefs(struct MMPrefs *Prefs,STRPTR CxPopKey)
 {
 	struct MsgPort *MMPort;
 	struct MMMessage Message;
@@ -579,9 +588,6 @@ AskPrefs(struct MMPrefs *Prefs,BOOL *Enabled,STRPTR CxPopKey)
 		if(Message.Class == MMC_GETCONFIG)
 		{
 			CopyMem(Message.Ptr1,Prefs,sizeof(*Prefs));
-
-			if(Enabled)
-				*Enabled = Message.Arg1;
 
 			if(CxPopKey)
 				strncpy(CxPopKey,Message.Ptr2,99);
@@ -626,53 +632,6 @@ NewPrefs(struct MMPrefs *Prefs)
 	Permit();
 
 	return(Result);
-}
-
-VOID
-SendEnable(BOOL Enable)
-{
-	struct MsgPort *MMPort;
-	struct MMMessage Message;
-
-	InitMMMessage(&Message);
-
-	Message.Class = MMC_ENABLE;
-	Message.Arg1 = Enable;
-
-	Forbid();
-
-	if(MMPort = FindPort(MMPORT_NAME))
-	{
-		PutMsg(MMPort,(struct Message *)&Message);
-
-		WaitPort(ReplyPort);
-		GetMsg(ReplyPort);
-	}
-
-	Permit();
-}
-
-VOID
-SendRemove(VOID)
-{
-	struct MsgPort *MMPort;
-	struct MMMessage Message;
-
-	InitMMMessage(&Message);
-
-	Message.Class = MMC_REMOVE;
-
-	Forbid();
-
-	if(MMPort = FindPort(MMPORT_NAME))
-	{
-		PutMsg(MMPort,(struct Message *)&Message);
-
-		WaitPort(ReplyPort);
-		GetMsg(ReplyPort);
-	}
-
-	Permit();
 }
 
 /******************************************************************************/
@@ -999,30 +958,27 @@ SampleRefreshHookFunc(REG(a0) struct Hook *UnusedHook,REG(a2) LayoutHandle *Hand
 
 /******************************************************************************/
 
-LONG
-ShowRequest(struct Window *Window,STRPTR Gadgets,STRPTR Text,...)
+VOID
+ShowRequest(STRPTR Text,...)
 {
 	struct EasyStruct Easy;
 	va_list VarArgs;
-	LONG Result;
 
 	Easy.es_StructSize	= sizeof(struct EasyStruct);
 	Easy.es_Flags		= NULL;
 	Easy.es_Title		= "MagicMenu";
 	Easy.es_TextFormat	= Text;
-	Easy.es_GadgetFormat	= Gadgets ? Gadgets : (STRPTR)"Ok";
+	Easy.es_GadgetFormat	= "Ok";
 
 	if(GTLayoutBase)
 		LT_LockWindow(Window);
 
 	va_start(VarArgs,Text);
-	Result = EasyRequestArgs(Window,&Easy,NULL,(APTR)VarArgs);
+	EasyRequestArgs(Window,&Easy,NULL,(APTR)VarArgs);
 	va_end(VarArgs);
 
 	if(GTLayoutBase)
 		LT_UnlockWindow(Window);
-
-	return(Result);
 }
 
 /******************************************************************************/
@@ -1034,7 +990,7 @@ ShowError(LONG ID,LONG Error)
 
 	Fault(Error,NULL,FaultBuffer,sizeof(FaultBuffer));
 
-	ShowRequest(Window,NULL,"%s\n%s",GetString(ID),FaultBuffer);
+	ShowRequest("%s\n%s",GetString(ID),FaultBuffer);
 }
 
 /******************************************************************************/
@@ -1176,6 +1132,91 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 /******************************************************************************/
 
 VOID
+ReleasePens(struct ColorMap *ColorMap)
+{
+	LONG i;
+
+	for(i = 0 ; i < COLOUR_PENS ; i++)
+	{
+		if(Pens[i] != -1)
+		{
+			ReleasePen(ColorMap,Pens[i]);
+			Pens[i] = -1;
+		}
+	}
+
+	for(i = 0 ; i < GradientPensUsed ; i++)
+	{
+		if(GradientPens[i] != -1)
+		{
+			ReleasePen(ColorMap,GradientPens[i]);
+			GradientPens[i] = -1;
+		}
+	}
+
+	GradientPensUsed = 0;
+}
+
+BOOL
+AllocatePens(struct ColorMap *ColorMap)
+{
+	STATIC Tag Tags[] =
+	{
+		OBP_Precision, PRECISION_IMAGE,
+		OBP_FailIfBad, TRUE,
+
+		TAG_DONE
+	};
+
+	BOOL GotPens;
+	LONG i;
+
+	for(i = 0 ; i < 8 ; i++)
+		Pens[i] = ObtainBestPenA(ColorMap,SPREAD(MagicColours[i][0]),SPREAD(MagicColours[i][1]),SPREAD(MagicColours[i][2]),(struct TagItem *)Tags);
+
+	for(i = 8 ; i < COLOUR_PENS ; i++)
+		Pens[i] = ObtainPen(ColorMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
+
+	GotPens = TRUE;
+
+	for(i = 0 ; i < COLOUR_PENS ; i++)
+	{
+		if(Pens[i] == -1)
+		{
+			GotPens = FALSE;
+			break;
+		}
+	}
+
+	if(GotPens)
+	{
+		GradientPensUsed = 0;
+
+		for(i = 0 ; i < GRADIENT_PENS ; i++)
+		{
+			GradientPens[i] = ObtainPen(ColorMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
+
+			if(GradientPens[i] != -1)
+				GradientPensUsed++;
+			else
+			{
+				if(GradientPensUsed < 2)
+					GotPens = FALSE;
+
+				break;
+			}
+		}
+	}
+
+	if(!GotPens)
+		ReleasePens(ColorMap);
+
+	return(GotPens);
+}
+
+/******************************************************************************/
+
+VOID
 CloseAll(VOID)
 {
 	DeleteMsgPort(ReplyPort);
@@ -1203,29 +1244,17 @@ CloseAll(VOID)
 	DeleteBitMap(SampleMenu,SampleMenuWidth,SampleMenuHeight);
 
 	if(V39 && PubScreen)
-	{
-		struct ColorMap *CMap;
-		LONG i;
-
-		CMap = PubScreen->ViewPort.ColorMap;
-
-		for(i = 0 ; i < COLOUR_PENS ; i++)
-		{
-			if(Pens[i] != -1)
-				ReleasePen(CMap,Pens[i]);
-		}
-
-		for(i = 0 ; i < GradientPensUsed ; i++)
-		{
-			if(GradientPens[i] != -1)
-				ReleasePen(CMap,GradientPens[i]);
-		}
-	}
+		ReleasePens(PubScreen->ViewPort.ColorMap);
 
 	if(IntuitionBase)
-		UnlockPubScreen(NULL,PubScreen);
+	{
+		if(CustomScreen)
+			CloseScreen(CustomScreen);
+		else
+			UnlockPubScreen(NULL,PubScreen);
+	}
 
-	if(AslBase)
+	if(FileRequester)
 		FreeAslRequest(FileRequester);
 
 	if(HomeDir)
@@ -1309,8 +1338,18 @@ OpenAll(struct WBStartup *StartupMsg)
 		Catalog = OpenCatalogA(NULL,"magicmenu.catalog",(struct TagItem *)LocaleTags);
 	}
 
-	ColorWheelBase = OpenLibrary("gadgets/colorwheel.gadget",39);
-	GradientSliderBase = OpenLibrary("gadgets/gradientslider.gadget",39);
+		/* Das hier geht leider nicht anders. Das colorwheel.gadget hat eine Macke
+		 * in der LibInit-Routine. Läßt sich die graphics.library V39 nicht öffnen,
+		 * setzt sie noch einen Alert() ab, aber dann wird beim Umladen des Stacks
+		 * zuviel vom Stack genommen. Aus diesem Zustand kommt sie nicht mehr
+		 * heile heraus.
+		 */
+
+	if(V39)
+	{
+		ColorWheelBase = OpenLibrary("gadgets/colorwheel.gadget",39);
+		GradientSliderBase = OpenLibrary("gadgets/gradientslider.gadget",39);
+	}
 
 	if(StartupMsg)
 	{
@@ -1346,8 +1385,6 @@ OpenAll(struct WBStartup *StartupMsg)
 							ProgramMode = MODE_Save;
 						else if (MatchToolValue(Result,"USE"))
 							ProgramMode = MODE_Use;
-						else if (MatchToolValue(Result,"REMOVE"))
-							ProgramMode = MODE_Remove;
 					}
 				}
 				else
@@ -1358,8 +1395,6 @@ OpenAll(struct WBStartup *StartupMsg)
 						ProgramMode = MODE_Save;
 					else if (FindToolType(Icon->do_ToolTypes,"USE"))
 						ProgramMode = MODE_Use;
-					else if (FindToolType(Icon->do_ToolTypes,"REMOVE"))
-						ProgramMode = MODE_Remove;
 
 					if(Result = FindToolType(Icon->do_ToolTypes,"CREATEICONS"))
 					{
@@ -1404,7 +1439,6 @@ OpenAll(struct WBStartup *StartupMsg)
 			LONG Edit;
 			LONG Use;
 			LONG Save;
-			LONG Remove;
 			STRPTR PubScreen;
 			LONG *CX_Priority;
 			STRPTR CX_PopKey;
@@ -1415,7 +1449,7 @@ OpenAll(struct WBStartup *StartupMsg)
 
 		memset(&Params,0,sizeof(Params));
 
-		if(Args = ReadArgs("FROM,EDIT/S,USE/S,SAVE/S,REMOVE/S,PUBSCREEN/K,CX_PRIORITY/N/K,CX_POPKEY/K,CX_POPUP/K",(LONG *)&Params,NULL))
+		if(Args = ReadArgs("FROM,EDIT/S,USE/S,SAVE/S,PUBSCREEN/K,CX_PRIORITY/N/K,CX_POPKEY/K,CX_POPUP/K",(LONG *)&Params,NULL))
 		{
 			if(Params.From)
 			{
@@ -1429,8 +1463,6 @@ OpenAll(struct WBStartup *StartupMsg)
 				ProgramMode = MODE_Use;
 			else if (Params.Save)
 				ProgramMode = MODE_Save;
-			else if (Params.Remove)
-				ProgramMode = MODE_Remove;
 
 			if(Params.PubScreen)
 				PubScreen = LockPubScreen(Params.PubScreen);
@@ -1488,13 +1520,11 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	if(!(FileRequester = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
 		ASLFR_InitialPattern,	"#?.prefs",
-		ASLFR_DoPatterns,	TRUE,
+		ASLFR_Flags2,		FRF_REJECTICONS,
 	TAG_DONE)))
 		return("file requester");
 
 	CopyMem(&DefaultPrefs,&CurrentPrefs,sizeof(CurrentPrefs));
-
-	MMEnabled = FALSE;
 
 	if(NewFileName)
 	{
@@ -1510,7 +1540,7 @@ OpenAll(struct WBStartup *StartupMsg)
 	}
 	else
 	{
-		if(!AskPrefs(&CurrentPrefs,&MMEnabled,CX_PopKey))
+		if(!AskPrefs(&CurrentPrefs,CX_PopKey))
 			ReadPrefs(FileName,&CurrentPrefs);
 	}
 
@@ -1527,63 +1557,45 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	if(V39 && ColorWheelBase && GradientSliderBase)
 	{
-		STATIC Tag Tags[] =
-		{
-			OBP_Precision, PRECISION_IMAGE,
-			OBP_FailIfBad, TRUE,
-
-			TAG_DONE
-		};
-
-		STATIC UBYTE MagicColours[8][3] =
-		{
-			0x95,0x95,0x95,
-			0x00,0x00,0x00,
-			0xFF,0xFF,0xFF,
-			0x3B,0x67,0xA2,
-			0x7B,0x7B,0x7B,
-			0xAF,0xAF,0xAF,
-			0xAA,0x90,0x7C,
-			0xFF,0xA9,0x97
-		};
-
+		struct Screen *WhichScreen;
 		struct ColorMap *CMap;
+
+		WhichScreen = PubScreen;
 
 		CMap = PubScreen->ViewPort.ColorMap;
 
-		for(i = 0 ; i < 8 ; i++)
-			Pens[i] = ObtainBestPenA(CMap,SPREAD(MagicColours[i][0]),SPREAD(MagicColours[i][1]),SPREAD(MagicColours[i][2]),(struct TagItem *)Tags);
+		GotPens = AllocatePens(CMap);
 
-		for(i = 8 ; i < COLOUR_PENS ; i++)
-			Pens[i] = ObtainPen(CMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
-
-		GotPens = TRUE;
-
-		for(i = 0 ; i < COLOUR_PENS ; i++)
+		if(!GotPens)
 		{
-			if(Pens[i] == -1)
+			struct LoadThatColour Colours[8+1];
+			LONG i;
+
+			for(i = 0 ; i < 8 ; i++)
 			{
-				GotPens = FALSE;
-				break;
+				Colours[i].One		= 1;
+				Colours[i].Which	= (i < 4) ? i : (1<<5) - 4 + i - 4;
+				Colours[i].Red		= SPREAD(MagicColours[i][0]);
+				Colours[i].Green	= SPREAD(MagicColours[i][1]);
+				Colours[i].Blue		= SPREAD(MagicColours[i][2]);
 			}
-		}
 
-		if(GotPens)
-		{
-			GradientPensUsed = 0;
+			Colours[i].One = 0;
 
-			for(i = 0 ; i < GRADIENT_PENS ; i++)
+			if(CustomScreen = OpenScreenTags(NULL,
+				SA_LikeWorkbench,	TRUE,
+				SA_Depth,		5,
+				SA_Title,		VERS " (" DATE ")",
+				SA_SharePens,		TRUE,
+				SA_Behind,		TRUE,
+				SA_Colors32,		Colours,
+			TAG_DONE))
 			{
-				GradientPens[i] = ObtainPen(CMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
-
-				if(GradientPens[i] != -1)
-					GradientPensUsed++;
-				else
+				if(GotPens = AllocatePens(CustomScreen->ViewPort.ColorMap))
 				{
-					if(GradientPensUsed < 2)
-						GotPens = FALSE;
+					CMap = CustomScreen->ViewPort.ColorMap;
 
-					break;
+					WhichScreen = CustomScreen;
 				}
 			}
 		}
@@ -1601,7 +1613,7 @@ OpenAll(struct WBStartup *StartupMsg)
 					MaxPen = Pens[i];
 			}
 
-			MaxDepth = min(8,GetBitMapAttr(PubScreen->RastPort.BitMap,BMA_DEPTH));
+			MaxDepth = min(8,GetBitMapAttr(WhichScreen->RastPort.BitMap,BMA_DEPTH));
 
 			for(i = 1 ; i <= 8 ; i++)
 			{
@@ -1612,7 +1624,7 @@ OpenAll(struct WBStartup *StartupMsg)
 				}
 			}
 
-			if(PubScreen->Font->ta_YSize >= 11)
+			if(WhichScreen->Font->ta_YSize >= 11)
 				WhichImage = &Demo_11_Image;
 			else
 				WhichImage = &Demo_8_Image;
@@ -1634,29 +1646,24 @@ OpenAll(struct WBStartup *StartupMsg)
 			}
 			else
 				GotPens = FALSE;
+
+			if(CustomScreen && GotPens)
+			{
+				UnlockPubScreen(NULL,PubScreen);
+				PubScreen = CustomScreen;
+				ScreenToFront(CustomScreen);
+			}
 		}
 
 		if(!GotPens)
 		{
-			for(i = 0 ; i < COLOUR_PENS ; i++)
-			{
-				if(Pens[i] != -1)
-				{
-					ReleasePen(CMap,Pens[i]);
-					Pens[i] = -1;
-				}
-			}
+			ReleasePens(CMap);
 
-			for(i = 0 ; i < GradientPensUsed ; i++)
+			if(CustomScreen)
 			{
-				if(GradientPens[i] != -1)
-				{
-					ReleasePen(CMap,GradientPens[i]);
-					GradientPens[i] = -1;
-				}
+				CloseScreen(CustomScreen);
+				CustomScreen = NULL;
 			}
-
-			GradientPensUsed = 0;
 		}
 	}
 
@@ -1669,10 +1676,11 @@ OpenAll(struct WBStartup *StartupMsg)
 		UpdateSample(&CurrentPrefs);
 	}
 
-	if(!(Handle = LT_CreateHandleTags(NULL,
+	if(!(Handle = LT_CreateHandleTags(CustomScreen,
 		LAHN_LocaleHook,	&LocaleHook,
-		LAHN_PubScreen,		PubScreen,
 		LAHN_CloningPermitted,	FALSE,
+
+		CustomScreen ? TAG_IGNORE : LAHN_PubScreen,PubScreen,
 	TAG_DONE)))
 		return("window");
 
@@ -2088,6 +2096,13 @@ OpenAll(struct WBStartup *StartupMsg)
 							LASL_FullCheck,		TRUE,
 						TAG_DONE);
 
+						LT_New(Handle,
+							LA_Type,	CHECKBOX_KIND,
+							LA_ID,		GAD_PreferScreenColours,
+							LA_LabelID,	MSG_PREFER_SCREEN_COLOURS_GAD,
+							LA_BYTE,	&CurrentPrefs.mmp_PreferScreenColours,
+						TAG_DONE);
+
 						LT_EndGroup(Handle);
 					}
 
@@ -2121,24 +2136,28 @@ OpenAll(struct WBStartup *StartupMsg)
 				LA_ID,		GAD_Save,
 				LA_LabelID,	MSG_SAVE_GAD,
 				LABT_ExtraFat,	TRUE,
+				LA_NoKey,	TRUE,
 			TAG_DONE);
 
 			LT_New(Handle,
 				LA_Type,	BUTTON_KIND,
 				LA_ID,		GAD_Use,
 				LA_LabelID,	MSG_USE_GAD,
+				LA_NoKey,	TRUE,
 			TAG_DONE);
 
 			LT_New(Handle,
 				LA_Type,	BUTTON_KIND,
 				LA_ID,		GAD_Test,
 				LA_LabelID,	MSG_TEST_GAD,
+				LA_NoKey,	TRUE,
 			TAG_DONE);
 
 			LT_New(Handle,
 				LA_Type,	BUTTON_KIND,
 				LA_ID,		GAD_Cancel,
 				LA_LabelID,	MSG_CANCEL_GAD,
+				LA_NoKey,	TRUE,
 			TAG_DONE);
 
 			LT_EndGroup(Handle);
@@ -2196,26 +2215,7 @@ OpenAll(struct WBStartup *StartupMsg)
 					LAMN_MutualExclude,	1,
 					LAMN_CheckIt,	TRUE,
 					LAMN_Checked,	!RGB_Mode,
-/*
-		LAMN_TitleID, 				MSG_CONTROL_TITLE_MEN,
 
-			LAMN_ItemID,			MSG_ENABLE_MEN,
-				LAMN_ID,		MEN_Enable,
-				LAMN_MutualExclude,	2,
-				LAMN_CheckIt,		TRUE,
-				LAMN_Checked,		MMEnabled,
-
-			LAMN_ItemID,			MSG_DISABLE_MEN,
-				LAMN_ID,		MEN_Disable,
-				LAMN_MutualExclude,	1,
-				LAMN_CheckIt,		TRUE,
-				LAMN_Checked,		!MMEnabled,
-
-			LAMN_ItemText,			NM_BARLABEL,
-
-			LAMN_ItemID,			MSG_REMOVE_MEN,
-				LAMN_ID,		MEN_Remove,
-*/
 #ifdef DEMO_MENU
 		LAMN_TitleText, 		"Demo",
 			LAMN_ItemText,		"Checkmark",
@@ -2313,6 +2313,10 @@ UpdateSettings(struct MMPrefs *Prefs)
 		GTCB_Checked,	Prefs->mmp_KCRAltRCommand,
 	TAG_DONE);
 
+	LT_SetAttributes(Handle,GAD_PreferScreenColours,
+		GTCB_Checked,	Prefs->mmp_PreferScreenColours,
+	TAG_DONE);
+
 	LT_SetAttributes(Handle,GAD_KCKeyStr,
 		GTST_String,	Prefs->mmp_KCKeyStr,
 	TAG_DONE);
@@ -2402,11 +2406,13 @@ EventLoop(struct WBStartup *StartupMsg)
 								{
 									BPTR In,Out;
 
-									if (In = Open("NIL:",MODE_NEWFILE))
+									Permit();
+
+									if(In = Open("NIL:",MODE_NEWFILE))
 									{
-										if (Out = Open("NIL:",MODE_NEWFILE))
+										if(Out = Open("NIL:",MODE_NEWFILE))
 										{
-											if (StartupMsg && !Cli())
+											if(StartupMsg && !Cli())
 												AttachCLI(StartupMsg);
 
 											SystemTags("MagicMenu",
@@ -2419,13 +2425,11 @@ EventLoop(struct WBStartup *StartupMsg)
 										else
 											Close(In);
 									}
-
-									Permit();
 								}
 								else
 									Permit();
 
-								TestPrefsValid = AskPrefs(&TestPrefs,NULL,NULL);
+								TestPrefsValid = AskPrefs(&TestPrefs,NULL);
 								NewPrefs(&CurrentPrefs);
 
 								LT_UnlockWindow(Window);
@@ -2440,11 +2444,15 @@ EventLoop(struct WBStartup *StartupMsg)
 									break;
 								}
 
+								/* Falls thru to... */
+
 							case GAD_Use:
 
 								WritePrefs("ENV:MagicMenu.prefs",&CurrentPrefs);
 								NewPrefs(&CurrentPrefs);
 								TestPrefsValid = FALSE;
+
+								/* Falls thru to... */
 
 							case GAD_Cancel:
 
@@ -2510,7 +2518,7 @@ EventLoop(struct WBStartup *StartupMsg)
 								{
 									case MEN_About:
 
-										ShowRequest(Window,NULL,GetString(MSG_ABOUT_TXT),VERSION,REVISION,DATE);
+										ShowRequest(GetString(MSG_ABOUT_TXT),VERSION,REVISION,DATE);
 										break;
 
 									case MEN_Open:
@@ -2519,9 +2527,8 @@ EventLoop(struct WBStartup *StartupMsg)
 
 										if(AslRequestTags(FileRequester,
 											ASLFR_Window,		Window,
-											ASLFR_PrivateIDCMP,	TRUE,
 											ASLFR_TitleText,	GetString(MSG_OPEN_PREFERENCES_TXT),
-											ASLFR_RejectIcons,	TRUE,
+											ASLFR_Flags1,		FRF_DOPATTERNS | FRF_PRIVATEIDCMP,
 										TAG_DONE))
 										{
 											if(FileRequester->fr_File[0])
@@ -2552,10 +2559,8 @@ EventLoop(struct WBStartup *StartupMsg)
 
 										if(AslRequestTags(FileRequester,
 											ASLFR_Window,		Window,
-											ASLFR_PrivateIDCMP,	TRUE,
 											ASLFR_TitleText,	GetString(MSG_SAVE_PREFERENCES_TXT),
-											ASLFR_RejectIcons,	TRUE,
-											ASLFR_DoSaveMode,	TRUE,
+											ASLFR_Flags1,		FRF_DOPATTERNS | FRF_PRIVATEIDCMP | FRF_DOSAVEMODE,
 										TAG_DONE))
 										{
 											if(FileRequester->fr_File[0])
@@ -2636,21 +2641,6 @@ EventLoop(struct WBStartup *StartupMsg)
 											LAGR_ActivePage,RGB_Mode = FALSE,
 										TAG_DONE);
 										break;
-
-									case MEN_Enable:
-
-										SendEnable(MMEnabled = TRUE);
-										break;
-
-									case MEN_Disable:
-
-										SendEnable(MMEnabled = FALSE);
-										break;
-
-									case MEN_Remove:
-
-										SendRemove();
-										break;
 								}
 
 								MsgCode = Item->NextSelect;
@@ -2708,7 +2698,7 @@ main(int argc,char **argv)
 			else
 			{
 				if(IntuitionBase)
-					ShowRequest(NULL,NULL,GetString(MSG_SETUP_FAILURE_TXT),Result);
+					ShowRequest(GetString(MSG_SETUP_FAILURE_TXT),Result);
 			}
 
 			ReturnCode = RETURN_FAIL;
@@ -2738,11 +2728,6 @@ main(int argc,char **argv)
 			case MODE_Use:
 
 				NewPrefs(&CurrentPrefs);
-				break;
-
-			case MODE_Remove:
-
-				SendRemove();
 				break;
 		}
 	}
