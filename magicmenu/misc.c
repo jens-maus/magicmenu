@@ -26,7 +26,10 @@ ULONG __asm CallActivateWindow (REG(a0) struct Window *W, REG(a6) struct Intuiti
 ULONG __asm CallWindowToFront (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallWindowToBack (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallMoveWindowInFrontOf (REG(a0) struct Window *Window, REG(a1) struct Window *Behind, REG(a6) struct IntuitionBase *IntuitionBase);
-BOOL __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallOffMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallOnMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
+LONG __asm CallLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow, REG(a6) struct IntuitionBase *IntuitionBase);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
 struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
 
@@ -280,11 +283,11 @@ MMMoveWindowInFrontOf (REG(a0) struct Window * Window,REG(a1) struct Window *Beh
     return (FALSE);
 }
 
-BOOL __asm __saveds
+ULONG __asm __saveds
 MMModifyIDCMP (REG(a0) struct Window * window,
                REG(d0) ULONG flags)
 {
-  BOOL Result;
+  ULONG Result;
 
   DB (kprintf ("|%s| in ModifyIDCMP patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
@@ -296,6 +299,46 @@ MMModifyIDCMP (REG(a0) struct Window * window,
   }
   else
     Result = CallModifyIDCMP (window, flags, IntuitionBase);
+
+  return (Result);
+}
+
+ULONG __asm __saveds
+MMOffMenu (REG(a0) struct Window * window,
+               REG(d0) ULONG number)
+{
+  ULONG Result;
+
+  DB (kprintf ("|%s| in OffMenu patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (MMCheckWindow (window))
+  {
+    Result = CallOffMenu (window, number, IntuitionBase);
+
+    ReleaseSemaphore (MenuActSemaphore);
+  }
+  else
+    Result = CallOffMenu (window, number, IntuitionBase);
+
+  return (Result);
+}
+
+ULONG __asm __saveds
+MMOnMenu (REG(a0) struct Window * window,
+               REG(d0) ULONG number)
+{
+  ULONG Result;
+
+  DB (kprintf ("|%s| in OnMenu patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (MMCheckWindow (window))
+  {
+    Result = CallOnMenu (window, number, IntuitionBase);
+
+    ReleaseSemaphore (MenuActSemaphore);
+  }
+  else
+    Result = CallOnMenu (window, number, IntuitionBase);
 
   return (Result);
 }
@@ -429,6 +472,16 @@ MMCreateUpfrontLayer (
   return (CreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, LAYERS_BACKFILL, Super));
 }
 
+LONG __asm __saveds
+MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
+{
+  DB (kprintf ("|%s| in LendMenus patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  RegisterLending(FromWindow,ToWindow);
+
+  return (CallLendMenus (FromWindow, ToWindow, IntuitionBase));
+}
+
 /*****************************************************************************************/
 
 VOID
@@ -438,6 +491,7 @@ CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
   ULONG Modulo;
   LONG i, Mask;
 
+  memset(BitMap,0,sizeof(*BitMap));
   InitBitMap (BitMap, Image->Depth, Image->Width, Image->Height);
 
   Modulo = BitMap->BytesPerRow * BitMap->Rows;
@@ -491,6 +545,7 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
       (*DestImage)->PlanePick = (1L << Depth) - 1;
 
+      memset(&Dst,0,sizeof(Dst));
       InitBitMap (&Dst, Depth, SrcImage->Width, SrcImage->Height);
 
       if ((*DestImage)->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP))
@@ -656,7 +711,14 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
     return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
   else
   {
-    if (BitMap = AllocVecPooled (sizeof (struct BitMap), NULL))
+    LONG Extra;
+
+    if(Depth > 8)
+      Extra = sizeof(PLANEPTR) * (Depth - 8);
+    else
+      Extra = 0;
+
+    if (BitMap = AllocVecPooled (sizeof (struct BitMap) + Extra, MEMF_ANY|MEMF_CLEAR))
     {
       InitBitMap (BitMap, Depth, Width, Height);
 

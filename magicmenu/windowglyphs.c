@@ -14,6 +14,7 @@ typedef struct WindowGlyphNode
 
   struct Window *Window;
   struct Image *AmigaGlyph;
+  struct Window *LendingTo;
 }
 WindowGlyphNode;
 
@@ -68,6 +69,12 @@ DiscardWindowGlyphs (struct Window *Window)
       }
     }
 
+    for (Node = (WindowGlyphNode *) WindowGlyphList.mlh_Head; Node->Link.mln_Succ; Node = (WindowGlyphNode *) Node->Link.mln_Succ)
+    {
+      if (Node->LendingTo == Window)
+        Node->LendingTo = NULL;
+    }
+
     ReleaseSemaphore (&WindowGlyphSemaphore);
   }
 }
@@ -100,6 +107,67 @@ ObtainGlyphs (struct Window *Window, struct Image **TickGlyph, struct Image **Am
   }
 }
 
+struct Window *
+FindLending(struct Window *From)
+{
+	WindowGlyphNode *Node;
+	struct Window *Result;
+
+	Result = NULL;
+
+	SafeObtainSemaphoreShared (&WindowGlyphSemaphore);
+
+	for (Node = (WindowGlyphNode *) WindowGlyphList.mlh_Head; Node->Link.mln_Succ; Node = (WindowGlyphNode *) Node->Link.mln_Succ)
+	{
+		if (Node->Window == From)
+		{
+			Result = Node->LendingTo;
+			break;
+		}
+	}
+
+	ReleaseSemaphore (&WindowGlyphSemaphore);
+
+	return(Result);
+}
+
+VOID
+RegisterLending(struct Window *From,struct Window *To)
+{
+	if (Inited)
+	{
+		WindowGlyphNode *Node;
+		BOOL GotIt;
+
+		GotIt = FALSE;
+
+		ObtainSemaphore (&WindowGlyphSemaphore);
+
+		for (Node = (WindowGlyphNode *) WindowGlyphList.mlh_Head; Node->Link.mln_Succ; Node = (WindowGlyphNode *) Node->Link.mln_Succ)
+		{
+			if (Node->Window == From)
+			{
+				GotIt = TRUE;
+				Node->LendingTo = To;
+				break;
+			}
+		}
+
+		if(!GotIt)
+		{
+			if (Node = (WindowGlyphNode *) AllocVecPooled (sizeof (WindowGlyphNode), MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR))
+			{
+				Node->Window = From;
+				Node->LendingTo = To;
+
+				AddTail ((struct List *) &WindowGlyphList, (struct Node *) Node);
+			}
+		}
+
+		ReleaseSemaphore (&WindowGlyphSemaphore);
+	}
+}
+
 VOID
 RegisterGlyphs (struct Window *Window, struct NewWindow *NewWindow, struct TagItem *Tags)
 {
@@ -124,7 +192,7 @@ RegisterGlyphs (struct Window *Window, struct NewWindow *NewWindow, struct TagIt
       {
 	WindowGlyphNode *Node;
 
-	if (Node = (WindowGlyphNode *) AllocVecPooled (sizeof (WindowGlyphNode), MEMF_ANY | MEMF_PUBLIC))
+	if (Node = (WindowGlyphNode *) AllocVecPooled (sizeof (WindowGlyphNode), MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR))
 	{
 	  Node->Window = Window;
 	  Node->AmigaGlyph = AmigaGlyph;

@@ -64,8 +64,11 @@ SendIntuiMessage (
   }
   else
   {
+    if (WaitForReply)
+      UnlockIBase (IntuiLock);
+
     FreeVecPooled (Sent);
-    WaitForReply = FALSE;	/* Es kann keine Antwort geben. */
+    return(Result);	/* Es kann keine Antwort geben. */
   }
 
   Permit ();

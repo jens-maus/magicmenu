@@ -13,8 +13,8 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 {
   struct Window *ZwWin;
   UWORD Code, Err;
-  struct Screen *FrontScreen;
   struct InputEvent *NewEvent;
+  struct Window *OriginalMenWin;
 
   /* Zugriff auf MenWin, MenScr und MenStrip sperren. */
   ObtainSemaphore (GetPointerSemaphore);
@@ -31,7 +31,22 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     return (TRUE);
   }
 
+  OriginalMenWin = MenWin;
   MenStrip = MenWin->MenuStrip;
+  MenScr = MenWin->WScreen;
+
+  /* Leiht dem Fenster ein anderes seine Menüs? */
+  if(V39)
+  {
+    struct Window *OtherGuy;
+
+    if(OtherGuy = FindLending(MenWin))
+    {
+      MenWin = OtherGuy;
+      MenStrip = OtherGuy->MenuStrip;
+      MenScr = OtherGuy->WScreen;
+    }
+  }
 
   /* Ist mit diesem Fenster etwas zu machen? */
   if ((!MenStrip) || (MenWin->Flags & WFLG_RMBTRAP) || (MenWin->ReqCount != 0))
@@ -41,8 +56,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     ReleaseSemaphore (GetPointerSemaphore);
     return (FALSE);
   }
-
-  MenScr = MenWin->WScreen;
 
   /* Ab jetzt kann wieder lesend auf MenWin, MenScr, MenStrip
    * zugegriffen werden.
@@ -93,9 +106,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     }
   }
 
-  /* Vordersten Bildschirm merken. */
-  FrontScreen = IntuitionBase->FirstScreen;
-
   /* Das war die letzte Handlung, zu der Intuition
    * gesperrt werden mußte.
    */
@@ -106,10 +116,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
    * warten müssen.
    */
   ObtainSemaphore (MenuActSemaphore);
-
-  /* Den Bildschirm mit dem Menü in den Vordergrund holen. */
-  if (FrontScreen != MenScr)
-    ScreenToFront (MenScr);
 
   MenWin->Flags |= WFLG_MENUSTATE;
 
@@ -151,7 +157,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     NewEvent->ie_Class = (HelpPressed) ? IECLASS_MENUHELP : IECLASS_MENULIST;
 
     NewEvent->ie_Code = FirstMenuNum;
-    NewEvent->ie_EventAddress = MenWin;
+    NewEvent->ie_EventAddress = OriginalMenWin;
     NewEvent->ie_Qualifier = PeekQualifier ();
 
     InputIO->io_Data = (APTR) NewEvent;
@@ -162,12 +168,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
     FreeVecPooled (NewEvent);
   }
-
-  /* Falls dieser Bildschirm in den Vordergrund geholt
-   * wurde, wird er wieder zurückgeschickt.
-   */
-  if (FrontScreen != MenScr)
-    ScreenToBack (MenScr);
 
   /* Jetzt kommt die letzte Maßnahme. Die Fenster, die vorher die
    * MENUVERIFY/MENUWAITING-Nachricht bekommen hatten, erhalten jetzt

@@ -26,57 +26,6 @@ long __stack = 8192;
 
 /******************************************************************************/
 
-static struct MsgPort		*ArmPort;
-static struct timerequest	*ArmRequest;
-static BOOL			 ArmTicking;
-static ULONG			 ArmMask;
-static BOOL			 MenuPending;
-
-VOID
-DisarmMenu(VOID)
-{
-/*
-	MenuPending = FALSE;
-
-	if(ArmTicking)
-	{
-		if(!CheckIO(ArmRequest))
-			AbortIO(ArmRequest);
-
-		WaitIO(ArmRequest);
-
-		ArmTicking = FALSE;
-	}
-*/
-}
-
-VOID
-ArmMenu(VOID)
-{
-/*
-	MenuPending = TRUE;
-
-	if(ArmTicking)
-	{
-		if(!CheckIO(ArmRequest))
-			AbortIO(ArmRequest);
-
-		WaitIO(ArmRequest);
-	}
-
-	ArmRequest->tr_node.io_Command	= TR_ADDREQUEST;
-	ArmRequest->tr_time.tv_secs	= 0;
-	ArmRequest->tr_time.tv_micro	= MILLION / 4;
-
-	ArmTicking = TRUE;
-
-	SetSignal(0,ArmMask);
-	SendIO(ArmRequest);
-*/
-}
-
-/******************************************************************************/
-
  /* This is how a linked list of directory search paths looks like. */
 
 struct Path
@@ -981,7 +930,7 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
         break;
       }
 
-      if (Event.ie_Code == CTRL)
+      if (Event.ie_Code == CTRL && ((StripPopUp && AktPrefs.mmp_PULook != LOOK_2D) || (!StripPopUp && AktPrefs.mmp_PDLook != LOOK_2D)))
       {
         SavSubItem = AktSubItem;
         SavSubItemNum = SubItemNum;
@@ -1337,15 +1286,13 @@ ProcessIntuiMenu (VOID)
   ULONG TickCounter;
   ULONG TimeMask;
   BOOL Poll, Ticking;
-  WORD LastMouseX,LastMouseY;
-  WORD MouseX,MouseY;
 
   Ende = FALSE;
   Cancel = FALSE;
   Ticking = TRUE;
 
   TimeMask = PORTMASK (TimerPort);
-  SigMask = CxSignalMask | TickSigMask | TimeMask | ArmMask;
+  SigMask = CxSignalMask | TickSigMask | TimeMask;
 
   TickCounter = 0;
 
@@ -1353,43 +1300,12 @@ ProcessIntuiMenu (VOID)
 
   Poll = FALSE;
 
-  LastMouseX = MenScr->MouseX;
-  LastMouseY = MenScr->MouseY;
-
   while (!Ende)
   {
     if (Poll)
       Signals = SetSignal (0, SigMask) & SigMask;
     else
       Signals = Wait (SigMask);
-
-    MouseX = MenScr->MouseX;
-    MouseY = MenScr->MouseY;
-
-    if(MenuPending)
-    {
-      if(abs(MouseX - LastMouseX) < 2 && abs(MouseY - LastMouseY) < 2)
-      {
-        DisarmMenu();
-
-        if(AktMenu)
-        {
-          if(AktItem)
-          {
-            if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
-              DisplayBeep (MenScr);
-          }
-          else
-          {
-            if (!DrawMenuBox (AktMenu, TRUE))
-              DisplayBeep (MenScr);
-          }
-        }
-      }
-    }
-
-    LastMouseX = MouseX;
-    LastMouseY = MouseY;
 
     if (Signals & TimeMask)
     {
@@ -1405,25 +1321,6 @@ ProcessIntuiMenu (VOID)
       }
       else
         StartTimeRequest (TimerIO, 0, MILLION / 2);
-    }
-
-    if (Signals & ArmMask)
-    {
-      DisarmMenu();
-
-      if(AktMenu)
-      {
-        if(AktItem)
-        {
-          if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
-            DisplayBeep (MenScr);
-        }
-        else
-        {
-          if (!DrawMenuBox (AktMenu, TRUE))
-            DisplayBeep (MenScr);
-        }
-      }
     }
 
     if (Signals & TickSigMask)
@@ -2244,14 +2141,6 @@ CloseAll (VOID)
     Broker = NULL;
   }
 
-  DisarmMenu();
-
-  if(ArmPort)
-  {
-    DeleteMsgPort(ArmPort);
-    ArmPort = NULL;
-  }
-
   if (LibPatches)
   {
     RemovePatches ();
@@ -2413,6 +2302,12 @@ main (int argc, char **argv)
   LONG z1;
   char *SPtr;
 
+  if(SysBase->LibNode.lib_Version < 37)
+  {
+    ((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
+    return(RETURN_FAIL);
+  }
+
   if (argc == 0)
   {
     WBMsg = (struct WBStartup *) argv;
@@ -2427,6 +2322,21 @@ main (int argc, char **argv)
       z1--;
     strncpy (ProgName, &argv[0][z1 + 1], 31);
   }
+
+  Forbid();
+
+  if(FindPort(MMPORT_NAME))
+  {
+    Permit();
+
+    StartPrefs();
+
+    return(RETURN_OK);
+  }
+  else
+    Permit();
+
+  SetProgramName("MagicMenu");
 
   /*****************************************************************************************/
 
@@ -2487,14 +2397,6 @@ main (int argc, char **argv)
   if (!(IMsgReplyPort = CreateMsgPort ()))
     ErrorPrc ("IMsg reply port");
 
-  if (!(ArmPort = CreateMsgPort ()))
-    ErrorPrc ("item reply port");
-
-  ArmMask = PORTMASK(ArmPort);
-
-  if(!(ArmRequest = (struct timerequest *)AllocVec(sizeof(struct timerequest),MEMF_ANY)))
-    ErrorPrc ("item time request");
-
   if (!(TimeoutPort = CreateMsgPort ()))
     ErrorPrc ("timeout reply port");
 
@@ -2503,10 +2405,6 @@ main (int argc, char **argv)
 
   if (OpenDevice (TIMERNAME, UNIT_VBLANK, (struct IORequest *) TimeoutRequest, NULL))
     ErrorPrc ("timer.device");
-
-  CopyMem(TimeoutRequest,ArmRequest,sizeof(struct timerequest));
-  ArmRequest->tr_node.io_Message.mn_ReplyPort = ArmPort;
-  ArmTicking = FALSE;
 
   InitSemaphore (RememberSemaphore);
 

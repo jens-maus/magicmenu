@@ -1,11 +1,7 @@
-; $$TABS=8
 ; 1992 Chris Green
-; bm_xlate.asm - translate a bitmap in via a one byte table
+; remap.a - translate a bitmap in via a one byte table
 
-;	include	"strucdef.equ"
-;	include	"lvo.equ"
 	include "graphics/gfx.i"
-;	addsym
 
 	section	text,code
 

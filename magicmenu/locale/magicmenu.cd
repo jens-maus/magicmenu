@@ -1,4 +1,4 @@
-; $VER: magicmenu.cd 1.3 (29.10.96)
+; $VER: magicmenu.cd 1.4 (3.11.96)
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>
@@ -14,6 +14,9 @@ Colour control
 ;
 MSG_SAVE_GAD (//)
 Save
+;
+MSG_TEST_GAD (//)
+Test
 ;
 MSG_USE_GAD (//)
 Use
@@ -55,7 +58,7 @@ MSG_TYPELABEL2_TXT (//)
 Pop-up menu only
 ;
 MSG_TYPELABEL3_TXT (//)
-Mouse pointer position dependant
+Mouse pointer position dependent
 ;
 MSG_PULL_DOWN_GROUP_TXT (//)
 Pull-down menu

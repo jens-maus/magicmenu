@@ -14,12 +14,14 @@
 .cd.h:
 	catcomp $*.cd cfile $*.h nocode noblock
 
+###############################################################################
+
 VERSION =	2
 
 GSTFILE =	system_headers.gst
-OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
-CPU =		030
-#CPU =		any
+#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+#CPU =		030
+CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
@@ -28,7 +30,8 @@ LFLAGS =	sc sd noicons addsym \
 		define __CXM33=__UCXM33 define __CXD33=__UCXD33 \
 		define __CXM22=__UCXM22 define __CXD22=__UCXD22
 
-LIBS =		lib:amiga.lib lib:sc.lib lib:debug.lib
+#LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
+LIBS =		lib:sc.lib lib:amiga.lib
 
 ###############################################################################
 
@@ -42,9 +45,9 @@ MAIN_OBJS =	main.o stubs.o misc.o \
 
 ###############################################################################
 
-PREFS_SOURCE =	edit.c DemoImageData.c remap.a
+PREFS_SOURCE =	edit.c demoimagedata.c remap.a
 
-PREFS_OBJS =	edit.o DemoImageData.o remap.o
+PREFS_OBJS =	edit.o demoimagedata.o remap.o
 
 ###############################################################################
 
@@ -55,7 +58,7 @@ SOURCE =	betatitle.c data.c data.h defines.h \
 		menuboxes.c misc.c protos.h remap.a \
 		sendintuimessage.c smakefile structures.h stubs.a \
 		system_headers.c system_headers.h wedge.c windowglyphs.c \
-		DemoImageData.c
+		demoimagedata.c
 
 ###############################################################################
 
@@ -89,7 +92,7 @@ protos:
 
 clean:
 		-delete \#?.o $(GSTFILE) MagicMenu MagicMenu.debug \
-		MagicMenuPrefs MagicMenuPrefs.debug
+		MagicMenuPrefs MagicMenuPrefs.debug magicmenu.h
 
 ###############################################################################
 
@@ -136,7 +139,6 @@ remap.o : remap.a
 sendintuimessage.o : sendintuimessage.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
 stubs.o : stubs.a
 wedge.o : wedge.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
-DemoMenu-11.o : DemoMenu-11.c
-DemoMenu-8.o : DemoMenu-8.c
 windowglyphs.o : windowglyphs.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
 edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h
+demoimagedata.o : demoimagedata.c

@@ -10,7 +10,11 @@
 
 /******************************************************************************/
 
-#define SHADOW_SIZE 6
+//#define DEMO_MENU
+
+/******************************************************************************/
+
+#define SHADOW_SIZE 4
 
 STATIC VOID
 AddShadow (struct RastPort *RPort, LONG Width, LONG Height)
@@ -804,10 +808,12 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   if (ActivateItem)
   {
     if (MenuMode == MODE_KEYBOARD)
+    {
       if (AktItemRmb->AktSubItem != NULL)
         ChangeAktSubItem (AktItemRmb->AktSubItem, AktItemRmb->AktSubItemNum);
       else
         SelectNextSubItem (-1);
+    }
 
     if (MenuMode != MODE_KEYBOARD && (MenuMode != MODE_SELECT || SelectSpecial))
       LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
@@ -874,7 +880,6 @@ CleanUpMenuBox (VOID)
   if (AktMenu)
     AktMenu->Flags &= ~MIDRAWN;
   AktItem = NULL;
-  DisarmMenu();
 }
 
 BOOL
@@ -1222,7 +1227,6 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   MenuBoxSwapped = TRUE;
 
   AktItem = NULL;
-  DisarmMenu();
 
   if (ActivateItem)
   {
@@ -1517,7 +1521,6 @@ CleanUpMenuStrip (VOID)
   }
 
   AktMenu = NULL;
-  DisarmMenu();
 
   if (MenOpenedFont)
   {
@@ -1587,7 +1590,9 @@ ChangeAktSubItem (struct MenuItem *NewItem, UWORD NewSubItemNum)
   if (NewItem)
   {
     SubItemNum = NewSubItemNum;
+
     if (DrawHiSubItem (AktSubItem = NewItem))
+    {
       if (AktSubItem)
         AktSubItem->Flags |= HIGHITEM;
       else
@@ -1595,6 +1600,7 @@ ChangeAktSubItem (struct MenuItem *NewItem, UWORD NewSubItemNum)
         SubItemNum = NOSUB;
         AktSubItem = NULL;
       }
+    }
   }
 }
 
@@ -1718,31 +1724,25 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
     AktItem->Flags &= ~HIGHITEM;
     AktItem = NULL;
     ItemNum = NOITEM;
-    DisarmMenu();
   }
 
   if (NewItem)
   {
     ItemNum = NewItemNum;
+
     if (DrawHiItem (AktItem = NewItem))
     {
       AktItem->Flags |= HIGHITEM;
       if (MenuMode != MODE_KEYBOARD)
       {
-/*        if(LookMC)*/
-/*          ArmMenu();*/
-/*        else*/
-        {
-          if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
-            DisplayBeep (MenScr);
-        }
+        if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
+          DisplayBeep (MenScr);
       }
     }
     else
     {
       ItemNum = NOITEM;
       AktItem = NULL;
-      DisarmMenu();
     }
   }
 }
@@ -1866,7 +1866,6 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     CleanUpMenuBox ();
     DrawNormMenu (AktMenu);
     AktMenu = NULL;
-    DisarmMenu();
     MenuNum = NOMENU;
   }
 
@@ -1877,20 +1876,14 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     {
       if (MenuMode != MODE_KEYBOARD)
       {
-/*        if(LookMC)*/
-/*          ArmMenu();*/
-/*        else*/
-        {
-          if (!DrawMenuBox (AktMenu, TRUE))
-            DisplayBeep (MenScr);
-        }
+        if (!DrawMenuBox (AktMenu, TRUE))
+          DisplayBeep (MenScr);
       }
     }
     else
     {
       MenuNum = NOMENU;
       AktMenu = NULL;
-      DisarmMenu();
     }
   }
 }
@@ -2016,6 +2009,7 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
       if (AktSubItem)
       {
         DrawNormSubItem (AktSubItem);
+
         AktSubItem->Flags &= ~HIGHITEM;
         AktSubItem = NULL;
       }
@@ -2091,9 +2085,9 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
       if (AktItem)
       {
         DrawNormItem (AktItem);
+
         AktItem->Flags &= ~HIGHITEM;
         AktItem = NULL;
-        DisarmMenu();
       }
 
       ItemNum = NOITEM;
@@ -2159,7 +2153,6 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
     {
       DrawNormMenu (AktMenu);
       AktMenu = NULL;
-      DisarmMenu();
     }
 
     MenuNum = NOMENU;
@@ -2386,7 +2379,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   ColorMap = MenScr->ViewPort.ColorMap;
 
-  if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes)
+  if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes && MenFont->tf_YSize >= 9)
   {
     LONG red, green, blue;
 
@@ -2482,7 +2475,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenHiCol = *Pen++;
       MenFillCol = *Pen++;
 
-  /*
+#ifdef DEMO_MENU
       MenXENGrey0 = 1;
       MenXENBlack = 2;
       MenXENWhite = 3;
@@ -2508,7 +2501,8 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenTextCol = 19;
       MenHiCol = 20;
       MenFillCol = 21;
-  */
+#endif	/* DEMO_MENU */
+
       LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
 
       if(LookMC)
@@ -3107,8 +3101,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   AktMenu = NULL;
   MenuStripSwapped = TRUE;
-  DisarmMenu();
-
 
   if (ActivateMenu)
   {

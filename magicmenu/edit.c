@@ -4,6 +4,10 @@
 **	:ts=8
 */
 
+//#define DEMO_MENU
+
+/******************************************************************************/
+
 #ifndef _SYSTEM_HEADERS_H
 #include "system_headers.h"
 #endif	/* _SYSTEM_HEADERS_H */
@@ -65,6 +69,9 @@ struct MMPrefs DefaultPrefs =
 struct MMPrefs CurrentPrefs;
 struct MMPrefs InitialPrefs;
 
+struct MMPrefs TestPrefs;
+BOOL TestPrefsValid;
+
 /******************************************************************************/
 
 #define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
@@ -94,6 +101,7 @@ enum
 	GAD_WhichPen,
 	GAD_Save,
 	GAD_Use,
+	GAD_Test,
 	GAD_Cancel,
 	GAD_ModelPager,
 	GAD_Red,
@@ -217,7 +225,7 @@ UBYTE			 FileName[MAX_FILENAME_LENGTH];
 
 /******************************************************************************/
 
-extern struct Image	 Demo_8_Image;
+extern struct Image	 Demo_9_Image;
 extern struct Image	 Demo_11_Image;
 
 /******************************************************************************/
@@ -238,6 +246,117 @@ struct MsgPort		*GlobalPort;
 /******************************************************************************/
 
 BOOL			 MMEnabled;
+
+/******************************************************************************/
+
+ /* This is how a linked list of directory search paths looks like. */
+
+struct Path
+{
+  BPTR path_Next;               /* Pointer to next entry */
+  BPTR path_Lock;               /* The drawer in question; may be NULL */
+};
+
+BPTR
+ClonePath (BPTR StartPath)
+{
+  struct Path *First, *Last, *List, *New;
+
+  for (List = BADDR (StartPath), First = Last = NULL; List; List = BADDR (List->path_Next))
+  {
+    if (List->path_Lock)
+    {
+      if (New = AllocVec (sizeof (struct Path), MEMF_ANY))
+      {
+        if (New->path_Lock = DupLock (List->path_Lock))
+        {
+          New->path_Next = NULL;
+
+          if (Last)
+            Last->path_Next = MKBADDR (New);
+
+          if (!First)
+            First = New;
+
+          Last = New;
+        }
+        else
+        {
+          FreeVec (New);
+          break;
+        }
+      }
+      else
+        break;
+    }
+  }
+
+  return (MKBADDR (First));
+}
+
+VOID
+AttachCLI (struct WBStartup * Startup)
+{
+  struct CommandLineInterface *DestCLI;
+
+  /* Note: FreeDosObject can't free it, but the DOS */
+  /*       process termination code can. */
+
+  if (DestCLI = AllocDosObject (DOS_CLI, NULL))
+  {
+    struct MsgPort *ReplyPort;
+    struct Process *Dest;
+
+    DestCLI->cli_DefaultStack = 4096 / sizeof (ULONG);
+
+    Dest = (struct Process *) FindTask (NULL);
+
+    Dest->pr_CLI = MKBADDR (DestCLI);
+    Dest->pr_Flags |= PRF_FREECLI;  /* Mark for cleanup */
+
+    Forbid ();
+
+    ReplyPort = Startup->sm_Message.mn_ReplyPort;
+
+    /* Does the reply port data point somewhere sensible? */
+
+    if (ReplyPort && (ReplyPort->mp_Flags & PF_ACTION) == PA_SIGNAL && TypeOfMem (ReplyPort->mp_SigTask))
+    {
+      struct Process *Father;
+
+      /* Get the address of the process that sent the startup message */
+
+      Father = (struct Process *) ReplyPort->mp_SigTask;
+
+      /* Just to be on the safe side... */
+
+      if (Father->pr_Task.tc_Node.ln_Type == NT_PROCESS)
+      {
+        struct CommandLineInterface *SourceCLI;
+
+        /* Is there a CLI attached? */
+
+        if (SourceCLI = BADDR (Father->pr_CLI))
+        {
+          STRPTR Prompt;
+
+          /* Clone the other CLI data. */
+
+          if (Prompt = (STRPTR) BADDR (SourceCLI->cli_Prompt))
+            SetPrompt (&Prompt[1]);
+
+          if (SourceCLI->cli_DefaultStack > DestCLI->cli_DefaultStack)
+            DestCLI->cli_DefaultStack = SourceCLI->cli_DefaultStack;
+
+          if (SourceCLI->cli_CommandDir)
+            DestCLI->cli_CommandDir = ClonePath (SourceCLI->cli_CommandDir);
+        }
+      }
+    }
+
+    Permit ();
+  }
+}
 
 /******************************************************************************/
 
@@ -851,7 +970,7 @@ LocaleHookFunc(REG(a0) struct Hook *UnusedHook,REG(a2) APTR Unused,REG(a1) LONG 
 LONG ASM SAVE_DS
 SampleRefreshHookFunc(REG(a0) struct Hook *UnusedHook,REG(a2) LayoutHandle *Handle,REG(a1) RefreshMsg *Message)
 {
-	BltBitMapRastPort(SampleMenu,0,0,Handle->Window->RPort,Message->Left,Message->Top,Message->Width,Message->Height,0xC0);
+	BltBitMapRastPort(SampleMenu,0,0,Handle->Window->RPort,Message->Left,Message->Top,Message->Width,Message->Height,ABC | ABNC | NABC | NABNC);
 	return(0);
 }
 
@@ -971,13 +1090,18 @@ DeleteBitMap(struct BitMap *BitMap, LONG Width, LONG Height)
 	}
 }
 
-
 struct BitMap *
 CreateBitMap(LONG Depth,LONG Width,LONG Height)
 {
 	struct BitMap *BitMap;
+	LONG Extra;
 
-	if(BitMap = AllocVec(sizeof(struct BitMap),MEMF_ANY|MEMF_PUBLIC))
+	if(Depth > 8)
+		Extra = sizeof(PLANEPTR) * (Depth - 8);
+	else
+		Extra = 0;
+
+	if(BitMap = AllocVec(sizeof(struct BitMap) + Extra,MEMF_ANY|MEMF_CLEAR|MEMF_PUBLIC))
 	{
 		LONG i;
 
@@ -1004,6 +1128,7 @@ CreateBitMapFromImage(struct Image *Image,struct BitMap *BitMap)
 	ULONG Modulo;
 	LONG i;
 
+	memset(BitMap,0,sizeof(*BitMap));
 	InitBitMap (BitMap,Image->Depth,Image->Width,Image->Height);
 
 	Modulo = BitMap->BytesPerRow * BitMap->Rows;
@@ -1332,7 +1457,10 @@ OpenAll(struct WBStartup *StartupMsg)
 	if(!(ReplyPort = CreateMsgPort()))
 		return("reply port");
 
-	if(!(FileRequester = (struct FileRequester *)AllocAslRequest(ASL_FileRequest,NULL)))
+	if(!(FileRequester = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest,
+		ASLFR_InitialPattern,	"#?.prefs",
+		ASLFR_DoPatterns,	TRUE,
+	TAG_DONE)))
 		return("file requester");
 
 	CopyMem(&DefaultPrefs,&CurrentPrefs,sizeof(CurrentPrefs));
@@ -1452,7 +1580,7 @@ OpenAll(struct WBStartup *StartupMsg)
 			if(PubScreen->Font->ta_YSize >= 11)
 				WhichImage = &Demo_11_Image;
 			else
-				WhichImage = &Demo_8_Image;
+				WhichImage = &Demo_9_Image;
 
 			if(SampleMenu = CreateBitMap(MaxDepth,SampleMenuWidth = WhichImage->Width,SampleMenuHeight = WhichImage->Height))
 			{
@@ -1931,6 +2059,12 @@ OpenAll(struct WBStartup *StartupMsg)
 
 			LT_New(Handle,
 				LA_Type,	BUTTON_KIND,
+				LA_ID,		GAD_Test,
+				LA_LabelID,	MSG_TEST_GAD,
+			TAG_DONE);
+
+			LT_New(Handle,
+				LA_Type,	BUTTON_KIND,
 				LA_ID,		GAD_Cancel,
 				LA_LabelID,	MSG_CANCEL_GAD,
 			TAG_DONE);
@@ -2009,7 +2143,7 @@ OpenAll(struct WBStartup *StartupMsg)
 */
 			LAMN_ItemID,			MSG_REMOVE_MEN,
 				LAMN_ID,		MEN_Remove,
-/*
+#ifdef DEMO_MENU
 		LAMN_TitleText, 		"Demo",
 			LAMN_ItemText,		"Checkmark",
 				LAMN_CheckIt,	TRUE,
@@ -2025,7 +2159,7 @@ OpenAll(struct WBStartup *StartupMsg)
 			LAMN_ItemText,		"Ghosted Sub",
 				LAMN_Disabled,	TRUE,
 				LAMN_SubText,		"Submenu Item",
-*/
+#endif	/* DEMO_MENU */
 	TAG_DONE)))
 		return("menu");
 
@@ -2130,7 +2264,7 @@ UpdateSettings(struct MMPrefs *Prefs)
 /******************************************************************************/
 
 VOID
-EventLoop(VOID)
+EventLoop(struct WBStartup *StartupMsg)
 {
 	ULONG Signals,WindowMask;
 	BOOL Done;
@@ -2181,6 +2315,46 @@ EventLoop(VOID)
 
 						switch(MsgGadget->GadgetID)
 						{
+							case GAD_Test:
+
+								LT_LockWindow(Window);
+
+								Forbid();
+
+								if(!FindPort(MMPORT_NAME))
+								{
+									BPTR In,Out;
+
+									if (In = Open("NIL:",MODE_NEWFILE))
+									{
+										if (Out = Open("NIL:",MODE_NEWFILE))
+										{
+											if (StartupMsg && !Cli())
+												AttachCLI(StartupMsg);
+
+											SystemTags("MagicMenu",
+												SYS_Input,	In,
+												SYS_Output,	Out,
+												SYS_Asynch,	TRUE,
+												NP_Name,	"MagicMenu",
+											TAG_DONE);
+										}
+										else
+											Close(In);
+									}
+
+									Permit();
+								}
+								else
+									Permit();
+
+								TestPrefsValid = AskPrefs(&TestPrefs,NULL,NULL);
+								NewPrefs(&CurrentPrefs);
+
+								LT_UnlockWindow(Window);
+
+								break;
+
 							case GAD_Save:
 
 								if(Error = WritePrefs("ENVARC:MagicMenu.prefs",&CurrentPrefs))
@@ -2193,6 +2367,7 @@ EventLoop(VOID)
 
 								WritePrefs("ENV:MagicMenu.prefs",&CurrentPrefs);
 								NewPrefs(&CurrentPrefs);
+								TestPrefsValid = FALSE;
 
 							case GAD_Cancel:
 
@@ -2409,6 +2584,9 @@ EventLoop(VOID)
 		}
 	}
 	while(!Done);
+
+	if(TestPrefsValid)
+		NewPrefs(&TestPrefs);
 }
 
 /******************************************************************************/
@@ -2416,6 +2594,7 @@ EventLoop(VOID)
 int
 main(int argc,char **argv)
 {
+	struct WBStartup *StartupMsg;
 	STRPTR Result;
 	LONG Error;
 	int ReturnCode;
@@ -2426,9 +2605,16 @@ main(int argc,char **argv)
 		return(RETURN_FAIL);
 	}
 
+	SetProgramName("MagicMenuPrefs");
+
 	ReturnCode = RETURN_OK;
 
-	Result = OpenAll(argc ? NULL : (struct WBStartup *)argv);
+	if(argc)
+		StartupMsg = NULL;
+	else
+		StartupMsg = (struct WBStartup *)argv;
+
+	Result = OpenAll(StartupMsg);
 
 	if(Result)
 	{
@@ -2455,7 +2641,7 @@ main(int argc,char **argv)
 		{
 			case MODE_Edit:
 
-				EventLoop();
+				EventLoop(StartupMsg);
 				break;
 
 			case MODE_Save:

@@ -11,7 +11,7 @@
 #define JMP_ABS 0x4EF9
 
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	4
+#define SEMAPHORE_VERSION	6
 
 typedef struct Wedge
 {
@@ -26,6 +26,7 @@ Wedge;
 typedef struct PatchEntry
 {
   APTR Base;
+  LONG Version;
   Wedge *WedgeCode;
   LONG Offset;
   APTR NewRoutine;
@@ -45,27 +46,33 @@ extern LONG __far LVOWindowToBack;
 extern LONG __far LVOMoveWindowInFrontOf;
 extern LONG __far LVOModifyIDCMP;
 extern LONG __far LVOObtainGIRPort;
+extern LONG __far LVOLendMenus;
+extern LONG __far LVOOffMenu;
+extern LONG __far LVOOnMenu;
 
 extern LONG __far LVOCreateUpfrontHookLayer;
 extern LONG __far LVOCreateUpfrontLayer;
 
 STATIC PatchEntry PatchTable[] =
 {
-  &IntuitionBase, NULL, (LONG) & LVOCloseWindow, (APTR) MMCloseWindow, &OldCloseWindow,
-  &IntuitionBase, NULL, (LONG) & LVOOpenWindow, (APTR) MMOpenWindow, &OldOpenWindow,
-  &IntuitionBase, NULL, (LONG) & LVOOpenWindowTagList, (APTR) MMOpenWindowTagList, &OldOpenWindowTagList,
-  &IntuitionBase, NULL, (LONG) & LVOClearMenuStrip, (APTR) MMClearMenuStrip, &OldClearMenuStrip,
-  &IntuitionBase, NULL, (LONG) & LVOSetMenuStrip, (APTR) MMSetMenuStrip, &OldSetMenuStrip,
-  &IntuitionBase, NULL, (LONG) & LVOResetMenuStrip, (APTR) MMResetMenuStrip, &OldResetMenuStrip,
-  &IntuitionBase, NULL, (LONG) & LVOActivateWindow, (APTR) MMActivateWindow, &OldActivateWindow,
-  &IntuitionBase, NULL, (LONG) & LVOWindowToFront, (APTR) MMWindowToFront, &OldWindowToFront,
-  &IntuitionBase, NULL, (LONG) & LVOWindowToBack, (APTR) MMWindowToBack, &OldWindowToBack,
-  &IntuitionBase, NULL, (LONG) & LVOMoveWindowInFrontOf, (APTR) MMMoveWindowInFrontOf, &OldMoveWindowInFrontOf,
-  &IntuitionBase, NULL, (LONG) & LVOModifyIDCMP, (APTR) MMModifyIDCMP, &OldModifyIDCMP,
-  &IntuitionBase, NULL, (LONG) & LVOObtainGIRPort, (APTR) MMObtainGIRPort, &OldObtainGIRPort,
+  &IntuitionBase, 37, NULL, (LONG) & LVOCloseWindow, (APTR) MMCloseWindow, &OldCloseWindow,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOpenWindow, (APTR) MMOpenWindow, &OldOpenWindow,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOpenWindowTagList, (APTR) MMOpenWindowTagList, &OldOpenWindowTagList,
+  &IntuitionBase, 37, NULL, (LONG) & LVOClearMenuStrip, (APTR) MMClearMenuStrip, &OldClearMenuStrip,
+  &IntuitionBase, 37, NULL, (LONG) & LVOSetMenuStrip, (APTR) MMSetMenuStrip, &OldSetMenuStrip,
+  &IntuitionBase, 37, NULL, (LONG) & LVOResetMenuStrip, (APTR) MMResetMenuStrip, &OldResetMenuStrip,
+  &IntuitionBase, 37, NULL, (LONG) & LVOActivateWindow, (APTR) MMActivateWindow, &OldActivateWindow,
+  &IntuitionBase, 37, NULL, (LONG) & LVOWindowToFront, (APTR) MMWindowToFront, &OldWindowToFront,
+  &IntuitionBase, 37, NULL, (LONG) & LVOWindowToBack, (APTR) MMWindowToBack, &OldWindowToBack,
+  &IntuitionBase, 37, NULL, (LONG) & LVOMoveWindowInFrontOf, (APTR) MMMoveWindowInFrontOf, &OldMoveWindowInFrontOf,
+  &IntuitionBase, 37, NULL, (LONG) & LVOModifyIDCMP, (APTR) MMModifyIDCMP, &OldModifyIDCMP,
+  &IntuitionBase, 37, NULL, (LONG) & LVOObtainGIRPort, (APTR) MMObtainGIRPort, &OldObtainGIRPort,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOffMenu, (APTR) MMOffMenu, &OldOffMenu,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOnMenu, (APTR) MMOnMenu, &OldOnMenu,
+  &IntuitionBase, 39, NULL, (LONG) & LVOLendMenus, (APTR) MMLendMenus, &OldLendMenus,
 
-  &LayersBase, NULL, (LONG) & LVOCreateUpfrontHookLayer, (APTR) MMCreateUpfrontHookLayer, &OldCreateUpfrontHookLayer,
-  &LayersBase, NULL, (LONG) & LVOCreateUpfrontLayer, (APTR) MMCreateUpfrontLayer, &OldCreateUpfrontLayer,
+  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontHookLayer, (APTR) MMCreateUpfrontHookLayer, &OldCreateUpfrontHookLayer,
+  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontLayer, (APTR) MMCreateUpfrontLayer, &OldCreateUpfrontLayer,
 };
 
 #define PATCHCOUNT (sizeof(PatchTable) / sizeof(PatchEntry))
@@ -95,7 +102,7 @@ RemovePatches ()
 
     Forbid ();
 
-    for (i = 0; i < PATCHCOUNT - (V39 ? 0 : 2) ; i++)
+    for (i = 0; i < PATCHCOUNT ; i++)
     {
       if (PatchTable[i].WedgeCode)
       {
@@ -163,16 +170,19 @@ InstallPatches ()
 
     Forbid ();
 
-    for (i = 0; i < PATCHCOUNT - (V39 ? 0 : 2); i++)
+    for (i = 0; i < PATCHCOUNT ; i++)
     {
-      Patches->Table[i].Command = JMP_ABS;
-      Patches->Table[i].Location = PatchTable[i].NewRoutine;
+      if((*(struct Library **)PatchTable[i].Base)->lib_Version >= PatchTable[i].Version)
+      {
+        Patches->Table[i].Command = JMP_ABS;
+        Patches->Table[i].Location = PatchTable[i].NewRoutine;
 
-      if (!Patches->Table[i].OldLocation)
-	Patches->Table[i].OldLocation = SetFunction ((struct Library *) (*(ULONG *)PatchTable[i].Base), PatchTable[i].Offset, (ULONG (*)()) & Patches->Table[i]);
+        if (!Patches->Table[i].OldLocation)
+	  Patches->Table[i].OldLocation = SetFunction (*(struct Library **)PatchTable[i].Base, PatchTable[i].Offset, (ULONG (*)()) & Patches->Table[i]);
 
-      *PatchTable[i].OldRoutine = (ULONG) Patches->Table[i].OldLocation;
-      PatchTable[i].WedgeCode = &Patches->Table[i];
+        *PatchTable[i].OldRoutine = (ULONG) Patches->Table[i].OldLocation;
+        PatchTable[i].WedgeCode = &Patches->Table[i];
+      }
     }
 
     CacheClearU ();
