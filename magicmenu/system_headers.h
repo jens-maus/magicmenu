@@ -32,6 +32,8 @@
 #include <devices/inputevent.h>
 #include <devices/input.h>
 
+#include <hardware/blit.h>
+
 #include <workbench/startup.h>
 
 #include <gadgets/gradientslider.h>
@@ -70,13 +72,15 @@
 #include <pragmas/graphics_pragmas.h>
 #include <pragmas/colorwheel_pragmas.h>
 
+#define USE_BUILTIN_MATH 1
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <stdio.h>
-#include <math.h>
+/*#include <stdio.h>*/
+/*#include <math.h>*/
 
-#include <ctype.h>
+/*#include <ctype.h>*/
 
 #include "gtlayout/gtlayout.h"
 #include "gtlayout/gtlayout_protos.h"

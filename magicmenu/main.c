@@ -22,24 +22,8 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 
 #define MAJORVERS      "2.0"
 
-int
-CXBRK (void)
-{
-  return (0);
-}				/* Disable Lattice Ctrl-C Handl. */
-/* void chkabort(void)	{ return; } */
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*	       Menu Funktionen						    */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-
-void
-Activate (void)
+VOID
+Activate (VOID)
 {
   if (!CxChanged)
   {
@@ -48,8 +32,8 @@ Activate (void)
   }
 }
 
-void
-Deactivate (void)
+VOID
+Deactivate (VOID)
 {
   if (!CxChanged)
   {
@@ -58,7 +42,7 @@ Deactivate (void)
   }
 }
 
-void
+VOID
 FreeMenuRemember (struct MenuRemember *Remember)
 {
   struct MenuRmb *MenRmb, *NextMenu;
@@ -392,8 +376,8 @@ MakeMenuRemember (struct Window *Win)
 
 }
 
-void
-FreeGlobalRemember (void)
+VOID
+FreeGlobalRemember (VOID)
 {
   struct MenuRemember *NextRemember;
 
@@ -410,7 +394,7 @@ FreeGlobalRemember (void)
 }
 
 BOOL
-MakeGlobalRemember (void)
+MakeGlobalRemember (VOID)
 {
   struct Screen *Scr;
   struct Window *Win;
@@ -453,7 +437,7 @@ MakeGlobalRemember (void)
   return (TRUE);
 }
 
-void
+VOID
 ClearRemember (struct Window *Win)
 {
   struct MenuRemember *LookRemember;
@@ -541,7 +525,7 @@ UpdateRemember (struct Window *Window)
   return (TRUE);
 }
 
-void
+VOID
 SetRemember (struct Window *Win)
 {
   register struct MenuRemember *NewRemember;
@@ -560,7 +544,7 @@ SetRemember (struct Window *Win)
   ReleaseSemaphore (RememberSemaphore);
 }
 
-void
+VOID
 ResetMenu (struct Menu *Menu, BOOL MenNull)
 {
   struct Menu *ZwMenu;
@@ -592,8 +576,8 @@ ResetMenu (struct Menu *Menu, BOOL MenNull)
   }
 }
 
-void
-CleanUpMenu (void)
+VOID
+CleanUpMenu (VOID)
 {
   struct Message *msg;
 
@@ -1221,8 +1205,8 @@ CheckCxMsgAct (CxMsg * Msg, struct timerequest ** TimeReq, BOOL * Cancel)
   return (Ende);
 }
 
-void
-ProcessIntuiMenu (void)
+VOID
+ProcessIntuiMenu (VOID)
 {
   ULONG SigMask, Signals;
   BOOL Ende, DoWait;
@@ -1350,27 +1334,19 @@ ProcessIntuiMenu (void)
   }
 }
 
-void
-EndIntuiMenu (void)
+VOID
+EndIntuiMenu(VOID)
 {
-  ObtainSemaphore (GetPointerSemaphore);
+	ObtainSemaphore (GetPointerSemaphore);
 
-  MenScr = NULL;
-  MenWin = NULL;
-  MenStrip = NULL;
+	MenScr = NULL;
+	MenWin = NULL;
+	MenStrip = NULL;
 
-  ReleaseSemaphore (GetPointerSemaphore);
+	ReleaseSemaphore (GetPointerSemaphore);
 
-  ReleaseSemaphore (MenuActSemaphore);
+	ReleaseSemaphore (MenuActSemaphore);
 }
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*	       Commodity Funktionen					    */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
 
 
 BOOL
@@ -1629,9 +1605,10 @@ CheckCxMsg (CxMsg * Msg)
 }
 
 
-BOOL CheckMMMsgPort(struct MMMessage *MMMsg)
+BOOL
+CheckMMMsgPort(struct MMMessage *MMMsg)
 {
-    BOOL	Ende;
+    BOOL Ende;
 
     Ende = FALSE;
 
@@ -1662,16 +1639,44 @@ BOOL CheckMMMsgPort(struct MMMessage *MMMsg)
     return(Ende);
 }
 
-void
-ProcessCommodity (void)
+BOOL
+RealWindow(struct Window *ThisWindow)
+{
+	if(TypeOfMem(ThisWindow))
+	{
+		struct Screen *Screen;
+
+		for(Screen = IntuitionBase->FirstScreen ; Screen ; Screen = Screen->NextScreen)
+		{
+			if(Screen == ThisWindow->WScreen)
+			{
+				struct Window *Window;
+
+				for(Window = Screen->FirstWindow ; Window ; Window = Window->NextWindow)
+				{
+					if(Window == ThisWindow)
+						return(TRUE);
+				}
+
+				return(FALSE);
+			}
+		}
+	}
+
+	return(FALSE);
+}
+
+VOID
+ProcessCommodity (VOID)
 {
   ULONG SigMask, SigRec, MMMsgPortMask, IMsgReplyMask;
   BOOL Ende, DoWait;
   struct Message *Msg;
   struct MMMessage *MMMsg;
+  struct IntuiMessage *IMsg;
 
-  MMMsgPortMask = 1l << MMMsgPort->mp_SigBit;
-  IMsgReplyMask = 1L<<IMsgReplyPort->mp_SigBit;
+  MMMsgPortMask = PORTMASK(MMMsgPort);
+  IMsgReplyMask = PORTMASK(IMsgReplyPort);
 
   Ende = FALSE;
 
@@ -1693,9 +1698,34 @@ ProcessCommodity (void)
 	Ende = CheckMMMsgPort(MMMsg);
     }
 
-    while(Msg = GetMsg(IMsgReplyPort))
+    /* Was hier zurückkommt, sollten Verify-Messages sein. */
+    while(IMsg = (struct IntuiMessage *)GetMsg(IMsgReplyPort))
     {
-        FreeVecPooled(Msg);
+        /* Wer zu spät kommt, den bestraft das Leben. Hier werden die
+         * zu spät beantworteten IDCMP_MENUVERIFY-Messages des aktiven
+         * Fensters abgewickelt.
+         */
+        if(IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUWAITING))
+        {
+            ULONG IntuiLock;
+
+            /* Nötig für RealWindow(). */
+            IntuiLock = LockIBase(NULL);
+
+            /* Gibt es das Fenster noch? */
+            if(RealWindow(IMsg->IDCMPWindow))
+            {
+                UWORD Code;
+
+                /* Standardbehandlung... */
+                Code = MENUNULL;
+                SendIntuiMessage(IDCMP_MENUPICK,&Code,PeekQualifier(),NULL,IMsg->IDCMPWindow,NULL,FALSE);
+            }
+
+            UnlockIBase(IntuiLock);
+        }
+
+        FreeVecPooled(IMsg);
         IMsgReplyCount--;
     }
 
@@ -1712,108 +1742,109 @@ ProcessCommodity (void)
 }
 
 
-void StopPrefs(void)
+VOID
+StopPrefs(VOID)
 {
-    struct  Task	*Task;
+	struct Task *Task;
 
-    if(Task = FindTask("MMPrefs"))
-	Signal(Task,SIGBREAKF_CTRL_C);
+	Forbid();
+
+	if(Task = FindTask("MMPrefs"))
+		Signal(Task,SIGBREAKF_CTRL_C);
+
+	Permit();
 }
 
-
-BOOL StartPrefs(void)
+VOID
+StartPrefs(VOID)
 {
-    char	ZwStr[232];
+	UBYTE PathName[MAX_FILENAME_LENGTH];
+	BPTR In,Out;
 
-    strcpy(ZwStr,ConfigPath);
-    AddPart(ZwStr,"MMPrefs",230);
+	strcpy(PathName,ConfigPath);
+	AddPart(PathName,"MMPrefs",sizeof(PathName));
 
-    SystemTags(ZwStr,
-		    SYS_Input,	    Open("nil:",MODE_OLDFILE),
-		    SYS_Output,     Open("nil:",MODE_OLDFILE),
-		    SYS_Asynch,     TRUE,
-		    NP_StackSize,   5000,
-		    NP_Name,	    "MMPrefs",
-		    TAG_DONE);
-    return(TRUE);
+	if(In = Open("NIL:",MODE_NEWFILE))
+	{
+		if(Out = Open("NIL:",MODE_NEWFILE))
+		{
+			SystemTags(PathName,
+				SYS_Input,	In,
+				SYS_Output,	Out,
+				SYS_Asynch,	TRUE,
+				NP_Name,	"MMPrefs",
+			TAG_DONE);
+		}
+		else
+			Close(In);
+	}
 }
 
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*	       Supportfunktionen für MAIN				    */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-
-char *
-strupc (char *Str)
-{
-  char *SavStr;
-
-  SavStr = Str;
-  while (*Str)
-  {
-    *Str = toupper (*Str);
-    Str++;
-  }
-
-  return (SavStr);
-}
-
-void
+VOID
 MyArgString (char *Result, struct DiskObject *DO, const char *TT, const char *Default, LONG Len, BOOL Upcase)
 {
-  char *Found;
+	char *Found;
 
-  Found = FindToolType (DO->do_ToolTypes, (char *) TT);
-  if (Found)
-    strncpy (Result, Found, Len);
-  else
-    strncpy (Result, Default, Len);
+	Found = FindToolType(DO->do_ToolTypes, (char *) TT);
 
-  if (Upcase)
-    strupc (Result);
+	if(Found)
+		strncpy (Result, Found, Len);
+	else
+		strncpy (Result, Default, Len);
+
+	if(Upcase)
+	{
+		UBYTE *c;
+
+		c = (UBYTE *)Result;
+
+		while(*c)
+			*c++ = ToUpper(*c);
+	}
 }
 
 LONG
-MyArgInt (struct DiskObject *DO, const char *TT, LONG Default)
+MyArgInt(struct DiskObject *DO, const char *TT, LONG Default)
 {
-  char Str[80];
-  LONG Result;
+	char Str[80];
+	LONG Result;
 
-  MyArgString (Str, DO, TT, "", 79, FALSE);
-  if (stcd_l (Str, &Result) == 0)
-    Result = Default;
+	MyArgString (Str, DO, TT, "", 79, FALSE);
 
-  return (Result);
+	if(StrToLong(Str,&Result) <= 0)
+		Result = Default;
+
+	return (Result);
 }
 
-void
-CheckArguments (void)
+VOID
+CheckArguments (VOID)
 {
-  char FName[60];
-  struct DiskObject *DiskObj;
+	UBYTE FName[MAX_FILENAME_LENGTH];
+	struct DiskObject *DiskObj;
 
-  strcpy (FName, "progdir:");
-  strcat (FName, ProgName);
+	strcpy (FName, "progdir:");
+	strcat (FName, ProgName);
 
-  if (!(DiskObj = GetDiskObjectNew (FName)))
-    return;
+	if(IconBase = OpenLibrary("icon.library",37))
+	{
+		if(DiskObj = GetDiskObjectNew(FName))
+		{
+			Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
 
-  Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
+			MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
+			MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
 
-  MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
-  MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
+			if (!Stricmp (Cx_PopupStr, "YES"))
+				Cx_Popup = TRUE;
+			else
+				Cx_Popup = FALSE;
 
-  FreeDiskObject (DiskObj);
+			FreeDiskObject (DiskObj);
+		}
 
-  Cx_Popup = FALSE;
-
-  if (strcmp (Cx_PopupStr, "YES") == 0)
-    Cx_Popup = TRUE;
+		CloseLibrary(IconBase);
+	}
 }
 
 
@@ -1849,8 +1880,8 @@ BOOL LoadPrefs(char *ConfigFile, BOOL Report)
 
 
 
-void
-CloseAll (void)
+VOID
+CloseAll (VOID)
 {
   struct Message *msg;
   struct MMMessage *MMMsg;
@@ -2009,12 +2040,6 @@ CloseAll (void)
     CxBase = NULL;
   }
 
-  if (IconBase)
-  {
-    CloseLibrary (IconBase);
-    IconBase = NULL;
-  }
-
   if (UtilityBase)
   {
     CloseLibrary (UtilityBase);
@@ -2046,14 +2071,14 @@ CloseAll (void)
   /*****************************************************************************************/
 }
 
-void
-ExitTrap (void)
+VOID
+ExitTrap (VOID)
 {
   CloseAll ();
   Delay (50);
 }
 
-void
+VOID
 ErrorPrc (const char *ErrTxt)
 {
   static struct IntuiText NoOS2Body2 =
@@ -2078,15 +2103,7 @@ ErrorPrc (const char *ErrTxt)
   exit (40);
 }
 
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*	       MAIN							    */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-void
+VOID
 main (int argc, char **argv)
 {
   BOOL Ok;
@@ -2133,9 +2150,6 @@ main (int argc, char **argv)
 
   if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
     ErrorPrc ("Can't open utility library!");
-
-  if (!(IconBase = OpenLibrary ((char *) "icon.library", 37)))
-    ErrorPrc ("Can't open icon library!");
 
   if (!(CxBase = OpenLibrary ((char *) "commodities.library", 37L)))
     ErrorPrc ("Can't open commodities library!");

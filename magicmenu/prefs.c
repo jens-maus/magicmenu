@@ -1561,7 +1561,7 @@ FreeRemappedImage (struct Image *Image)
 {
   if(Image)
   {
-	if (Image->ImageData)
+    WaitBlit();
 	FreeVec (Image->ImageData);
 	FreeVecPooled (Image);
   }

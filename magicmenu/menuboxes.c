@@ -1461,7 +1461,7 @@ FindSubItemChar (char Search, BOOL * Single)
   BOOL FirstFound, AnotherFound, Found;
   char LookChar;
 
-  Search = toupper (Search);
+  Search = ToUpper (Search);
 
   if (!AktSubItem)
     return (FALSE);
@@ -1488,7 +1488,7 @@ FindSubItemChar (char Search, BOOL * Single)
     if (ZwItem && (ZwItem->Flags & ITEMTEXT) != NULL)
     {
       LookChar = ((struct IntuiText *) ZwItem->ItemFill)->IText[0];
-      Found = toupper (LookChar) == Search;
+      Found = ToUpper (LookChar) == Search;
     }
     else
       Found = FALSE;
@@ -1602,7 +1602,7 @@ FindItemChar (char Search, BOOL * Single)
   BOOL FirstFound, AnotherFound, Found;
   char LookChar;
 
-  Search = toupper (Search);
+  Search = ToUpper (Search);
 
   if (!AktItem)
     return (FALSE);
@@ -1629,7 +1629,7 @@ FindItemChar (char Search, BOOL * Single)
     if (ZwItem && (ZwItem->Flags & ITEMTEXT) != NULL)
     {
       LookChar = ((struct IntuiText *) ZwItem->ItemFill)->IText[0];
-      Found = toupper (LookChar) == Search;
+      Found = ToUpper (LookChar) == Search;
     }
     else
       Found = FALSE;
@@ -1740,7 +1740,7 @@ FindMenuChar (char Search, BOOL * Single)
   UWORD ZwMenuNum;
   BOOL FirstFound, AnotherFound, Found;
 
-  Search = toupper (Search);
+  Search = ToUpper (Search);
 
   if (!AktMenu)
     return (FALSE);
@@ -1764,7 +1764,7 @@ FindMenuChar (char Search, BOOL * Single)
       ZwMenuNum = 0;
     }
 
-    Found = (ZwMenu && toupper (ZwMenu->MenuName[0]) == Search);
+    Found = (ZwMenu && ToUpper (ZwMenu->MenuName[0]) == Search);
     if (Found)
     {
       if (!FirstFound)

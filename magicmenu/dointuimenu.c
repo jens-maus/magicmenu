@@ -79,12 +79,16 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     Code = MENUHOT;
     Err = SendIntuiMessage (IDCMP_MENUVERIFY,&Code, PeekQualifier (), NULL, MenWin, IBaseLock, TRUE);
 
-    /* Abgebrochen wird, falls für die Message nicht genügend
-     * Speicher da war, die Aktion abgebrochen wurde oder der
-     * Himmel einstürzt. In jedem Fall sollte das Fenster
-     * aber noch offen sein.
-     */
-    if (Err != SENDINTUI_OK || Code == MENUCANCEL)
+    /* Falls abgebrochen werden soll, braucht das Fenster noch ein IDCMP_MENUPICK/MENUNULL-Event. */
+    if (Code == MENUCANCEL)
+    {
+      Code = MENUNULL;
+      SendIntuiMessage (IDCMP_MENUPICK,&Code, PeekQualifier (), NULL, MenWin, NULL, FALSE);
+      EndIntuiMenu ();
+      return (TRUE);
+    }
+
+    if (Err != SENDINTUI_OK)
     {
       EndIntuiMenu ();
       return (TRUE);

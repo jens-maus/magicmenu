@@ -72,3 +72,5 @@ extern LONG __far LVOModifyIDCMP;
 #define     LOWCHECKIMGWIDTH        (LOWCHECKWIDTH - 4)
 
 #define PORTMASK(p)	(1L<<((p)->mp_SigBit))
+
+#define MAX_FILENAME_LENGTH	256
