@@ -21,7 +21,11 @@
 #endif /* _GLOBAL_H */
 
 #if defined(_M68020) || defined(_M68030) || defined(_M68040)
+#ifdef __MIXEDBINARY__
+STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 020+/ppc fatbinary\n";
+#else
 STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 020+ version\r\n";
+#endif
 #else
 STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #endif // _M68030
@@ -33,8 +37,11 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #endif // _M68030
 
 /******************************************************************************/
-
+#ifdef __STORMGCC__
+long __stacksize = 8192;
+#else
 long __stack = 8192;
+#endif
 
 /******************************************************************************/
 
@@ -2371,7 +2378,10 @@ CloseAll (VOID)
 
 	if (IntuitionBase)
 		CloseLibrary ((struct Library *) IntuitionBase);
-
+#ifdef __MIXEDBINARY__
+	if (PowerPCBase)
+		CloseLibrary(PowerPCBase);
+#endif
 	/*****************************************************************************************/
 
 	MemoryExit ();
@@ -2396,14 +2406,14 @@ ErrorPrc (char *ErrTxt)
 	exit (RETURN_FAIL);
 }
 #ifdef __STORMGCC__
-void SAVEDS
+void
 wbmain(struct WBStartup *wbmsg)
 {
 	main(0L,(char**)wbmsg);
 }
 #endif
 
-int SAVEDS
+int
 main (int argc, char **argv)
 {
 	BOOL Ok;
@@ -2469,7 +2479,9 @@ main (int argc, char **argv)
 		ErrorPrc ("");
 
 	CyberGfxBase = OpenLibrary("cybergraphics.library",0);
-
+#ifdef __MIXEDBINARY__
+	PowerPCBase = OpenLibrary("powerpc.library",14);
+#endif
 	if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
 		ErrorPrc ("graphics.library V37");
 

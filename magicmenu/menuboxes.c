@@ -31,6 +31,10 @@
 #define min(a,b)	((a)<(b)?(a):(b))
 #endif
 
+#ifndef max
+#define max(a,b)	((a)>(b)?(a):(b))
+#endif
+
 /******************************************************************************/
 
 STATIC BOOL MenuNotDrawn;
@@ -172,7 +176,7 @@ OpenCommonWindow(
 	{
 		BltBitMap(MenScr->RastPort.BitMap,Left,Top,CustomBitMap,0,0,Width,Height,MINTERM_COPY,~0,NULL);
 
-		bgc = CreateBackgroundCover(CustomBitMap,0,0,Width,Height);
+		bgc = CreateBackgroundCover(CustomBitMap,0,0,Width,Height,Level==0&&!GlobalPopUp);
 
 		Hook->Hook.h_Entry	= (HOOKFUNC)WindowBackfillRoutine;
 		Hook->BitMap		= CustomBitMap;

@@ -31,7 +31,9 @@ extern struct Library *InputBase;
 extern struct Library *GadToolsBase;
 extern struct Library *KeymapBase;
 extern struct Library *UtilityBase;
-
+#ifdef __MIXEDBINARY__
+extern struct Library *PowerPCBase;
+#endif
 extern struct Library *LocaleBase;
 extern struct Catalog *Catalog;
 

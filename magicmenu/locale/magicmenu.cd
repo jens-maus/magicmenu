@@ -196,13 +196,16 @@ Save preferences
 MSG_ABOUT_TXT (//)
 MagicMenu %ld.%ld (%s)\n\
 \n\
-Written by Martin Korndörfer and\n\
-Olaf `Olsen' Barthel\n\
+Written by Martin Korndörfer,\n\
+Olaf `Olsen' Barthel,\n\
+Stephan Rupprecht and\n\
+Jens `Damato` Langner\n\
 \n\
 Artwork created by Mario Cattaneo\n\
 \n\
 For feature requests or bug reports\n\
-please contact <olsen@sourcery.han.de>
+please contact <damato@magicmenu.de> or\n\
+<stephan@magicmenu.de>
 ;
 MSG_COULD_NOT_OPEN_TXT (//)
 Could not open configuration file

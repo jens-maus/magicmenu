@@ -32,7 +32,9 @@ struct Library *TimerBase;
 struct Library *InputBase;
 struct Library *KeymapBase;
 struct Library *UtilityBase;
-
+#ifdef __MIXEDBINARY__
+struct Library	*PowerPCBase;
+#endif
 struct Library *LocaleBase;
 struct Catalog *Catalog;
 

@@ -1043,7 +1043,7 @@ InstallRPort (
 				{
 					struct BackgroundCover *bgc;
 
-					bgc = CreateBackgroundCover(Friend,Left,Top,OriginalWidth,OriginalHeight);
+					bgc = CreateBackgroundCover(Friend,Left,Top,OriginalWidth,OriginalHeight,Level==0&&!GlobalPopUp);
 
 					(*BitMapPtr) = BitMap;
 					(*RastPortPtr) = Layer->rp;
@@ -1891,17 +1891,23 @@ TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 	}
 }
 
+#ifdef __MIXEDBINARY__
+extern VOID BlurAndTintPixelBufferPPC(UBYTE * pix,ULONG pixfmt, ULONG mod,LONG width,LONG height,int r,int g,int b);
+#endif
+extern VOID BlurAndTintPixelBuffer(UBYTE * pix,ULONG pixfmt, ULONG mod,LONG width,LONG height,int r,int g,int b);
+
 struct BackgroundCover *
 CreateBackgroundCover(
 	struct BitMap *	friend,
 	LONG left,
 	LONG top,
 	LONG width,
-	LONG height)
+	LONG height,
+	BOOL strip)
 {
 	struct BackgroundCover * bgc = NULL;
 
-	if(GlobalPopUp && AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	if(/*GlobalPopUp &&*/AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
 	{
 		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
 		if(bgc != NULL)
@@ -1909,22 +1915,61 @@ CreateBackgroundCover(
 			bgc->bgc_BitMap = allocBitMap(GetBitMapDepth(friend), width, height, friend, FALSE);
 			if(bgc->bgc_BitMap != NULL)
 			{
-				struct RastPort rp;
-
-				BltBitMap(friend,left,top,bgc->bgc_BitMap,0,0,width,height,MINTERM_COPY,~0,NULL);
+				struct RastPort	rp;
 
 				bgc->bgc_Width = width;
 				bgc->bgc_Height = height;
 
 				InitRastPort(&rp);
 				rp.BitMap = bgc->bgc_BitMap;
+				/* Fülle den Hintergrund mit BARBLOCKPEN, wenn wir den
+				 * MenuStrip eines PullDownMenüs haben. Dies sieht (wohl?)
+				 * besser aus, da der Titeltext nicht mehr durchscheint.
+				 */
+				if(strip)
+				{
+					ULONG	tab[3], r, g, b;
 
-				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+					GetRGB32( MenScr->ViewPort.ColorMap, MenMenuBackCol, 1, tab );
+					r = ( tab[0] >> 24 ) + ( AktPrefs.mmp_Background.R >> 24 ) + 1;
+					g = ( tab[1] >> 24 ) + ( AktPrefs.mmp_Background.G >> 24 ) + 1;
+					b = ( tab[2] >> 24 ) + ( AktPrefs.mmp_Background.B >> 24 ) + 1;
+					r  = min(255,r/2);
+					g  = min(255,g/2);
+					b  = min(255,b/2);
+					FillPixelArray(&rp,0,0,width,height,r<<16|g<<8|b);
 
-				BlurPixelBuffer(ShadowBuffer,width,height);
-				TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+					return bgc;
+				}
+#ifdef __MIXEDBINARY__
+				if(PowerPCBase != NULL)
+				{
+					APTR	 handle;
+					ULONG	 mod, pixfmt;
+					UBYTE *baddr;
 
-				WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+					BltBitMap(friend,left,top,bgc->bgc_BitMap,0,0,width,height,MINTERM_COPY,~0,NULL);
+
+					if(handle = LockBitMapTags(bgc->bgc_BitMap,
+						LBMI_PIXFMT, &pixfmt,
+						LBMI_BYTESPERROW, &mod,
+						LBMI_BASEADDRESS, &baddr,
+						TAG_DONE))
+					{
+						BlurAndTintPixelBufferPPC(baddr,pixfmt,mod,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+						UnLockBitMap(handle);
+					}
+				}
+				else
+#endif
+				{
+					rp.BitMap = friend;
+					ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
+					BlurPixelBuffer(ShadowBuffer,width,height);
+					TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+					rp.BitMap = bgc->bgc_BitMap;
+					WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+				}
 			}
 			else
 			{

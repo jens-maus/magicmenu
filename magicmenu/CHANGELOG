@@ -1,3 +1,11 @@
+2001-10-17  Stephan Rupprecht <mail@stephan-rupprecht.de>
+
+  * Utilizes the PPC (if available) to speedup the transparency mode.
+  * Reenabeled transparency for the traditional pull-down menus.
+    The menustrip is not really transparent in this mode as it
+    will cleared first (that's an attempt to make it more
+    readable as the titletext doesn't show through) <Mario Cattaneo>.
+
 2001-10-16  Stephan Rupprecht <mail@stephan-rupprecht.de>
 
   * adapted the whole thing to SDI_compiler.h and StormC4.
