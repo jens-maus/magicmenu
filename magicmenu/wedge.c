@@ -11,7 +11,7 @@
 #define JMP_ABS 0x4EF9
 
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	10
+#define SEMAPHORE_VERSION	11
 
 typedef struct Wedge
 {
@@ -36,6 +36,13 @@ PatchEntry;
 
 extern LONG __far LVOOpenWindow;
 extern LONG __far LVOOpenWindowTagList;
+extern LONG __far LVOCloseScreen;
+extern LONG __far LVOOpenScreen;
+extern LONG __far LVOOpenScreenTagList;
+extern LONG __far LVOCloseScreen;
+extern LONG __far LVOScreenToFront;
+extern LONG __far LVOScreenToBack;
+extern LONG __far LVOScreenDepth;
 extern LONG __far LVOClearMenuStrip;
 extern LONG __far LVOSetMenuStrip;
 extern LONG __far LVOResetMenuStrip;
@@ -56,6 +63,13 @@ extern LONG __far LVOCreateUpfrontLayer;
 
 STATIC PatchEntry PatchTable[] =
 {
+  &IntuitionBase, 37, NULL, (LONG) & LVOCloseScreen, (APTR) MMCloseScreen, &OldCloseScreen,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOpenScreen, (APTR) MMOpenScreen, &OldOpenScreen,
+  &IntuitionBase, 37, NULL, (LONG) & LVOOpenScreenTagList, (APTR) MMOpenScreenTagList, &OldOpenScreenTagList,
+  &IntuitionBase, 37, NULL, (LONG) & LVOScreenToFront, (APTR) MMScreenToFront, &OldScreenToFront,
+  &IntuitionBase, 37, NULL, (LONG) & LVOScreenToBack, (APTR) MMScreenToBack, &OldScreenToBack,
+  &IntuitionBase, 39, NULL, (LONG) & LVOScreenDepth, (APTR) MMScreenDepth, &OldScreenDepth,
+
   &IntuitionBase, 37, NULL, (LONG) & LVOCloseWindow, (APTR) MMCloseWindow, &OldCloseWindow,
   &IntuitionBase, 37, NULL, (LONG) & LVOOpenWindow, (APTR) MMOpenWindow, &OldOpenWindow,
   &IntuitionBase, 37, NULL, (LONG) & LVOOpenWindowTagList, (APTR) MMOpenWindowTagList, &OldOpenWindowTagList,

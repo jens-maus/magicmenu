@@ -45,7 +45,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level,BOOL DontC
 	else
 		Flag = 0;
 
-	if(V39 && Look3D && AktPrefs.mmp_CastShadows && (StripPopUp || LinesAndShadows))
+	if(V39 && Look3D && AktPrefs.mmp_CastShadows)
 	{
 		ShadowSize = SHADOW_SIZE + Level * 2;
 

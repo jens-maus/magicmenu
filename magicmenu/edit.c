@@ -591,6 +591,8 @@ AddIcon(STRPTR Name)
 
 			if(Icon = GetDiskObjectNew("ENV:sys/def_pref"))
 			{
+				Icon->do_DefaultTool = DefaultPrefsIcon.do_DefaultTool;
+
 				PutDiskObject(Name,Icon);
 
 				FreeDiskObject(Icon);
@@ -1634,6 +1636,7 @@ OpenAll(struct WBStartup *StartupMsg)
 
 		if(!GotPens)
 		{
+/*
 			struct LoadThatColour Colours[8+1];
 			LONG i;
 
@@ -1647,14 +1650,14 @@ OpenAll(struct WBStartup *StartupMsg)
 			}
 
 			Colours[i].One = 0;
-
+*/
 			if(CustomScreen = OpenScreenTags(NULL,
 				SA_LikeWorkbench,	TRUE,
 				SA_Depth,		5,
 				SA_Title,		VERS " (" DATE ")",
 				SA_SharePens,		TRUE,
 				SA_Behind,		TRUE,
-				SA_Colors32,		Colours,
+/*				SA_Colors32,		Colours,*/
 			TAG_DONE))
 			{
 				if(GotPens = AllocatePens(CustomScreen->ViewPort.ColorMap))

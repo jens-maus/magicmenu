@@ -33,6 +33,7 @@ VOID ChangeBrokerSetup(VOID);
 VOID CleanupMenuActiveData(VOID);
 BOOL SetupMenuActiveData(VOID);
 VOID CloseAll(VOID);
+VOID Complain(char *ErrTxt);
 VOID ErrorPrc(char *ErrTxt);
 int main(int argc, char **argv);
 
@@ -55,6 +56,12 @@ ULONG __asm __saveds MMOnMenu(REG (a0 )struct Window *window, REG (d0 )ULONG num
 struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInfo);
 ULONG __asm __saveds MMRefreshWindowFrame(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMSetWindowTitles(REG (a0 )struct Window *W, REG (a1 )STRPTR WindowTitle, REG (a2 )STRPTR ScreenTitle);
+ULONG __asm __saveds MMOpenScreen(REG (a0 )struct NewScreen *NS);
+ULONG __asm __saveds MMOpenScreenTagList(REG (a0 )struct NewScreen *NS, REG (a1 )struct TagItem *TI);
+ULONG __asm __saveds MMCloseScreen(REG (a0 )struct Screen *S);
+ULONG __asm __saveds MMScreenToFront(REG (a0 )struct Screen *S);
+ULONG __asm __saveds MMScreenToBack(REG (a0 )struct Screen *S);
+ULONG __asm __saveds MMScreenDepth(REG (a0 )struct Screen *S, REG (d0 )ULONG flags, REG (a1 )reserved);
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
@@ -172,3 +179,6 @@ VOID StopHihoTask(VOID);
 /* storage.c */
 LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
 LONG StoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
+
+/* scare.c */
+VOID Scare(VOID);

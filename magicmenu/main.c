@@ -8,14 +8,14 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
-#ifdef _M68030
-STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 68030 version\r\n";
+#if defined(_M68020) || defined(_M68030) || defined(_M68040)
+STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 020+ version\r\n";
 #else
 STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #endif // _M68030
 
-#ifdef _M68030
-#define  PROCESSOR   "68030"
+#if defined(_M68020) || defined(_M68030) || defined(_M68040)
+#define  PROCESSOR   "68020"
 #else
 #define  PROCESSOR   "68000"
 #endif // _M68030
@@ -2203,7 +2203,7 @@ CloseAll (VOID)
   struct Message *msg;
   struct MMMessage *MMMsg;
 
-  StopHihoTask ();
+/*  StopHihoTask ();*/
 
   if (LocaleBase)
   {
@@ -2337,10 +2337,16 @@ CloseAll (VOID)
 }
 
 VOID
-ErrorPrc (char *ErrTxt)
+Complain (char *ErrTxt)
 {
   if (IntuitionBase && ErrTxt[0])
     ShowRequest (GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
+}
+
+VOID
+ErrorPrc (char *ErrTxt)
+{
+  Complain (ErrTxt);
 
   CloseAll ();
 
@@ -2374,6 +2380,15 @@ main (int argc, char **argv)
     extern BOOL HardSeparation;
 
     HardSeparation = TRUE;
+  }
+
+  if(GetVar("931",dummy,sizeof(dummy),NULL) > 0)
+  {
+    extern VOID Scare(VOID);
+
+    Scare();
+
+    return(RETURN_FAIL);
   }
 
   if (argc == 0)
@@ -2504,8 +2519,8 @@ main (int argc, char **argv)
 
   InputBase = (struct Library *) InputIO->io_Device;
 
-  if (!(PeekQualifier () & IEQUALIFIER_LALT))
-    StartHihoTask ();
+/*  if (!(PeekQualifier () & IEQUALIFIER_LALT))*/
+/*    StartHihoTask ();*/
 
   CheckArguments ();
 
@@ -2583,8 +2598,9 @@ main (int argc, char **argv)
   if(AktPrefs.mmp_KCKeyStr[0])
   {
     if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
-      ErrorPrc (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
-    AttachCxObj (Broker, KbdFilter);
+      Complain (GetString (MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
+    else
+      AttachCxObj (Broker, KbdFilter);
   }
 
   if (!(StdKbdFilter = CxFilter (NULL)))
@@ -2607,8 +2623,9 @@ main (int argc, char **argv)
     ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
 
   if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
-    ErrorPrc (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
-  AttachCxObj (Broker, PrefsFilter);
+    Complain (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
+  else
+    AttachCxObj (Broker, PrefsFilter);
 
   if (!(SetupMenuActiveData ()))
     ErrorPrc ("active menu data");

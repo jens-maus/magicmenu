@@ -19,10 +19,10 @@
 VERSION =	2
 
 GSTFILE =	system_headers.gst
-#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
-#CPU =		040
+OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+CPU =		040
 #CPU =		030
-CPU =		any
+#CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
@@ -35,12 +35,12 @@ LIBS =		lib:sc.lib lib:amiga.lib
 MAIN_SOURCE =	main.c misc.c \
 		data.c wedge.c windowglyphs.c memory.c menuboxes.c \
 		dointuimenu.c sendintuimessage.c betatitle.c remap.a \
-		storage.c
+		storage.c scare.c
 
 MAIN_OBJS =	main.o stubs.o misc.o \
 		data.o wedge.o windowglyphs.o memory.o menuboxes.o \
-		dointuimenu.o sendintuimessage.o betatitle.o remap.o \
-		storage.o
+		dointuimenu.o sendintuimessage.o remap.o \
+		storage.o scare.o
 
 ###############################################################################
 
@@ -147,3 +147,4 @@ windowglyphs.o : windowglyphs.c defines.h data.h prefs.h MagicMenu_rev.h protos.
 edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h
 demoimagedata.o : demoimagedata.c
 storage.o : storage.c storage.c
+scare.o: scare.c

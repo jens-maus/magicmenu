@@ -33,6 +33,12 @@ ULONG __asm CallRefreshWindowFrame (REG(a0) struct Window *, REG(a6) struct Intu
 ULONG __asm CallSetWindowTitles (REG(a0) struct Window *, REG(a1) STRPTR, REG(a2) STRPTR, REG(a6) struct IntuitionBase *);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
 struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
+ULONG __asm CallOpenScreen (REG(a0) struct NewScreen *NS, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallOpenScreenTagList (REG(a0) struct NewScreen *NS, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallCloseScreen (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallScreenToFront (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallScreenToBack (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved, REG(a6) struct IntuitionBase *IntuitionBase);
 
 /*****************************************************************************************/
 
@@ -437,6 +443,108 @@ MMSetWindowTitles (REG(a0) struct Window * W, REG(a1) STRPTR WindowTitle, REG(a2
     Result = CallSetWindowTitles (W, WindowTitle, ScreenTitle, IntuitionBase);
 
   return (Result);
+}
+
+ULONG __asm __saveds
+MMOpenScreen (REG(a0) struct NewScreen *NS)
+{
+	ULONG Scr;
+
+	if (MMCheckScreen ())
+	{
+		Scr = CallOpenScreen (NS, IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Scr = CallOpenScreen (NS, IntuitionBase);
+
+	return(Scr);
+}
+
+ULONG __asm __saveds
+MMOpenScreenTagList (REG(a0) struct NewScreen *NS, REG(a1) struct TagItem *TI)
+{
+	ULONG Scr;
+
+	if (MMCheckScreen ())
+	{
+		Scr = CallOpenScreenTagList (NS, TI, IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		Scr = CallOpenScreenTagList (NS, TI, IntuitionBase);
+
+	return(Scr);
+}
+
+ULONG __asm __saveds
+MMCloseScreen (REG(a0) struct Screen *S)
+{
+	ULONG rc;
+
+	if (MMCheckScreen ())
+	{
+		rc = CallCloseScreen(S,IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		rc = CallCloseScreen(S,IntuitionBase);
+
+	return(rc);
+}
+
+ULONG __asm __saveds
+MMScreenToFront (REG(a0) struct Screen *S)
+{
+	ULONG rc;
+
+	if (MMCheckScreen ())
+	{
+		rc = CallScreenToFront(S,IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		rc = CallScreenToFront(S,IntuitionBase);
+
+	return(rc);
+}
+
+ULONG __asm __saveds
+MMScreenToBack (REG(a0) struct Screen *S)
+{
+	ULONG rc;
+
+	if (MMCheckScreen ())
+	{
+		rc = CallScreenToBack(S,IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		rc = CallScreenToBack(S,IntuitionBase);
+
+	return(rc);
+}
+
+ULONG __asm __saveds
+MMScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved)
+{
+	ULONG rc;
+
+	if (MMCheckScreen ())
+	{
+		rc = CallScreenDepth(S,flags,reserved,IntuitionBase);
+
+		ReleaseSemaphore (MenuActSemaphore);
+	}
+	else
+		rc = CallScreenDepth(S,flags,reserved,IntuitionBase);
+
+	return(rc);
 }
 
 struct Layer *__saveds __asm

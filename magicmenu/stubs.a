@@ -41,6 +41,12 @@ Call\1:
 	PATCH	OnMenu
 	PATCH	SetWindowTitles
 	PATCH	RefreshWindowFrame
+	PATCH	OpenScreen
+	PATCH	OpenScreenTagList
+	PATCH	CloseScreen
+	PATCH	ScreenToFront
+	PATCH	ScreenToBack
+	PATCH	ScreenDepth
 
 *--------------------------------------------------------------------------
 
