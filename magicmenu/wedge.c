@@ -11,7 +11,7 @@
 #define JMP_ABS 0x4EF9
 
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	3
+#define SEMAPHORE_VERSION	4
 
 typedef struct Wedge
 {
@@ -41,6 +41,8 @@ extern LONG __far LVOResetMenuStrip;
 extern LONG __far LVOCloseWindow;
 extern LONG __far LVOActivateWindow;
 extern LONG __far LVOWindowToFront;
+extern LONG __far LVOWindowToBack;
+extern LONG __far LVOMoveWindowInFrontOf;
 extern LONG __far LVOModifyIDCMP;
 extern LONG __far LVOObtainGIRPort;
 
@@ -57,6 +59,8 @@ STATIC PatchEntry PatchTable[] =
   &IntuitionBase, NULL, (LONG) & LVOResetMenuStrip, (APTR) MMResetMenuStrip, &OldResetMenuStrip,
   &IntuitionBase, NULL, (LONG) & LVOActivateWindow, (APTR) MMActivateWindow, &OldActivateWindow,
   &IntuitionBase, NULL, (LONG) & LVOWindowToFront, (APTR) MMWindowToFront, &OldWindowToFront,
+  &IntuitionBase, NULL, (LONG) & LVOWindowToBack, (APTR) MMWindowToBack, &OldWindowToBack,
+  &IntuitionBase, NULL, (LONG) & LVOMoveWindowInFrontOf, (APTR) MMMoveWindowInFrontOf, &OldMoveWindowInFrontOf,
   &IntuitionBase, NULL, (LONG) & LVOModifyIDCMP, (APTR) MMModifyIDCMP, &OldModifyIDCMP,
   &IntuitionBase, NULL, (LONG) & LVOObtainGIRPort, (APTR) MMObtainGIRPort, &OldObtainGIRPort,
 

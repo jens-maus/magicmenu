@@ -24,6 +24,8 @@ ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionB
 ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallActivateWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallWindowToFront (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallWindowToBack (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallMoveWindowInFrontOf (REG(a0) struct Window *Window, REG(a1) struct Window *Behind, REG(a6) struct IntuitionBase *IntuitionBase);
 BOOL __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags, REG(a6) struct IntuitionBase *IntuitionBase);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
 struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);

@@ -46,6 +46,8 @@ ULONG __asm __saveds MMResetMenuStrip(REG (a0 )struct Window *W, REG (a1 )struct
 ULONG __asm __saveds MMCloseWindow(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMActivateWindow(REG (a0 )struct Window *W);
 ULONG __asm __saveds MMWindowToFront(REG (a0 )struct Window *W);
+ULONG __asm __saveds MMWindowToBack(REG (a0 )struct Window *W);
+ULONG __asm __saveds MMMoveWindowInFrontOf(REG (a0 )struct Window *Window, REG (a1 )struct Window *Behind);
 BOOL __asm __saveds MMModifyIDCMP(REG (a0 )struct Window *window, REG (d0 )ULONG flags);
 struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInfo);
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
@@ -151,3 +153,5 @@ UWORD SendIntuiMessage(ULONG Class, UWORD *Code, UWORD Qualifier, APTR IAddress,
 /* betatitle.c */
 VOID StartHihoTask(VOID);
 VOID StopHihoTask(VOID);
+
+/* remap.a */
