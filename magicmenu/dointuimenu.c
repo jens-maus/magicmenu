@@ -4,6 +4,8 @@
 **   :ts=8
 */
 
+/*#define DEBUG*/
+
 #ifndef _GLOBAL_H
 #include "Global.h"
 #endif /* _GLOBAL_H */
@@ -14,7 +16,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   struct Window *ZwWin;
   UWORD Code, Err;
   struct InputEvent *NewEvent;
-  struct Window *OriginalMenWin;
+  BOOL lending = FALSE;
 
   /* Zugriff auf MenWin, MenScr und MenStrip sperren. */
   ObtainSemaphore (GetPointerSemaphore);
@@ -31,7 +33,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     return (TRUE);
   }
 
-  OriginalMenWin = MenWin;
   MenStrip = MenWin->MenuStrip;
   MenScr = MenWin->WScreen;
 
@@ -42,9 +43,17 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
     if(OtherGuy = FindLending(MenWin))
     {
+      SHOWMSG("menu lending active");
+
+      D(("this window 0x%08lx |%s|",MenWin,MenWin->Title));
+
       MenWin = OtherGuy;
       MenStrip = OtherGuy->MenuStrip;
       MenScr = OtherGuy->WScreen;
+
+      D(("Other window 0x%08lx |%s|",MenWin,MenWin->Title));
+
+      lending = TRUE;
     }
   }
 
@@ -74,19 +83,19 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   if (MenWin->IDCMPFlags & IDCMP_MENUVERIFY)
   {
-    DB (kprintf ("has menuverify\n"));
+    D(("has menuverify"));
     /* Nachricht verschicken (beinhaltet UnlockIBase()) */
     Code = MENUHOT;
     Err = SendIntuiMessage (IDCMP_MENUVERIFY, &Code, PeekQualifier (), NULL, MenWin, IBaseLock, TRUE);
 
     if (Code == MENUCANCEL || Err != SENDINTUI_OK)
     {
-      DB (kprintf ("code=%ld err=%ld\n", Code, Err));
+      D(("code=%ld err=%ld", Code, Err));
       EndIntuiMenu (FALSE);
       return (TRUE);
     }
 
-    DB (kprintf ("get going again\n"));
+    D(("get going again"));
 
     /* Intuition wieder starten. */
     IBaseLock = LockIBase (NULL);
@@ -144,18 +153,28 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   ResetMenu (MenStrip, FALSE);
 
+  if(lending)
+  {
+    Code = FirstMenuNum;
+
+    IBaseLock = LockIBase (NULL);
+    SendIntuiMessage ((HelpPressed) ? IDCMP_MENUHELP : IDCMP_MENUPICK, &Code, PeekQualifier (), MenWin, MenWin, NULL, FALSE);
+    UnlockIBase (IBaseLock);
+  }
   /* Das hier ist der Knackpunkt. Das Fenster kann verschwinden (!) bevor
    * die IntuiMessage erzeugt und ausgeliefert ist. Vielleicht w‰re es
    * besser, die IntuiMessage selbst zu erzeugen und auszuliefern.
    *
    * Eigentlich nicht. Intuition ist schlau genug, damit klarzukommen.
    */
-  if (NewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
+  else if (NewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
   {
     NewEvent->ie_Class = (HelpPressed) ? IECLASS_MENUHELP : IECLASS_MENULIST;
 
+    D(("sending with window 0x%08lx |%s|",MenWin,MenWin->Title));
+
     NewEvent->ie_Code = FirstMenuNum;
-    NewEvent->ie_EventAddress = OriginalMenWin;
+    NewEvent->ie_EventAddress = MenWin;
     NewEvent->ie_Qualifier = PeekQualifier ();
 
     InputIO->io_Data = (APTR) NewEvent;
@@ -165,6 +184,10 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     DoIO ((struct IORequest *) InputIO);
 
     FreeVecPooled (NewEvent);
+  }
+  else
+  {
+    SHOWMSG("not enough memory for notification message");
   }
 
   /* Jetzt kommt die letzte Maﬂnahme. Die Fenster, die vorher die

@@ -3,7 +3,7 @@
 @author "Olaf Barthel"
 @node main "MagicMenu"
 
-                               MagicMenu 2.22
+                               MagicMenu 2.26
                      A utility to enhance the Intuition
                             pull-down menu system
 
@@ -58,7 +58,7 @@ to it. It also sports a well-defined set of icon tooltypes:
 
    You can invoke the MagicMenu preferences editor with a hotkey combination.
    The default is "control alt space", which means that you need to hold
-   down the [Ctrl] and [Alt] key and then press the [Space] key to invoke
+   down the @{b}[Ctrl]@{ub} and @{b}[Alt]@{ub} key and then press the @{b}[Space]@{ub} key to invoke
    the preferences program. For a complete description of the hotkey syntax,
    see your AmigaOS manual.
 
@@ -131,7 +131,7 @@ editor you have ever used. It supports the following tooltypes:
 
    You can invoke the MagicMenu preferences editor with a hotkey combination.
    The default is "control alt space", which means that you need to hold
-   down the [Ctrl] and [Alt] key and then press the [Space] key to invoke
+   down the @{b}[Ctrl]@{ub} and @{b}[Alt]@{ub} key and then press the @{b}[Space]@{ub} key to invoke
    the preferences program. For a complete description of the hotkey syntax,
    see your AmigaOS manual.
 
@@ -166,16 +166,19 @@ resources until Intuition has stopped waiting for them to be released. The
 net effect is a classical deadlock.
    MagicMenu will eventually back out of the deadlock after a certain amount
 of time but the deadlock can be avoided altogether if you configure MagicMenu
-to run in non-blocking mode (see @{"Preferences/Non blocking" link Prefs} for
-more information). However, the non-blocking mode has the effect that display
-updates by other programs that have windows open on the same screen will not
-be halted or delayed. Thus, if you are used to halt text scrolling by holding
-down the menu button, it will no longer work in non-blocking mode.
+to run in non-blocking mode (see @{"Preferences/Non blocking" link Prefs_Look_and_usage 152} for more information).
+However, the non-blocking mode has the effect that display updates by other
+programs that have windows open on the same screen will not be halted or
+delayed. Thus, if you are used to halt text scrolling by holding down the
+menu button, it will no longer work in non-blocking mode.
 
 Some programs may interact strangely with the way MagicMenu renders and
-builds its menus. If you suspect foul play, hold down the [Ctrl] key or one
-of the [Alt] keys while you hold down the menu button: MagicMenu will get out
+builds its menus. If you suspect foul play, hold down the @{b}[Ctrl]@{ub} key or one
+of the @{b}[Alt]@{ub} keys while you hold down the menu button: MagicMenu will get out
 of the way and let Intuition handle the pull-down menu business as usual.
+
+You might want to investigate the effects of the @{"Verify patches" link Prefs_Look_and_usage 234}
+and @{"Fix patches" link Prefs_Look_and_usage 250} switches.
 @endnode
 
 @node Prefs "The preferences editor"
@@ -324,6 +327,22 @@ to choose from:
            pointer is in a different position, it will display
            pop-up menus instead.
 
+   @{b}Separator bar style@{ub}
+
+      Two options are available, and they only affect the multicolour 3D mode:
+
+         - Dent
+
+           Separator bars do not extend beyond the menu labels they
+           separate and will similar to the "traditional" indented Amiga
+           bevel boxes.
+
+         - Gap
+
+           Separator bars will extend right to the edges of the menu,
+           separating not just the menu labels but the menu items
+           themselves.
+
    @{b}Mark submenus@{ub}
 
       Menus that have submenus attached will receive a marker at the right
@@ -364,7 +383,7 @@ to choose from:
         layout is a little "off", it will happily trash innocent
         memory when it is rendered.
 
-        Think again, if you want trouble, this is the right
+        Think again: if you want trouble, this is the right
         setting for you.
 
       - If this switch is enabled, display updates will not be
@@ -380,6 +399,22 @@ to choose from:
 
         The big disadvantage of this mode is that it does not
         block display updates.
+
+   @{b}Highlight disabled menu items@{ub}
+
+      By default, moving the mouse across a disabled menu item will not
+      highlight that item. If you still want the highlighting, such as
+      for reasons of visual consistency, this is the switch you would
+      need to check.
+
+   @{b}Transparency@{ub}
+
+      On high- and truecolour displays, MagicMenu can play tricks with
+      the menu background. Instead of rendering it in the usual "dull"
+      background colour, the background can be made to "shine through"
+      the menu background. This takes extra effort and is not
+      recommended for daily use. This option is restricted to the
+      multicolour 3D mode.
 
    @{b}Menus open delayed@{ub}
 
@@ -401,12 +436,37 @@ to choose from:
       You can tell MagicMenu to draw drop shadows below the menus it displays
       if you enable this switch. Please note that the shadows will appear only
       in 3D mode.
+
+   @{b}Verify patches@{ub}
+
+      This and the following option ("Fix patches") can be used to make
+      MagicMenu work more reliably. As was explained before, MagicMenu
+      will plant a number of patches in the operating system. It expects
+      that it will be the first client to be invoked when the patched
+      operating system calls are made. If this fails for some reason, such
+      as other applications planting their patches on top of MagicMenu,
+      then the results may be undefined. You may get system crashes,
+      or the system may even appear to freeze. If you enable the
+      "Verify patches" option, MagicMenu will regularly check if it is
+      still the first client to be called from an operating system
+      patch. If this is no longer the case, MagicMenu will shut down
+      and effectively cease operation. Once this has happened, the only
+      way to reactivate MagicMenu is to stop and restart it.
+
+   @{b}Fix patches@{ub}
+
+      If enabled, this option will cause MagicMenu to examine every
+      new operating system patch to be planted, checking if one such
+      patch would be placed on top of a currently active MagicMenu
+      patch. When this happens, MagicMenu will modify the new patch
+      to be installed in such a way as to make sure that MagicMenu's
+      patch stays the first to be invoked.
 @endnode
 
 @node Prefs_keyboard_control "Keyboard control"
 This page holds the controls for the keyboard control option, which is what
-you get when you press a special key combination or [Right Amiga]+[Right
-Alt]. The menus will open, for you to select an item with the cursor keys.
+you get when you press a special key combination or @{b}[Right Amiga]@{ub}+@{b}[Right
+Alt]@{ub}. The menus will open, for you to select an item with the cursor keys.
 
 @{b}Keyboard control enabled@{ub}
 
@@ -428,8 +488,8 @@ Alt]. The menus will open, for you to select an item with the cursor keys.
 
    This is another shortcut to get MagicMenu into keyboard control
    mode. The default key combination is "ramiga space", which means
-   that you will have to hold down the [Right Amiga] key and then
-   press the [Space] key to get into keyboard control mode.
+   that you will have to hold down the @{b}[Right Amiga]@{ub} key and then
+   press the @{b}[Space]@{ub} key to get into keyboard control mode.
 @endnode
 
 @node Prefs_colour_control "Colour control"
@@ -526,21 +586,21 @@ by keyboard:
 
    You can activate the menu and bring MagicMenu into keyboard control mode
    by holding down a special combination of keys. The default key
-   combinations are [Right Amiga]+[Space] and [Right Amiga]+[Right Alt].
+   combinations are @{b}[Right Amiga]@{ub}+@{b}[Space]@{ub} and @{b}[Right Amiga]@{ub}+@{b}[Right Alt]@{ub}.
    The menu will open and allow you to select the menu item you want with
-   the cursor keys. Press [Return] to select an item or to open a submenu.
-   Press [Esc] to return to the previous menu hierarchy or to close the
+   the cursor keys. Press @{b}[Return]@{ub} to select an item or to open a submenu.
+   Press @{b}[Esc]@{ub} to return to the previous menu hierarchy or to close the
    menu altogether.
 
 @{b}Use the normal Intuition menus@{ub}
 
    You can tell MagicMenu to get out of the way and let Intuition take care
-   of the menus by holding down either [Alt] or [Ctrl] key when you
+   of the menus by holding down either @{b}[Alt]@{ub} or @{b}[Ctrl]@{ub} key when you
    press the menu button.
 
 @{b}Change the look of the menus@{ub}
 
-   While the menu is active, press [Ctrl] to toggle between 3D mode
+   While the menu is active, press @{b}[Ctrl]@{ub} to toggle between 3D mode
    and the flat standard mode.
 @endnode
 
@@ -549,41 +609,50 @@ MagicMenu and the preferences editor may not always do what you expect them
 to. Here is a short list of such situations and an explanation of what has
 happened:
 
+
 @{b}I cannot configure the multicolour menu colours@{ub}
 The preferences program needs at least 24 colours to display the settings
 page that controls the multicolour menu. As the operating system will always
-allocate 11 colours for itself, this means you will need to run the
-preferences program on a screen with at least 64 colours available.
+allocate 11 colours for itself (fewer if there are fewer colours available
+on a screen), this means you will need to run the preferences program on a
+screen with at least 64 colours available.
+
 
 @{b}The multicolour menu never shows up, I always get the old 3D look menu@{ub}
 For the multicolour menu to work, MagicMenu needs to allocate the colours
-that make up its display from the set the screen has to offer it is to open
-on. Not all screens allow for this to work, as they may not have unallocated
-pens to work with or a colour palette which already has the correct colours
-in the right places. In these cases MagicMenu will fail to get the colours it
-needs and step back to the old style 3D menu. MagicMenu will also refuse to
-use the multicolour menu if the screen to use is a low resolution screen.
+that make up its display from the set the menu's screen has to offer. Not
+all screens allow for this to work, as they may not have any unallocated
+pens to work with. There might not even be a colour palette in place which
+already has the required colours set. In these cases MagicMenu will fail to
+obtain the colours it needs and step back to the old style 3D menu.
+MagicMenu will also refuse to use the multicolour menu if the screen to use
+is a low resolution screen.
+
 
 @{b}Sometimes I don't get any menu to show up at all@{ub}
 MagicMenu can run out of memory trying to display the menu and it can also
 fail to display a menu due to not enough room available on the screen. In
 such cases MagicMenu will have stopped building the menu for display before
-it has a chance to back out and hand over the job to Intuition. Sorry, that's
-all it can do then.
+it has a chance to back out and hand over the job to Intuition. Sorry,
+that's all it can do then.
    It's also possible that MagicMenu backs out of displaying a menu in order
 to avoid a fatal system deadlock. This may happen so quickly you won't even
 notice that the menus came up after all.
    In both situations, nothing should be keeping you from retrying to bring
 up the menus again. It should eventually work.
 
+
 @{b}The menu changes the screen colours when it appears@{ub}
-Some applications open screens which allow other software to allocate colours
-from the palette. But not all these applications seem to know that some of
-these colours may be allocated and changed by software like MagicMenu. The
-MultiView Workbench utility is such an application. MagicMenu will end up
-changing the screen colour palette since the screen parameters permit this.
-Other applications may make the same mistake. The only way to avoid this is
-to put MagicMenu into the old 3D colour look.
+Some applications open screens which allow other software to allocate
+colours from the palette. But not all these applications seem to know that
+some of these colours may be allocated and changed by software like
+MagicMenu. The MultiView Workbench utility is such an application (actually,
+this particular bug was fixed in the MultiView version distributed as part
+of the AmigaOS 3.5 update). MagicMenu will end up changing the screen colour
+palette since the screen parameters permit this. Other applications may make
+the same mistake. The only way to avoid this is to put MagicMenu into the
+old 3D colour look.
+
 
 @{b}Images and the text frames overlap the menu item text@{ub}
 The program to create the menus also determines how they are placed. The
@@ -593,6 +662,7 @@ make room without running the risk of covering other items and really
 screwing things up. Thus, the text frames can be only as large as the menu
 item sizes permit.
 
+
 @{b}MagicMenu conflicts with another utility that maps a certain feature to
 the menu button@{ub}
 Provided that the "other" utility is a commodities tool just like MagicMenu
@@ -600,9 +670,11 @@ you can use the CX_PRIORITY=<number> tool type to select the order in which
 input events are processed. If you want MagicMenu to take care of processing
 the menu button, select a lower priority, e.g. make "CX_PRIORITY=-1".
 
+
 @{b}Menu operations become terribly sluggish on 15/16/24 bit screens@{ub}
-Well? That's supposed to happen. You might be able to cut the time by turning
-off the @{b}Non blocking@{ub} option.
+Well? That's supposed to happen. You might be able to cut the time by
+turning off the @{"Preferences/Non blocking" link Prefs_Look_and_usage 152} option.
+
 
 @{b}MagicMenu fails with "Error initializing system patches".@{ub}
 There are three reasons why MagicMenu can fail with this error:
@@ -616,18 +688,33 @@ There are three reasons why MagicMenu can fail with this error:
 - You had an older MagicMenu version running on your machine before
   you tried to start the new version.
 
-The last reason is the most likely. Unless you do something
-very strange in your Workbench startup procedure the problem should
-go away after replacing the old version with the new one and
-rebooting your machine.
+The last reason is the most likely. Unless you do something very strange in
+your Workbench startup procedure the problem should go away after replacing
+the old version with the new one and rebooting your machine.
 
-@{b}The menus don't show up at all, the Amiga just freezes and
-crashes when the right mouse button is pressed.@{ub}
-Take care if you have several utilities running that plaster the
-operating system with patches. For some of the patches the order
-in which they are installed matters greatly. Whether MagicMenu
-is the first program to install its patches or the last one can
-make the decisive difference between a crash and a working system.
+
+@{b}The menus don't show up at all, the Amiga just freezes and crashes when the
+right mouse button is pressed.@{ub}
+Take care if you have several utilities running that plaster the operating
+system with patches. For some of the patches the order in which they are
+installed matters greatly. Whether MagicMenu is the first program to install
+its patches or the last one can make the decisive difference between a crash
+and a working system. You might want to investigate the effects of the
+@{"Verify patches" link Prefs_Look_and_usage 234} and @{"Fix patches" link Prefs_Look_and_usage 250} switches.
+
+
+@{b}I dropped the MagicMenu program into my "SYS:WBStartup" drawer. Now every
+time I reboot my system, the MagicMenu preferences editor pops up. What's
+wrong?@{ub}
+MagicMenu may notice that your previously active MagicMenu preferences no
+longer match the structure and features it requires. This frequently happens
+after a new MagicMenu version has been released. In the preferences editor,
+just click on the "Save" button and the problem should go away. Please also
+consult the program's documentation: you have missed an important change.
+
+If the problem persist, verify that the versions of the MagicMenuPrefs
+program and the MagicMenu program match. If they don't, you may need a more
+recent version of the MagicMenuPrefs program.
 
 (to be continued)
 @endnode
@@ -1090,6 +1177,47 @@ MagicMenu 2.22
 
 - If launched from Workbench, MagicMenu is now quite a bit smarter
   when trying to find its icon to read the tool types.
+
+
+MagicMenu 2.23
+==============
+
+- MagicMenu now only avoids activating the multicolour mode if the
+  menu text would become unreadable due to the colours chosen, or
+  if the background and the highlighting colours are the same.
+
+- Implemented hi/truecolour shadows.
+
+- MagicMenu now plants its system patches in such a way that
+  allows it to monitor whether any other application tries to
+  put its own patches on top of them. In such a case, MagicMenu
+  will insure that it stays the owner of the first patch code
+  to be invoked. This will hopefully fix all known lockup
+  problems.
+
+MagicMenu 2.24
+==============
+
+- Implemented Mario's new multicolour 3D frames.
+
+
+MagicMenu 2.25
+==============
+
+- Added the "smarter" system patch code (enabled by default).
+
+
+MagicMenu 2.26 (11.10.1999)
+
+- MagicMenu no longer starts up and complains if it didn't find a hot key
+  specifier.
+
+- Menu lending is now implemented differently, regarding the IntuiMessage->IDCMPWindow
+  pointer. MagicMenu now places the Window pointer there the menus lent came from.
+  This approach will solve one or two problems but may create others.
+
+- Added new configuration options "Transparency", "Separator bar style",
+  "Highlight disabled menu items", "Verify patches" and "Fix patches".
 @endnode
 
 @node Translations
@@ -1193,7 +1321,7 @@ Any contribution makes sense, large or small.
 You can find the most current version of MagicMenu either on Aminet or
 on the official home page, as maintained by Mario 'padrino' Cattaneo:
 
-   http://fsinfo.cs.uni-sb.de/~cattaneo/magicmenu/
+   http://www.cattaneo.de/magicmenu
 
 For feature requests or bug reports please contact <olsen@sourcery.han.de>.
 @endnode

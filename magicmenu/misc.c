@@ -16,6 +16,10 @@
 
 /*****************************************************************************************/
 
+#define BRIGHTNESS(r,g,b) (((WORD)r) * 38 + ((WORD)g) * 76 + ((WORD)b) * 14) / 128
+
+/*****************************************************************************************/
+
 #define CATCOMP_NUMBERS
 #include "magicmenu.h"
 
@@ -44,19 +48,6 @@ ULONG __asm CallCloseScreen (REG(a0) struct Screen *S, REG(a6) struct IntuitionB
 ULONG __asm CallScreenToFront (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallScreenToBack (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved, REG(a6) struct IntuitionBase *IntuitionBase);
-
-/*****************************************************************************************/
-
-#if 0
-#ifdef DB
-#undef DB
-#endif	/* DB */
-
-/*#define DB(x)	;*/
-#define DB(x) x
-
-extern void kprintf(const char *,...);
-#endif
 
 /*****************************************************************************************/
 
@@ -124,7 +115,7 @@ MMOpenWindow (REG(a0) struct NewWindow * NW)
 {
   ULONG Win;
 
-  DB (kprintf ("|%s| in OpenWindow patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("|%s| in OpenWindow patch",FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckScreen ())
   {
@@ -150,8 +141,7 @@ MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
 {
   ULONG Win;
 
-  DB (kprintf ("|%s| in OpenWindowTagList patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in OpenWindowTagList patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckScreen ())
   {
     Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
@@ -175,8 +165,7 @@ MMClearMenuStrip (REG(a0) struct Window * W)
 {
   ULONG Res;
 
-  DB (kprintf ("|%s| in ClearMenuStrip patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in ClearMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckWindow (W))
   {
     Res = CallClearMenuStrip (W, IntuitionBase);
@@ -195,8 +184,7 @@ MMSetMenuStrip (REG(a0) struct Window * W,
 {
   ULONG Res;
 
-  DB (kprintf ("|%s| in SetMenuStrip patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in SetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckWindow (W))
   {
     Res = CallSetMenuStrip (W, MI, IntuitionBase);
@@ -218,8 +206,7 @@ MMResetMenuStrip (REG(a0) struct Window * W,
 {
   ULONG Res;
 
-  DB (kprintf ("|%s| in ResetMenuStrip patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in ResetMenuStrip patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckWindow (W))
   {
     Res = CallResetMenuStrip (W, MI, IntuitionBase);
@@ -241,7 +228,7 @@ MMCloseWindow (REG(a0) struct Window * W)
 
   CallSelf = (FindTask(NULL) == ThisTask);
 
-  DB (kprintf ("|%s| in CloseWindow patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("%s| in CloseWindow patch", FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckScreen ())
   {
@@ -271,8 +258,7 @@ MMActivateWindow (REG(a0) struct Window * W)
 {
   ULONG Result;
 
-  DB (kprintf ("|%s| in ActivateWindow patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in ActivateWindow patch", FindTask (NULL)->tc_Node.ln_Name));
   if (AttemptSemaphore (MenuActSemaphore))
   {
     Result = CallActivateWindow (W, IntuitionBase);
@@ -292,8 +278,7 @@ MMWindowToFront (REG(a0) struct Window * W)
   if(!RealWindow(W))
     return(FALSE);
 
-  DB (kprintf ("|%s| in WindowToFront patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in WindowToFront patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckParentScreen (W, TRUE))
   {
     Result = CallWindowToFront (W, IntuitionBase);
@@ -310,7 +295,7 @@ MMWindowToBack (REG(a0) struct Window * W)
 {
   ULONG Result;
 
-  DB (kprintf ("|%s| in WindowToBack patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("|%s| in WindowToBack patch", FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckParentScreen (W, TRUE))
   {
@@ -329,7 +314,7 @@ MMModifyIDCMP (REG(a0) struct Window * window,
 {
   ULONG Result;
 
-  DB (kprintf ("|%s| in ModifyIDCMP patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("|%s| in ModifyIDCMP patch",FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckWindow (window))
   {
@@ -349,7 +334,7 @@ MMOffMenu (REG(a0) struct Window * window,
 {
   ULONG Result;
 
-  DB (kprintf ("|%s| in OffMenu patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("%s| in OffMenu patch", FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckWindow (window))
   {
@@ -369,8 +354,7 @@ MMOnMenu (REG(a0) struct Window * window,
 {
   ULONG Result;
 
-  DB (kprintf ("|%s| in OnMenu patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in OnMenu patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckWindow (window))
   {
     Result = CallOnMenu (window, number, IntuitionBase);
@@ -386,8 +370,7 @@ MMOnMenu (REG(a0) struct Window * window,
 struct RastPort *__asm __saveds
 MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
 {
-  DB (kprintf ("|%s| in ObtainGIRPort patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in ObtainGIRPort patch", FindTask (NULL)->tc_Node.ln_Name));
   if (!AktPrefs.mmp_NonBlocking && GInfo)  /* GInfo kann tatsächlich (!) NULL sein. */
   {
     SafeObtainSemaphoreShared (GetPointerSemaphore);
@@ -425,8 +408,7 @@ MMRefreshWindowFrame (REG(a0) struct Window * W)
   if(!RealWindow(W))
     return(FALSE);
 
-  DB (kprintf ("|%s| in RefreshWindowFrame patch\n", FindTask (NULL)->tc_Node.ln_Name));
-
+  D(("|%s| in RefreshWindowFrame patch", FindTask (NULL)->tc_Node.ln_Name));
   if (MMCheckParentScreen (W, FALSE))
   {
     Result = CallRefreshWindowFrame (W, IntuitionBase);
@@ -447,7 +429,7 @@ MMSetWindowTitles (REG(a0) struct Window * W, REG(a1) STRPTR WindowTitle, REG(a2
   if(!RealWindow(W))
     return(FALSE);
 
-  DB (kprintf ("|%s| in SetWindowTitles patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("|%s| in SetWindowTitles patch", FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckParentScreen (W, FALSE))
   {
@@ -565,7 +547,7 @@ MMScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved)
 LONG __asm __saveds
 MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 {
-  DB (kprintf ("|%s| in LendMenus patch\n", FindTask (NULL)->tc_Node.ln_Name));
+  D(("|%s| in LendMenus patch", FindTask (NULL)->tc_Node.ln_Name));
 
   RegisterLending(FromWindow,ToWindow);
 
@@ -1363,16 +1345,20 @@ CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   }
 }
 
-void
+BOOL
 HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover * bgc)
 {
+  BOOL trueColour = FALSE;
+
   if (Width > 0 && Height > 0)
   {
     if(Highlighted)
-      HighlightBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
+      trueColour = HighlightBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
     else
       FillBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
   }
+
+  return(trueColour);
 }
 
 BOOL
@@ -1654,8 +1640,6 @@ FillBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,stru
 
 /******************************************************************************/
 
-BOOL Transparency = FALSE;
-
 VOID
 DeleteBackgroundCover(struct BackgroundCover * bgc)
 {
@@ -1744,8 +1728,9 @@ BrightenPixelBuffer(UBYTE * pix,LONG width,LONG height)
 	}
 }
 
+/*
 STATIC VOID
-TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
+OldTintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 {
 	UBYTE red[256];
 	UBYTE green[256];
@@ -1771,6 +1756,23 @@ TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 		}
 	}
 }
+*/
+
+STATIC VOID
+TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
+{
+	LONG x,y;
+
+	for(y = 0 ; y < height ; y++)
+	{
+		for(x = 0 ; x < width ; x++)
+		{
+			(*pix) = min(255,((*pix) + r + 1) / 2);	pix++;
+			(*pix) = min(255,((*pix) + g + 1) / 2);	pix++;
+			(*pix) = min(255,((*pix) + b + 1) / 2);	pix++;
+		}
+	}
+}
 
 struct BackgroundCover *
 CreateBackgroundCover(
@@ -1782,7 +1784,7 @@ CreateBackgroundCover(
 {
 	struct BackgroundCover * bgc = NULL;
 
-	if(Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	if(AktPrefs.mmp_Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
 	{
 		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
 		if(bgc != NULL)
@@ -1803,6 +1805,7 @@ CreateBackgroundCover(
 				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
 
 				BlurPixelBuffer(ShadowBuffer,width,height);
+				TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
 
 				WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
 			}
@@ -1885,10 +1888,11 @@ DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,LONG par
 
 /******************************************************************************/
 
-VOID
+BOOL
 HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,struct BackgroundCover * bgc)
 {
 	BOOL done = FALSE;
+	BOOL trueColour = FALSE;
 
 	if(bgc != NULL)
 	{
@@ -1905,6 +1909,8 @@ HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY
 
 			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 
+			trueColour = TRUE;
+
 			done = TRUE;
 		}
 	}
@@ -1914,4 +1920,6 @@ HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY
 		SetPens (rp, MenFillCol, 0, JAM1);
 		RectFill (rp, minX, minY, maxX, maxY);
 	}
+
+	return(trueColour);
 }

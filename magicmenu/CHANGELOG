@@ -471,3 +471,16 @@ MagicMenu 2.24
 ==============
 
 - Implemented Mario's new multicolour 3D frames.
+
+
+MagicMenu 2.26 (11.10.1999)
+
+- MagicMenu no longer starts up and complains if it didn't find a hot key
+  specifier.
+
+- Menu lending is now implemented differently, regarding the IntuiMessage->IDCMPWindow
+  pointer. MagicMenu now places the Window pointer there the menus lent came from.
+  This approach will solve one or two problems but may create others.
+
+- Added new configuration options "Transparency", "Separator bar style",
+  "Highlight disabled menu items", "Verify patches" and "Fix patches".

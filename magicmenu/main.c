@@ -195,7 +195,7 @@ Activate (VOID)
 {
   if (!CxChanged)
   {
-    /*if(AllPatchesOnTop())*/
+    if(NOT AktPrefs.mmp_VerifyPatches || AllPatchesOnTop())
     {
       ActivateCxObj (Broker, TRUE);
       MagicActive = TRUE;
@@ -835,12 +835,12 @@ MenuSelected (BOOL LastSelect)
             if (SubItem)
             {
               if (GetSubItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
+                DrawMenuItem (SubBoxDrawRPort, ZwItem, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w, FALSE);
             }
             else
             {
               if (GetItemContCoor (ZwItem, &t, &l, &w, &h))
-                DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
+                DrawMenuItem (BoxDrawRPort, ZwItem, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w, FALSE);
             }
           }
 
@@ -1795,12 +1795,10 @@ ProcessCommodity (VOID)
 
     DoWait = TRUE;
 
-    /*
-    if(MagicActive && NOT AllPatchesOnTop())
+    if(AktPrefs.mmp_VerifyPatches && MagicActive && NOT AllPatchesOnTop())
     {
       Deactivate();
     }
-    */
 
     if (Msg = GetMsg (CxMsgPort))
     {
@@ -2020,6 +2018,12 @@ LoadPrefs (char *Name, BOOL Report)
 		DECLARE_ITEM(MMPrefs,mmp_FillCol.R,		SIT_ULONG,	"Fill.R"),
 		DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
 		DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
+
+		DECLARE_ITEM(MMPrefs,mmp_Transparency,		SIT_BOOLEAN,	"Transparency"),
+		DECLARE_ITEM(MMPrefs,mmp_HighlightDisabled,	SIT_BOOLEAN,	"HighlightDisabled"),
+		DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,	SIT_UBYTE,	"SeparatorBarStyle"),
+		DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
+		DECLARE_ITEM(MMPrefs,mmp_FixPatches,		SIT_BOOLEAN,	"FixPatches"),
 	};
 
 	struct MMPrefs LocalPrefs;
@@ -2378,7 +2382,6 @@ ErrorPrc (char *ErrTxt)
 int
 main (int argc, char **argv)
 {
-  UBYTE dummy[4];
   BOOL Ok;
   LONG error;
   LONG z1;
@@ -2387,36 +2390,6 @@ main (int argc, char **argv)
   if(SysBase->lib_Version < 37)
   {
     ((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
-    return(RETURN_FAIL);
-  }
-
-  if(GetVar("922",dummy,sizeof(dummy),NULL) > 0)
-  {
-    extern BOOL LinesAndShadows;
-
-    LinesAndShadows = TRUE;
-  }
-
-  if(GetVar("909",dummy,sizeof(dummy),NULL) > 0)
-  {
-    extern BOOL HardSeparation;
-
-    HardSeparation = TRUE;
-  }
-
-  if(GetVar("971",dummy,sizeof(dummy),NULL) > 0)
-  {
-    extern BOOL Transparency;
-
-    Transparency = TRUE;
-  }
-
-  if(GetVar("931",dummy,sizeof(dummy),NULL) > 0)
-  {
-    extern VOID Scare(VOID);
-
-    Scare();
-
     return(RETURN_FAIL);
   }
 
@@ -2653,10 +2626,13 @@ main (int argc, char **argv)
   if(KbdFilter)
     ActivateCxObj(KbdFilter, AktPrefs.mmp_KCEnabled != FALSE);
 
-  if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
-    Complain (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
-  else
-    AttachCxObj (Broker, PrefsFilter);
+  if(Cx_Popkey[0] != '\0')
+  {
+    if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
+      Complain (GetString (MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
+    else
+      AttachCxObj (Broker, PrefsFilter);
+  }
 
   if (!(SetupMenuActiveData ()))
     ErrorPrc ("active menu data");

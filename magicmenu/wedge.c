@@ -154,7 +154,7 @@ LocalSetFunction(
 	SHOWVALUE(w->Magic);
 	SHOWVALUE(w->PointBack);
 
-	if(w->Magic == WEDGE_MAGIC && w->PointBack == w)
+	if(AktPrefs.mmp_FixPatches && w->Magic == WEDGE_MAGIC && w->PointBack == w)
 	{
 		SHOWMSG("one of our patches");
 
@@ -290,7 +290,6 @@ InstallPatches ()
 
 /*****************************************************************************************/
 
-/*
 BOOL
 AllPatchesOnTop(VOID)
 {
@@ -317,4 +316,3 @@ AllPatchesOnTop(VOID)
 
 	return(result);
 }
-*/

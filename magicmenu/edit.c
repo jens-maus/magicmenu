@@ -71,6 +71,12 @@ struct MMPrefs DefaultPrefs =
 	0x00000000, 0x00000000, 0x00000000,	/* TextCol */
 	0x00000000, 0x00000000, 0x00000000,	/* HiCol */
 	0x3B3B3B3B, 0x67676767, 0xa3a3a3a3,	/* FillCol */
+
+	FALSE,					/* Transparency */
+	FALSE,					/* HighlightDisabled */
+	0,					/* SeparatorBarStyle */
+	FALSE,					/* VerifyPatches */
+	FALSE,					/* FixPatches */
 };
 
 struct MMPrefs CurrentPrefs;
@@ -135,6 +141,12 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_FillCol.R,		SIT_ULONG,	"Fill.R"),
 	DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
 	DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
+
+	DECLARE_ITEM(MMPrefs,mmp_Transparency,		SIT_BOOLEAN,	"Transparency"),
+	DECLARE_ITEM(MMPrefs,mmp_HighlightDisabled,	SIT_BOOLEAN,	"HighlightDisabled"),
+	DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,	SIT_UBYTE,	"SeparatorBarStyle"),
+	DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
+	DECLARE_ITEM(MMPrefs,mmp_FixPatches,		SIT_BOOLEAN,	"FixPatches"),
 };
 
 /******************************************************************************/
@@ -194,7 +206,13 @@ enum
 	GAD_PreferScreenColours,
 	GAD_Delayed,
 	GAD_DrawFrames,
-	GAD_CastShadows
+	GAD_CastShadows,
+	GAD_Sample,
+	GAD_HighlightDisabled,
+	GAD_Transparency,
+	GAD_SeparatorBarStyle,
+	GAD_VerifyPatches,
+	GAD_FixPatches
 };
 
 enum
@@ -1893,12 +1911,27 @@ OpenAll(struct WBStartup *StartupMsg)
 							-1
 						};
 
+						STATIC LONG StyleLabelTable[] =
+						{
+							MSG_SEPARATOR_STYLE1_TXT,
+							MSG_SEPARATOR_STYLE2_TXT,
+							-1
+						};
+
 						LT_New(Handle,
 							LA_Type,	CYCLE_KIND,
 							LA_ID,		GAD_MenuType,
 							LA_LabelID,	MSG_TYPE_GAD,
 							LA_BYTE,	&CurrentPrefs.mmp_MenuType,
 							LACY_LabelTable,TypeLabelTable,
+						TAG_DONE);
+
+						LT_New(Handle,
+							LA_Type,	CYCLE_KIND,
+							LA_ID,		GAD_SeparatorBarStyle,
+							LA_LabelID,	MSG_SEPARATOR_STYLE_GAD,
+							LA_BYTE,	&CurrentPrefs.mmp_SeparatorBarStyle,
+							LACY_LabelTable,StyleLabelTable,
 						TAG_DONE);
 
 						LT_New(Handle,
@@ -1935,6 +1968,20 @@ OpenAll(struct WBStartup *StartupMsg)
 								LA_ID,		GAD_NonBlocking,
 								LA_LabelID,	MSG_NON_BLOCKING_GAD,
 								LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_HighlightDisabled,
+								LA_LabelID,	MSG_HIGHLIGHT_DISABLED_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_HighlightDisabled,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_VerifyPatches,
+								LA_LabelID,	MSG_VERIFY_PATCHES_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_VerifyPatches,
 							TAG_DONE);
 
 							LT_EndGroup(Handle);
@@ -1974,6 +2021,20 @@ OpenAll(struct WBStartup *StartupMsg)
 								LA_ID,		GAD_CastShadows,
 								LA_LabelID,	MSG_CAST_DROP_SHADOWS_GAD,
 								LA_BYTE,	&CurrentPrefs.mmp_CastShadows,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_Transparency,
+								LA_LabelID,	MSG_TRANSPARENCY_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_Transparency,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_FixPatches,
+								LA_LabelID,	MSG_FIX_PATCHES_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_FixPatches,
 							TAG_DONE);
 
 							LT_EndGroup(Handle);
@@ -2052,6 +2113,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							};
 
 							LT_New(Handle,
+								LA_ID,			GAD_Sample,
 								LA_Type,		FRAME_KIND,
 								LAFR_InnerWidth,	SampleMenuWidth,
 								LAFR_InnerHeight,	SampleMenuHeight,
@@ -2614,7 +2676,20 @@ EventLoop(struct WBStartup *StartupMsg)
 							default:
 
 								if(GotPens)
+								{
 									UpdateSlidersAndStuff(&CurrentPrefs,WhichPen,MsgGadget->GadgetID,MsgCode);
+
+									if(MsgClass == IDCMP_GADGETUP && GTLayoutBase->lib_Version >= 47 && V39)
+									{
+										if((GAD_Red <= MsgGadget->GadgetID && MsgGadget->GadgetID <= GAD_Brightness) || MsgGadget->GadgetID == GAD_GradientSlider || MsgGadget->GadgetID == GAD_ColorWheel)
+										{
+											if(GetBitMapAttr(Handle->Window->RPort->BitMap,BMA_DEPTH) > 8)
+												LT_Redraw(Handle,GAD_Sample);
+										}
+									}
+								}
+
+								break;
 						}
 
 						break;

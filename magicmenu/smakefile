@@ -27,8 +27,8 @@ VERSION = 2
 
 GSTFILE =	system_headers.gst
 OPTIMIZE =	optimize opttime optinlocal optschedule optdepth=10 optrdepth=10
-CPU =		040
-#CPU =		any
+#CPU =		040
+CPU =		any
 DEBUG =		line
 CFLAGS =	idlen=64 streq strmerge nostackcheck params=r \
 		idir=include gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
@@ -41,13 +41,13 @@ MAIN_SOURCE = \
 	main.c misc.c \
 	data.c wedge.c windowglyphs.c memory.c menuboxes.c \
 	dointuimenu.c sendintuimessage.c remap.a \
-	storage.c scare.c
+	storage.c
 
 MAIN_OBJS = \
 	main.o stubs.o misc.o \
 	data.o wedge.o windowglyphs.o memory.o menuboxes.o \
 	dointuimenu.o sendintuimessage.o remap.o \
-	storage.o scare.o
+	storage.o
 
 ###############################################################################
 
@@ -184,5 +184,6 @@ freeze: RCS
 #edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h
 #demoimagedata.o : demoimagedata.c
 #storage.o : storage.c storage.c
-#scare.o: scare.c
 magicmenu.h: magicmenu.cd
+main.o : main.c MagicMenu_rev.h
+edit.o : edit.c MagicMenuPrefs_rev.h

@@ -85,7 +85,7 @@ void DrawSmooth3DRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Heig
 void DrawNormRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void GhostRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void CompRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
-void HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover *bgc);
+BOOL HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover *bgc);
 BOOL MoveMouse(LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr);
 VOID SPrintf(STRPTR buffer, STRPTR formatString, ...);
 VOID SetPens(struct RastPort *RPort, ULONG FgPen, ULONG BgPen, ULONG DrawMode);
@@ -104,13 +104,14 @@ VOID FillBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG m
 VOID DeleteBackgroundCover(struct BackgroundCover *bgc);
 struct BackgroundCover *CreateBackgroundCover(struct BitMap *friend, LONG left, LONG top, LONG width, LONG height);
 VOID DrawShadow(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, LONG part);
-VOID HighlightBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
+BOOL HighlightBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
 
 /* data.c */
 
 /* wedge.c */
 VOID RemovePatches(VOID);
 BOOL InstallPatches(VOID);
+BOOL AllPatchesOnTop(VOID);
 
 /* windowglyphs.c */
 VOID WindowGlyphExit(VOID);
@@ -130,7 +131,7 @@ BOOL MemoryInit(VOID);
 /* menuboxes.c */
 VOID __saveds __asm WindowBackfillRoutine(register __a0 struct FatHook *Hook, register __a2 struct RastPort *RPort, register __a1 struct LayerMsg *Bounds);
 VOID LocalPrintIText(struct RastPort *rp, struct IntuiText *itext, WORD left, WORD top);
-VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
+VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width, BOOL UseHighlightImagery);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
 VOID CleanUpMenuSubBox(VOID);
 BOOL DrawHiSubItem(struct MenuItem *Item);
@@ -181,6 +182,3 @@ UWORD SendIntuiMessage(ULONG Class, UWORD *Code, UWORD Qualifier, APTR IAddress,
 /* storage.c */
 LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
 LONG StoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
-
-/* scare.c */
-VOID Scare(VOID);

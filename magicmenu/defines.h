@@ -65,9 +65,6 @@
 #define ASM	__asm
 #define REG(x)	register __##x
 
-#define DB(x)	;
-/*#define DB(x) x */
-
 #define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
 #define MILLION 1000000
