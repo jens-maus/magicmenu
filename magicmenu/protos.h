@@ -16,6 +16,10 @@
 
 ***************************************************************************/
 
+#ifndef SDI_COMPILER_H
+#include <SDI_compiler.h>
+#endif
+
 /* main.c */
 BPTR ClonePath(BPTR StartPath);
 VOID AttachCLI(struct WBStartup *Startup);
@@ -58,28 +62,28 @@ int main(int argc, char **argv);
 BOOL MMCheckParentScreen(struct Window *Window, BOOL PlayItSafe);
 BOOL MMCheckScreen(void);
 BOOL MMCheckWindow(struct Window *Win);
-ULONG __asm __saveds MMOpenWindow(REG (a0 )struct NewWindow *NW);
-ULONG __asm __saveds MMOpenWindowTagList(REG (a0 )struct NewWindow *NW, REG (a1 )struct TagItem *TI);
-ULONG __asm __saveds MMClearMenuStrip(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMSetMenuStrip(REG (a0 )struct Window *W, REG (a1 )struct Menu *MI);
-ULONG __asm __saveds MMResetMenuStrip(REG (a0 )struct Window *W, REG (a1 )struct Menu *MI);
-ULONG __asm __saveds MMCloseWindow(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMActivateWindow(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMWindowToFront(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMWindowToBack(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMModifyIDCMP(REG (a0 )struct Window *window, REG (d0 )ULONG flags);
-ULONG __asm __saveds MMOffMenu(REG (a0 )struct Window *window, REG (d0 )ULONG number);
-ULONG __asm __saveds MMOnMenu(REG (a0 )struct Window *window, REG (d0 )ULONG number);
-struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInfo);
-ULONG __asm __saveds MMRefreshWindowFrame(REG (a0 )struct Window *W);
-ULONG __asm __saveds MMSetWindowTitles(REG (a0 )struct Window *W, REG (a1 )STRPTR WindowTitle, REG (a2 )STRPTR ScreenTitle);
-ULONG __asm __saveds MMOpenScreen(REG (a0 )struct NewScreen *NS);
-ULONG __asm __saveds MMOpenScreenTagList(REG (a0 )struct NewScreen *NS, REG (a1 )struct TagItem *TI);
-ULONG __asm __saveds MMCloseScreen(REG (a0 )struct Screen *S);
-ULONG __asm __saveds MMScreenToFront(REG (a0 )struct Screen *S);
-ULONG __asm __saveds MMScreenToBack(REG (a0 )struct Screen *S);
-ULONG __asm __saveds MMScreenDepth(REG (a0 )struct Screen *S, REG (d0 )ULONG flags, REG (a1 )reserved);
-LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
+ULONG __ASM SAVEDS MMOpenWindow(REG (a0,struct NewWindow *NW));
+ULONG __ASM SAVEDS MMOpenWindowTagList(REG (a0,struct NewWindow *NW), REG (a1, struct TagItem *TI));
+ULONG __ASM SAVEDS MMClearMenuStrip(REG (a0,struct Window *W));
+ULONG __ASM SAVEDS MMSetMenuStrip(REG (a0,struct Window *W), REG (a1,struct Menu *MI));
+ULONG __ASM SAVEDS MMResetMenuStrip(REG (a0,struct Window *W), REG (a1,struct Menu *MI));
+ULONG __ASM SAVEDS MMCloseWindow(REG (a0, struct Window *W));
+ULONG __ASM SAVEDS MMActivateWindow(REG (a0,struct Window *W));
+ULONG __ASM SAVEDS MMWindowToFront(REG (a0,struct Window *W));
+ULONG __ASM SAVEDS MMWindowToBack(REG (a0,struct Window *W));
+ULONG __ASM SAVEDS MMModifyIDCMP(REG (a0,struct Window *window), REG (d0,ULONG flags));
+ULONG __ASM SAVEDS MMOffMenu(REG (a0,struct Window *window), REG (d0,ULONG number));
+ULONG __ASM SAVEDS MMOnMenu(REG (a0,struct Window *window), REG (d0,ULONG number));
+struct RastPort *__ASM SAVEDS MMObtainGIRPort(REG (a0,struct GadgetInfo *GInfo));
+ULONG __ASM SAVEDS MMRefreshWindowFrame(REG (a0,struct Window *W));
+ULONG __ASM SAVEDS MMSetWindowTitles(REG (a0,struct Window *W), REG (a1,STRPTR WindowTitle), REG (a2,STRPTR ScreenTitle));
+ULONG __ASM SAVEDS MMOpenScreen(REG (a0,struct NewScreen *NS));
+ULONG __ASM SAVEDS MMOpenScreenTagList(REG (a0,struct NewScreen *NS), REG (a1,struct TagItem *TI));
+ULONG __ASM SAVEDS MMCloseScreen(REG (a0,struct Screen *S));
+ULONG __ASM SAVEDS MMScreenToFront(REG (a0,struct Screen *S));
+ULONG __ASM SAVEDS MMScreenToBack(REG (a0,struct Screen *S));
+ULONG __ASM SAVEDS MMScreenDepth(REG (a0,struct Screen *S), REG (d0,ULONG flags), REG (a1,ULONG reserved));
+LONG __ASM SAVEDS MMLendMenus(REG (a0,struct Window *FromWindow), REG (a1,struct Window *ToWindow));
 VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
 VOID MakeRemappedImage(BOOL *good, struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
@@ -148,7 +152,9 @@ VOID MemoryExit(VOID);
 BOOL MemoryInit(VOID);
 
 /* menuboxes.c */
-VOID __saveds __asm WindowBackfillRoutine(register __a0 struct FatHook *Hook, register __a2 struct RastPort *RPort, register __a1 struct LayerMsg *Bounds);
+#ifndef __STORMGCC__ /* LayerMsg declared inside parameter list */
+VOID SAVEDS __ASM WindowBackfillRoutine(REG(a0, struct FatHook *Hook), REG(a2, struct RastPort *RPort), REG(a1, struct LayerMsg *Bounds));
+#endif
 VOID LocalPrintIText(struct RastPort *rp, struct IntuiText *itext, WORD left, WORD top);
 VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
@@ -199,5 +205,5 @@ UWORD SendIntuiMessage(ULONG Class, UWORD *Code, UWORD Qualifier, APTR IAddress,
 /* remap.a */
 
 /* storage.c */
-LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr, LONG *NumItemsPtr);
-LONG StoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
+//LONG RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG NumItems,APTR DataPtr,LONG * NumItemsPtr);
+//LONG StoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG NumItems,APTR DataPtr);

@@ -22,6 +22,21 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+#ifdef __STORMGCC__
+#undef ReadPixelArray
+#undef WritePixelArray
+#undef BltBitMap
+#undef CreateUpfrontHookLayer
+#endif
+
+#ifndef max
+#define max(a,b)	((a)>(b)?(a):(b))
+#endif
+
+#ifndef min
+#define min(a,b)	((a)<(b)?(a):(b))
+#endif
+
 /*****************************************************************************************/
 
 #define EXTRACT_BITS(v,offset,width) (((v) >> (offset)) & ((1 << width)-1))
@@ -37,29 +52,29 @@
 
 /*****************************************************************************************/
 
-ULONG __asm CallOpenWindow (REG(a0) struct NewWindow *NW, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallOpenWindowTagList (REG(a0) struct NewWindow *NW, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallClearMenuStrip (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallSetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallResetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallActivateWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallWindowToFront (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallWindowToBack (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallMoveWindowInFrontOf (REG(a0) struct Window *Window, REG(a1) struct Window *Behind, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallOffMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallOnMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG(a6) struct IntuitionBase *IntuitionBase);
-LONG __asm CallLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallRefreshWindowFrame (REG(a0) struct Window *, REG(a6) struct IntuitionBase *);
-ULONG __asm CallSetWindowTitles (REG(a0) struct Window *, REG(a1) STRPTR, REG(a2) STRPTR, REG(a6) struct IntuitionBase *);
-struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallOpenScreen (REG(a0) struct NewScreen *NS, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallOpenScreenTagList (REG(a0) struct NewScreen *NS, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallCloseScreen (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallScreenToFront (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallScreenToBack (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
-ULONG __asm CallScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __ASM CallOpenWindow (REG(a0, struct NewWindow *NW), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallOpenWindowTagList (REG(a0, struct NewWindow *NW), REG(a1, struct TagItem *TI), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallClearMenuStrip (REG(a0, struct Window *W), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallSetMenuStrip (REG(a0, struct Window *W), REG(a1, struct Menu *MS), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallResetMenuStrip (REG(a0, struct Window *W), REG(a1, struct Menu *MS), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallCloseWindow (REG(a0, struct Window *W), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallActivateWindow (REG(a0, struct Window *W), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallWindowToFront (REG(a0, struct Window *W), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallWindowToBack (REG(a0, struct Window *W), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallMoveWindowInFrontOf (REG(a0, struct Window *Window), REG(a1, struct Window *Behind), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallModifyIDCMP (REG(a0, struct Window *window), REG(d0, ULONG flags), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallOffMenu (REG(a0, struct Window *window), REG(d0, ULONG number), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallOnMenu (REG(a0, struct Window *window), REG(d0, ULONG number), REG(a6, struct IntuitionBase *IntuitionBase));
+LONG __ASM CallLendMenus (REG(a0, struct Window *FromWindow),REG(a1, struct Window *ToWindow), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallRefreshWindowFrame (REG(a0, struct Window *), REG(a6, struct IntuitionBase *));
+ULONG __ASM CallSetWindowTitles (REG(a0, struct Window *), REG(a1, STRPTR), REG(a2, STRPTR), REG(a6, struct IntuitionBase *));
+struct RastPort *__ASM CallObtainGIRPort (REG(a0, struct GadgetInfo *GInfo), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallOpenScreen (REG(a0, struct NewScreen *NS), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallOpenScreenTagList (REG(a0, struct NewScreen *NS), REG(a1, struct TagItem *TI), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallCloseScreen (REG(a0, struct Screen *S), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallScreenToFront (REG(a0, struct Screen *S), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallScreenToBack (REG(a0, struct Screen *S), REG(a6, struct IntuitionBase *IntuitionBase));
+ULONG __ASM CallScreenDepth (REG(a0, struct Screen *S), REG(d0, ULONG flags), REG(a1, APTR reserved), REG(a6, struct IntuitionBase *IntuitionBase));
 
 /*****************************************************************************************/
 
@@ -122,8 +137,8 @@ MMCheckWindow (struct Window * Win)
 
 /*****************************************************************************************/
 
-ULONG __asm __saveds
-MMOpenWindow (REG(a0) struct NewWindow * NW)
+ULONG __ASM SAVEDS
+MMOpenWindow (REG(a0, struct NewWindow * NW))
 {
 	ULONG Win;
 
@@ -147,10 +162,10 @@ MMOpenWindow (REG(a0) struct NewWindow * NW)
 	return (Win);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMOpenWindowTagList (
-	REG(a0) struct NewWindow * NW,
-	REG(a1) struct TagItem * TI)
+	REG(a0, struct NewWindow * NW),
+	REG(a1, struct TagItem * TI))
 {
 	ULONG Win;
 
@@ -173,8 +188,8 @@ MMOpenWindowTagList (
 	return (Win);
 }
 
-ULONG __asm __saveds
-MMClearMenuStrip (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMClearMenuStrip (REG(a0, struct Window * W))
 {
 	ULONG Res;
 
@@ -191,10 +206,10 @@ MMClearMenuStrip (REG(a0) struct Window * W)
 	}
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMSetMenuStrip (
-	REG(a0) struct Window * W,
-	REG(a1) struct Menu * MI)
+	REG(a0, struct Window * W),
+	REG(a1, struct Menu * MI))
 {
 	ULONG Res;
 
@@ -214,10 +229,10 @@ MMSetMenuStrip (
 	}
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMResetMenuStrip (
-	REG(a0) struct Window * W,
-	REG(a1) struct Menu * MI)
+	REG(a0, struct Window * W),
+	REG(a1, struct Menu * MI))
 {
 	ULONG Res;
 
@@ -235,8 +250,8 @@ MMResetMenuStrip (
 	}
 }
 
-ULONG __asm __saveds
-MMCloseWindow (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMCloseWindow (REG(a0, struct Window * W))
 {
 	ULONG Res;
 	BOOL CallSelf;
@@ -268,8 +283,8 @@ MMCloseWindow (REG(a0) struct Window * W)
 	return (Res);
 }
 
-ULONG __asm __saveds
-MMActivateWindow (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMActivateWindow (REG(a0, struct Window * W))
 {
 	ULONG Result;
 
@@ -284,8 +299,8 @@ MMActivateWindow (REG(a0) struct Window * W)
 		return (FALSE);
 }
 
-ULONG __asm __saveds
-MMWindowToFront (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMWindowToFront (REG(a0, struct Window * W))
 {
 	ULONG Result;
 
@@ -305,8 +320,8 @@ MMWindowToFront (REG(a0) struct Window * W)
 	return (Result);
 }
 
-ULONG __asm __saveds
-MMWindowToBack (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMWindowToBack (REG(a0, struct Window * W))
 {
 	ULONG Result;
 
@@ -323,10 +338,10 @@ MMWindowToBack (REG(a0) struct Window * W)
 	return (Result);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMModifyIDCMP (
-	REG(a0) struct Window * window,
-	REG(d0) ULONG flags)
+	REG(a0, struct Window * window),
+	REG(d0, ULONG flags))
 {
 	ULONG Result;
 
@@ -344,10 +359,10 @@ MMModifyIDCMP (
 	return (Result);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMOffMenu (
-	REG(a0) struct Window * window,
-	REG(d0) ULONG number)
+	REG(a0, struct Window * window),
+	REG(d0, ULONG number))
 {
 	ULONG Result;
 
@@ -365,10 +380,10 @@ MMOffMenu (
 	return (Result);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMOnMenu (
-	REG(a0) struct Window * window,
-	REG(d0) ULONG number)
+	REG(a0, struct Window * window),
+	REG(d0, ULONG number))
 {
 	ULONG Result;
 
@@ -385,8 +400,8 @@ MMOnMenu (
 	return (Result);
 }
 
-struct RastPort *__asm __saveds
-MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
+struct RastPort *__ASM SAVEDS
+MMObtainGIRPort (REG(a0, struct GadgetInfo *GInfo))
 {
 	D(("|%s| in ObtainGIRPort patch", FindTask (NULL)->tc_Node.ln_Name));
 	if (!AktPrefs.mmp_NonBlocking && GInfo)  /* GInfo kann tatsächlich (!) NULL sein. */
@@ -417,8 +432,8 @@ MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
 	return (CallObtainGIRPort (GInfo, IntuitionBase));
 }
 
-ULONG __asm __saveds
-MMRefreshWindowFrame (REG(a0) struct Window * W)
+ULONG __ASM SAVEDS
+MMRefreshWindowFrame (REG(a0, struct Window * W))
 {
 	ULONG Result;
 
@@ -438,11 +453,11 @@ MMRefreshWindowFrame (REG(a0) struct Window * W)
 	return (Result);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMSetWindowTitles (
-	REG(a0) struct Window * W,
-	REG(a1) STRPTR WindowTitle,
-	REG(a2) STRPTR ScreenTitle)
+	REG(a0, struct Window * W),
+	REG(a1, STRPTR WindowTitle),
+	REG(a2, STRPTR ScreenTitle))
 {
 	ULONG Result;
 
@@ -463,8 +478,8 @@ MMSetWindowTitles (
 	return (Result);
 }
 
-ULONG __asm __saveds
-MMOpenScreen (REG(a0) struct NewScreen *NS)
+ULONG __ASM SAVEDS
+MMOpenScreen (REG(a0, struct NewScreen *NS))
 {
 	ULONG Scr;
 
@@ -480,10 +495,10 @@ MMOpenScreen (REG(a0) struct NewScreen *NS)
 	return(Scr);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMOpenScreenTagList (
-	REG(a0) struct NewScreen *NS,
-	REG(a1) struct TagItem *TI)
+	REG(a0, struct NewScreen *NS),
+	REG(a1, struct TagItem *TI))
 {
 	ULONG Scr;
 
@@ -499,8 +514,8 @@ MMOpenScreenTagList (
 	return(Scr);
 }
 
-ULONG __asm __saveds
-MMCloseScreen (REG(a0) struct Screen *S)
+ULONG __ASM SAVEDS
+MMCloseScreen (REG(a0, struct Screen *S))
 {
 	ULONG rc;
 
@@ -516,8 +531,8 @@ MMCloseScreen (REG(a0) struct Screen *S)
 	return(rc);
 }
 
-ULONG __asm __saveds
-MMScreenToFront (REG(a0) struct Screen *S)
+ULONG __ASM SAVEDS
+MMScreenToFront (REG(a0, struct Screen *S))
 {
 	ULONG rc;
 
@@ -533,8 +548,8 @@ MMScreenToFront (REG(a0) struct Screen *S)
 	return(rc);
 }
 
-ULONG __asm __saveds
-MMScreenToBack (REG(a0) struct Screen *S)
+ULONG __ASM SAVEDS
+MMScreenToBack (REG(a0, struct Screen *S))
 {
 	ULONG rc;
 
@@ -550,11 +565,11 @@ MMScreenToBack (REG(a0) struct Screen *S)
 	return(rc);
 }
 
-ULONG __asm __saveds
+ULONG __ASM SAVEDS
 MMScreenDepth (
-	REG(a0) struct Screen *S,
-	REG(d0) ULONG flags,
-	REG(a1) reserved)
+	REG(a0, struct Screen *S),
+	REG(d0, ULONG flags),
+	REG(a1, ULONG reserved))
 {
 	ULONG rc;
 
@@ -570,10 +585,10 @@ MMScreenDepth (
 	return(rc);
 }
 
-LONG __asm __saveds
+LONG __ASM SAVEDS
 MMLendMenus (
-	REG(a0) struct Window *FromWindow,
-	REG(a1) struct Window *ToWindow)
+	REG(a0, struct Window *FromWindow),
+	REG(a1, struct Window *ToWindow))
 {
 	D(("|%s| in LendMenus patch", FindTask (NULL)->tc_Node.ln_Name));
 
@@ -616,7 +631,7 @@ CreateBitMapFromImage (struct Image * Image, struct BitMap * BitMap)
 VOID
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
 {
-	extern VOID __asm RemapBitMap(REG(a0) struct BitMap *srcbm,REG(a1) struct BitMap *destbm,REG(a2) UBYTE *table,REG(d0) LONG width);
+	extern VOID __ASM RemapBitMap(REG(a0, struct BitMap *srcbm),REG(a1, struct BitMap *destbm),REG(a2, UBYTE *table),REG(d0, LONG width));
 
 	WaitBlit();
 	RemapBitMap(Src,Dst,Mapping,Width);
@@ -1346,7 +1361,7 @@ DrawSmooth3DRect (
 			SetFgPen (rp, MenStdGrey2);
 		else
 			SetFgPen (rp, MenStdGrey0);
-			
+
 		DrawLinePairs(rp, 3,
 			x+Width-3,y+1,
 			x+1,y+1,

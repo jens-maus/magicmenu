@@ -26,20 +26,21 @@
 
 #include <string.h>
 
+#include <SDI_compiler.h>
+
 extern struct ExecBase *SysBase;
 
-#define REG(x)	register __##x
 
 	/* pools.lib */
 
-APTR __asm AsmCreatePool (REG (d0) ULONG MemFlags, REG (d1) ULONG PuddleSize, REG (d2) ULONG ThreshSize, REG (a6)
-			  struct ExecBase *ExecBase);
-VOID __asm AsmDeletePool (REG (a0) APTR PoolHeader, REG (a6)
-		       struct ExecBase *ExecBase);
-APTR __asm AsmAllocPooled (REG (a0) APTR PoolHeader, REG (d0) ULONG Size, REG (a6)
-			struct ExecBase *ExecBase);
-VOID __asm AsmFreePooled (REG (a0) APTR PoolHeader, REG (a1) APTR Memory, REG (d0) ULONG MemSize, REG (a6)
-		       struct ExecBase *ExecBase);
+APTR __ASM AsmCreatePool (REG (d0, ULONG MemFlags), REG (d1, ULONG PuddleSize), REG (d2, ULONG ThreshSize), REG (a6,
+			  struct ExecBase *ExecBase));
+VOID __ASM AsmDeletePool (REG (a0, APTR PoolHeader), REG (a6,
+		       struct ExecBase *ExecBase));
+APTR __ASM AsmAllocPooled (REG (a0, APTR PoolHeader), REG (d0, ULONG Size), REG (a6,
+			struct ExecBase *ExecBase));
+VOID __ASM AsmFreePooled (REG (a0, APTR PoolHeader), REG (a1, APTR Memory), REG (d0, ULONG MemSize), REG (a6,
+		       struct ExecBase *ExecBase));
 
 STATIC struct SignalSemaphore MemorySemaphore;
 STATIC APTR MemoryPool;

@@ -22,12 +22,16 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+#ifdef __STORMGCC__
+#define __far
+#endif
+
 /****************************************************************************/
 
-STATIC APTR ASM __saveds LocalSetFunction(REG(a1) struct Library * library,
-                                 REG(a0) WORD funcOffset,
-                                 REG(d0) APTR newFunction,
-                                 REG(a6) struct Library * SysBase);
+STATIC APTR __ASM SAVEDS LocalSetFunction(REG(a1, struct Library * library),
+                                 REG(a0, WORD funcOffset),
+                                 REG(d0, APTR newFunction),
+                                 REG(a6, struct Library * SysBase));
 
 /****************************************************************************/
 
@@ -148,14 +152,14 @@ STATIC PatchSemaphore *Patches;
 
 /****************************************************************************/
 
-APTR ASM CallSetFunction(REG(a1) struct Library * library,REG(a0) LONG funcOffset,REG(d0) APTR newFunction,REG(a6) struct Library * SysBase);
+APTR __ASM CallSetFunction(REG(a1, struct Library * library),REG(a0, LONG funcOffset),REG(d0,APTR newFunction),REG(a6,struct Library * SysBase));
 
-STATIC APTR ASM __saveds
+STATIC APTR __ASM SAVEDS
 LocalSetFunction(
-	REG(a1) struct Library * library,
-	REG(a0) WORD funcOffset,
-	REG(d0) APTR newFunction,
-	REG(a6) struct Library * SysBase)
+	REG(a1, struct Library * library),
+	REG(a0, WORD funcOffset),
+	REG(d0, APTR newFunction),
+	REG(a6, struct Library * SysBase))
 {
 	LibraryVector * lv = (LibraryVector *)(((ULONG)library) + funcOffset);
 	Wedge * w = (Wedge *)lv->Location;

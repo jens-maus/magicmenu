@@ -85,7 +85,9 @@ ofs_dadr_add		equ	ofs_dst_offset+4
 st_depth		equ	ofs_dadr_add+4
 
 	xdef	RemapBitMap
+	xdef	_RemapBitMap
 
+_RemapBitMap:
 RemapBitMap:
 	movem.l	d2-d7/a2-a6,-(a7)
 	sub.l	#st_depth,a7			; adjust for temp vars

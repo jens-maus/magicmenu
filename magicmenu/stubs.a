@@ -20,12 +20,19 @@
 
 PATCH	macro
 
+	xref	_Old\1
 	xref	Old\1
 	xdef	Call\1
+	xdef	_Call\1
 
+_Call\1:
 Call\1:
 	movem.l a0-a6/d1-d7,-(sp)
+ IFD STORM
+	move.l	_Old\1(a4),a4
+ ELSE
 	move.l	Old\1(a4),a4
+ ENDIF
 	jsr	(a4)
 	movem.l (sp)+,a0-a6/d1-d7
 	rts

@@ -50,19 +50,26 @@
   #define REGARGS
   #define SAVEDS
   #define INLINE inline
-#elif defined(__VBCC__)
+#elif defined(__VBCC__) 
   #define STDARGS
   #define STACKEXT
   #define REGARGS
   #define INLINE
   #define REG(reg,arg) __reg(#reg) arg
 #elif defined(__STORM__)
+#if defined(__STORMGCC__)
+  #define REG(reg,arg) arg __asm(#reg)
+  #define LREG(reg,arg) register REG(reg,arg)
+  #define __ASM
+#else
   #define STDARGS
   #define STACKEXT
   #define REGARGS
   #define INLINE inline
+#endif  
 #elif defined(__SASC)
   #define ASM(arg) arg __asm
+  #define __ASM __asm
 #elif defined(__GNUC__)
   #define REG(reg,arg) arg __asm(#reg)
   #define LREG(reg,arg) register REG(reg,arg)

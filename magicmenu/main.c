@@ -2395,8 +2395,15 @@ ErrorPrc (char *ErrTxt)
 
 	exit (RETURN_FAIL);
 }
+#ifdef __STORMGCC__
+void SAVEDS
+wbmain(struct WBStartup *wbmsg)
+{
+	main(0L,(char**)wbmsg);
+}
+#endif
 
-int
+int SAVEDS
 main (int argc, char **argv)
 {
 	BOOL Ok;

@@ -46,6 +46,10 @@ long __stack = 16000;
 #include "storage.h"
 #endif	/* _STORAGE_H */
 
+#ifndef min
+#define min(a,b)	((a)>(b)?(b):(a))
+#endif
+
 /******************************************************************************/
 
 #include "prefs.h"
@@ -175,11 +179,6 @@ enum
 };
 
 #define MAX_FILENAME_LENGTH 256
-
-#define REG(x) register __##x
-#define ASM __asm
-#define SAVE_DS __saveds
-#define STACK_ARGS __stdargs
 
 /******************************************************************************/
 
@@ -328,6 +327,7 @@ extern struct Image	 Demo_11_Image;
 
 /******************************************************************************/
 
+struct RastPort		 SampleRPort;
 struct BitMap		*SampleMenu;
 LONG			 SampleMenuWidth,SampleMenuHeight;
 
@@ -518,7 +518,7 @@ GetString(ULONG ID)
 
 /******************************************************************************/
 
-LONG SAVE_DS STACK_ARGS
+LONG SAVEDS STDARGS
 PrecisionDispFunc(struct Gadget *UnusedGadget,WORD Offset)
 {
 	LONG Which;
@@ -1027,16 +1027,16 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 
 /******************************************************************************/
 
-STRPTR ASM SAVE_DS
-LocaleHookFunc(REG(a0) struct Hook *UnusedHook,REG(a2) APTR Unused,REG(a1) LONG ID)
+STRPTR  SAVEDS __ASM
+LocaleHookFunc(REG(a0,struct Hook *UnusedHook),REG(a2, APTR Unused),REG(a1, LONG ID))
 {
 	return(GetString(ID));
 }
 
 /******************************************************************************/
 
-LONG ASM SAVE_DS
-SampleRefreshHookFunc(REG(a0) struct Hook *UnusedHook,REG(a2) LayoutHandle *Handle,REG(a1) RefreshMsg *Message)
+LONG  SAVEDS __ASM
+SampleRefreshHookFunc(REG(a0, struct Hook *UnusedHook),REG(a2, LayoutHandle *Handle),REG(a1, RefreshMsg *Message))
 {
 	BltBitMapRastPort(SampleMenu,0,0,Handle->Window->RPort,Message->Left,Message->Top,Message->Width,Message->Height,ABC | ABNC | NABC | NABNC);
 	return(0);
@@ -1236,7 +1236,7 @@ CreateBitMapFromImage(struct Image *Image,struct BitMap *BitMap)
 VOID
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
 {
-	extern VOID __asm RemapBitMap(REG(a0) struct BitMap *srcbm,REG(a1) struct BitMap *destbm,REG(a2) UBYTE *table,REG(d0) LONG width);
+	extern VOID __ASM RemapBitMap(REG(a0, struct BitMap *srcbm),REG(a1, struct BitMap *destbm),REG(a2, UBYTE *table),REG(d0, LONG width));
 
 	WaitBlit();
 	RemapBitMap(Src,Dst,Mapping,Width);
@@ -1753,6 +1753,9 @@ OpenAll(struct WBStartup *StartupMsg)
 				CreateBitMapFromImage(WhichImage,&WhichBitMap);
 
 				RecolourBitMap(&WhichBitMap,SampleMenu,Mapping,MaxDepth,SampleMenuWidth,SampleMenuHeight);
+
+				InitRastPort( &SampleRPort );
+				SampleRPort.BitMap = SampleMenu;
 			}
 			else
 				GotPens = FALSE;
@@ -2433,7 +2436,7 @@ OpenAll(struct WBStartup *StartupMsg)
 					LAMN_MutualExclude,	1,
 					LAMN_CheckIt,	TRUE,
 					LAMN_Checked,	!RGB_Mode,
-
+/*
 #ifdef DEMO_MENU
 		LAMN_TitleText, 		"Demo",
 			LAMN_ItemText,		"Checkmark",
@@ -2450,7 +2453,7 @@ OpenAll(struct WBStartup *StartupMsg)
 			LAMN_ItemText,		"Ghosted Sub",
 				LAMN_Disabled,	TRUE,
 				LAMN_SubText,		"Submenu Item",
-#endif	/* DEMO_MENU */
+#endif*/	/* DEMO_MENU */
 	TAG_DONE)))
 		return("menu");
 
@@ -2721,9 +2724,19 @@ EventLoop(struct WBStartup *StartupMsg)
 
 						if(MsgCode == SELECTDOWN && GotPens)
 						{
-							LONG Pen;
+							LONG Pen, left, top, width, height;
 
-							if(Pen = ReadPixel(Handle->Window->RPort,MsgX,MsgY))
+							LT_GetAttributes( Handle, GAD_Sample,
+								LA_Left, &left,
+								LA_Top, &top,
+								LA_Width, &width,
+								LA_Height, &height,
+								TAG_DONE );
+
+							left += ( width - SampleMenuWidth ) / 2;
+							top += ( height - SampleMenuHeight ) / 2;
+
+							if(Pen = ReadPixel(&SampleRPort,MsgX-left,MsgY-top))
 							{
 								LONG i;
 
@@ -2902,6 +2915,14 @@ EventLoop(struct WBStartup *StartupMsg)
 }
 
 /******************************************************************************/
+
+#ifdef __STORMGCC__
+void
+wbmain(struct WBStartup *wbmsg)
+{
+	main( 0L, (char **)wbmsg );
+}
+#endif
 
 int
 main(int argc,char **argv)

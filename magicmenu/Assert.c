@@ -12,12 +12,12 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
@@ -34,6 +34,8 @@
 #include <pragmas/dos_pragmas.h>
 
 #include <string.h>
+
+#include <SDI_compiler.h>
 
 extern struct Library * SysBase;
 
@@ -145,25 +147,25 @@ _SHOWVALUE(
 		switch(size)
 		{
 			case 1:
-	
+
 				fmt = "%s:%ld:%s = %ld, 0x%02lx";
 				break;
-	
+
 			case 2:
-	
+
 				fmt = "%s:%ld:%s = %ld, 0x%04lx";
 				break;
-	
+
 			default:
-	
+
 				fmt = "%s:%ld:%s = %ld, 0x%08lx";
 				break;
 		}
-	
+
 		_INDENT();
-	
+
 		kprintf(fmt,file,line,name,value,value);
-	
+
 		if(size == 1 && value < 256)
 		{
 			if(value < ' ' || (value >= 127 && value < 160))
@@ -171,7 +173,7 @@ _SHOWVALUE(
 			else
 				kprintf(", '%lc'",value);
 		}
-	
+
 		kprintf("\n");
 	}
 }
@@ -221,8 +223,8 @@ _DPRINTF_HEADER(
 	}
 }
 
-static void __asm
-putch(register __d0 c)
+static void __ASM
+putch(REG(d0, UBYTE c))
 {
 	if(c != '\0')
 		kputc(c);
@@ -305,7 +307,7 @@ _ASSERT(
 	{
 		STATIC BOOL ScrollMode	= FALSE;
 		STATIC BOOL BatchMode	= FALSE;
-	
+
 		if(BatchMode == FALSE)
 		{
 			if(x == 0)
@@ -315,33 +317,33 @@ _ASSERT(
 				        line,
 				        xs,
 				        function);
-	
+
 				if(ScrollMode == FALSE)
 				{
 					ULONG Signals;
-	
+
 					SetSignal(0,SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E);
-	
+
 					kprintf(" ^C to continue, ^D to enter scroll mode, ^E to enter batch mode\r");
-	
+
 					Signals = Wait(SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E);
-	
+
 					if(Signals & SIGBREAKF_CTRL_D)
 					{
 						ScrollMode = TRUE;
-	
+
 						kprintf("Ok, entering scroll mode\033[K\n");
 					}
 					else if (Signals & SIGBREAKF_CTRL_E)
 					{
 						BatchMode = TRUE;
-	
+
 						kprintf("Ok, entering batch mode\033[K\n");
 					}
 					else
 					{
 						/* Continue */
-	
+
 						kprintf("\033[K\r");
 					}
 				}

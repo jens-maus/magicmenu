@@ -1,3 +1,8 @@
+2001-10-16  Stephan Rupprecht <mail@stephan-rupprecht.de>
+
+  * adapted the whole thing to SDI_compiler.h and StormC4.
+  * MagicMenuPrefs: improved hi-/truecolor support a bit.
+
 2001-10-14  Jens Langner <Jens.Langner@htw-dresden.de>
 
   * added new source header to every sourcefile and changed

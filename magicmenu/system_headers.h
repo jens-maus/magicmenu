@@ -85,7 +85,11 @@
 #include <pragmas/input_pragmas.h>
 #include <pragmas/timer_pragmas.h>
 #include <pragmas/icon_pragmas.h>
+#ifdef __STORM__ 
+#include <pragmas/exec_pragmas.h>
+#else
 #include <pragmas/exec_sysbase_pragmas.h>
+#endif
 #include <pragmas/dos_pragmas.h>
 #include <pragmas/asl_pragmas.h>
 #include <pragmas/graphics_pragmas.h>
@@ -109,5 +113,7 @@
 #include "cybergraphx/cybergraphics.h"
 #include "clib/cybergraphics_protos.h"
 #include "pragmas/cybergraphics_pragmas.h"
+
+#include "SDI_compiler.h"
 
 #endif	/* _SYSTEM_HEADERS_H */

@@ -22,6 +22,15 @@
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+#ifdef __STORMGCC__
+#undef BltBitMap
+#undef BltMaskBitMapRastPort
+#endif
+
+#ifndef min
+#define min(a,b)	((a)<(b)?(a):(b))
+#endif
+
 /******************************************************************************/
 
 STATIC BOOL MenuNotDrawn;
@@ -45,11 +54,11 @@ struct FatHook
 	struct BitMap *		BitMap;
 };
 
-VOID __saveds __asm
+VOID SAVEDS __ASM
 WindowBackfillRoutine(
-	register __a0 struct FatHook *	Hook,
-	register __a2 struct RastPort *	RPort,
-	register __a1 struct LayerMsg *	Bounds)
+	REG(a0, struct FatHook *	Hook),
+	REG(a2, struct RastPort *	RPort),
+	REG(a1, struct LayerMsg *	Bounds))
 {
 	LONG FromX,FromY;
 
@@ -301,7 +310,13 @@ AllocateMenuColours (struct ColorMap *cmap)
 
 	for (i = 0; i < NUM_MENU_PENS; i++)
 	{
-		if ((MenuPens[i] = AllocateColour(cmap, *colour++, *colour++, *colour++)) == -1)
+		ULONG	r, g, b;
+		/* Stephan: StormGCC/gnuc fix */
+		r = *colour++;
+		g = *colour++;
+		b = *colour++;
+
+		if ((MenuPens[i] = AllocateColour(cmap, r,g,b)) == -1)
 		{
 			FreeMenuColours (cmap);
 			return (FALSE);
@@ -376,16 +391,16 @@ LocalDrawImage(
 		{
 			SHOWMSG("has magic");
 			SHOWVALUE(image->PlanePick);
-	
+
 			if(image->PlanePick != 0)
 			{
 				PLANEPTR mask;
-		
+
 				mask = (PLANEPTR)image[1].ImageData;
 				if(mask != NULL)
 				{
 					struct BitMap bm;
-	
+
 					CreateBitMapFromImage(image,&bm);
 					BltMaskBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,ABC|ABNC|ANBC,mask);
 				}
@@ -396,24 +411,24 @@ LocalDrawImage(
 			if(image->PlanePick == 0)
 			{
 				LONG pen,mode;
-		
+
 				pen		= GetDrawMode(rp);
 				mode	= GetFgPen(rp);
-		
+
 				SetFgPen(rp,image->PlaneOnOff);
 				SetDrawMode(rp,JAM1);
-		
+
 				RectFill(rp,x,y,x+image->Width-1,y+image->Height);
-		
+
 				SetFgPen(rp,pen);
 				SetDrawMode(rp,mode);
 			}
 			else
 			{
 				struct BitMap bm;
-		
+
 				CreateBitMapFromImage(image,&bm);
-		
+
 				BltBitMapRastPort(&bm,0,0,rp,x,y,image->Width,image->Height,MINTERM_COPY);
 			}
 		}
