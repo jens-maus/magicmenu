@@ -1,0 +1,14 @@
+VERSION		EQU	2
+REVISION	EQU	7
+DATE	MACRO
+		dc.b	'28.10.96'
+	ENDM
+VERS	MACRO
+		dc.b	'MagicMenu 2.7'
+	ENDM
+VSTRING	MACRO
+		dc.b	'MagicMenu 2.7 (28.10.96)',13,10,0
+	ENDM
+VERSTAG	MACRO
+		dc.b	0,'$VER: MagicMenu 2.7 (28.10.96)',0
+	ENDM

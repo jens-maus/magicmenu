@@ -20,6 +20,55 @@ STRPTR VersTag = "\0$VER: " VERS " (" DATE ") Generic 68k version\r\n";
 #define  PROCESSOR   "68000"
 #endif // _M68030
 
+/******************************************************************************/
+
+#define CATCOMP_ARRAY
+#include "magicmenu.h"
+
+STRPTR
+GetString(ULONG ID)
+{
+	STRPTR Builtin;
+
+	if(ID < NUM_ELEMENTS(CatCompArray) && CatCompArray[ID].cca_ID == ID)
+		Builtin = CatCompArray[ID].cca_Str;
+	else
+	{
+		LONG Left,Mid,Right;
+
+		Left	= 0;
+		Right	= NUM_ELEMENTS(CatCompArray) - 1;
+
+		do
+		{
+			Mid = (Left + Right) / 2;
+
+			if(ID < CatCompArray[Mid].cca_ID)
+				Right	= Mid - 1;
+			else
+				Left	= Mid + 1;
+		}
+		while(ID != CatCompArray[Mid].cca_ID && Left <= Right);
+
+		if(ID == CatCompArray[Mid].cca_ID)
+			Builtin = CatCompArray[Mid].cca_Str;
+		else
+			Builtin = "";
+	}
+
+	if(Catalog)
+	{
+		STRPTR String = GetCatalogStr(Catalog,ID,Builtin);
+
+		if(String[0])
+			return(String);
+	}
+
+	return(Builtin);
+}
+
+/******************************************************************************/
+
 VOID
 Activate (VOID)
 {
@@ -1724,12 +1773,12 @@ ProcessCommodity (VOID)
 VOID
 StopPrefs (VOID)
 {
-  struct Task *Task;
+  struct MsgPort *SomePort;
 
   Forbid ();
 
-  if (Task = FindTask ("MMPrefs"))
-    Signal (Task, SIGBREAKF_CTRL_C);
+  if (SomePort = FindPort("« MagicMenu Preferences »"))
+    Signal (SomePort->mp_SigTask, SIGBREAKF_CTRL_C);
 
   Permit ();
 }
@@ -1737,21 +1786,17 @@ StopPrefs (VOID)
 VOID
 StartPrefs (VOID)
 {
-  UBYTE PathName[MAX_FILENAME_LENGTH];
   BPTR In, Out;
-
-  strcpy (PathName, ConfigPath);
-  AddPart (PathName, "MMPrefs", sizeof (PathName));
 
   if (In = Open ("NIL:", MODE_NEWFILE))
   {
     if (Out = Open ("NIL:", MODE_NEWFILE))
     {
-      SystemTags (PathName,
+      SystemTags ("MagicMenuPrefs",
 		  SYS_Input, In,
 		  SYS_Output, Out,
 		  SYS_Asynch, TRUE,
-		  NP_Name, "MMPrefs",
+		  NP_Name, "MagicMenuPrefs",
 		  TAG_DONE);
     }
     else
@@ -1802,7 +1847,7 @@ CheckArguments (VOID)
   UBYTE FName[MAX_FILENAME_LENGTH];
   struct DiskObject *DiskObj;
 
-  strcpy (FName, "progdir:");
+  strcpy (FName, "PROGDIR:");
   strcat (FName, ProgName);
 
   if (IconBase = OpenLibrary ("icon.library", 37))
@@ -1837,7 +1882,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
   if (!(FH = Open (ConfigFile, MODE_OLDFILE)))
   {
     if (Report)
-      SimpleRequest (NULL, "MagicMenu Error", "Couldn't open configuration file!", "Ok", NULL, 0, 0);
+      SimpleRequest (NULL, "MagicMenu", GetString(MSG_COULD_NOT_OPEN_TXT), "Ok", NULL, 0, 0);
     return (FALSE);
   }
 
@@ -1853,7 +1898,7 @@ LoadPrefs (char *ConfigFile, BOOL Report)
   else
   {
     if (Report)
-      SimpleRequest (NULL, "MagicMenu Error", "Error in configuration file!", "Ok", NULL, 0, 0);
+      SimpleRequest (NULL, "MagicMenu", GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT), "Ok", NULL, 0, 0);
     return (FALSE);
   }
 }
@@ -1982,6 +2027,15 @@ CloseAll (VOID)
   struct Message *msg;
   struct MMMessage *MMMsg;
 
+  if(LocaleBase)
+  {
+    CloseCatalog(Catalog);
+    Catalog = NULL;
+
+    CloseLibrary(LocaleBase);
+    LocaleBase = NULL;
+  }
+
   if (RememberSemaphore)
     ObtainSemaphore (RememberSemaphore);
 
@@ -2101,23 +2155,9 @@ CloseAll (VOID)
     TimeoutPort = NULL;
   }
 
-  if (RememberSemaphore)
-  {
-    FreeVecPooled (RememberSemaphore);
-    RememberSemaphore = NULL;
-  }
-
-  if (GetPointerSemaphore)
-  {
-    FreeVecPooled (GetPointerSemaphore);
-    GetPointerSemaphore = NULL;
-  }
-
-  if (MenuActSemaphore)
-  {
-    FreeVecPooled (MenuActSemaphore);
-    MenuActSemaphore = NULL;
-  }
+  RememberSemaphore = NULL;
+  GetPointerSemaphore = NULL;
+  MenuActSemaphore = NULL;
 
   StopHihoTask ();
 
@@ -2180,26 +2220,10 @@ ExitTrap (VOID)
 VOID
 ErrorPrc (const char *ErrTxt)
 {
-  static struct IntuiText NoOS2Body2 =
-  {2, 1, JAM1, 5, 15, NULL, (UBYTE *) "works with AmigaOS 2.04 or later!", NULL};
+	if(IntuitionBase && ErrTxt[0])
+		SimpleRequest (NULL, "MagicMenu", GetString(MSG_SETUP_FAILURE_TXT), "Ok", NULL, 0, (APTR)ErrTxt);
 
-  static struct IntuiText NoOS2Body1 =
-  {2, 1, JAM1, 5, 5, NULL, (UBYTE *) "Sorry dude, this fine program only", &NoOS2Body2};
-
-  static struct IntuiText NoOS2Neg =
-  {2, 1, JAM1, 6, 3, NULL, (UBYTE *) "What a pity!", NULL};
-
-  if (!IntuitionBase)
-  {
-    if (IntuitionBase = (struct IntuitionBase *) OpenLibrary ((char *) "intuition.library", 0))
-    {
-      AutoRequest (NULL, &NoOS2Body1, NULL, &NoOS2Neg, NULL, NULL, 320, 65);
-    }
-    exit (40);
-  }
-
-  SimpleRequest (NULL, "MagicMenu Error", ErrTxt, "Hmpf", NULL, 0, 0);
-  exit (40);
+	exit (RETURN_FAIL);
 }
 
 VOID
@@ -2233,55 +2257,67 @@ main (int argc, char **argv)
 
   onexit (ExitTrap);
 
+  if(LocaleBase = OpenLibrary("locale.library",38))
+  {
+    STATIC ULONG LocaleTags[] =
+    {
+      OC_BuiltInLanguage, (ULONG)"english",
+
+      TAG_DONE
+    };
+
+    Catalog = OpenCatalogA(NULL,"magicmenu.catalog",(struct TagItem *)LocaleTags);
+  }
+
   if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ((char *) "intuition.library", 37)))
     ErrorPrc ("");
 
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ((char *) "graphics.library", 37)))
-    ErrorPrc ("Can't open graphics library!");
+    ErrorPrc ("graphics.library V37");
 
   StartHihoTask ();
 
   V39 = (BOOL)(GfxBase->LibNode.lib_Version >= 39);
 
   if (!MemoryInit ())
-    ErrorPrc ("Cannot set up memory allocator");
+    ErrorPrc ("memory allocator");
 
   if (!(LayersBase = (struct Library *) OpenLibrary ((char *) "layers.library", 37)))
-    ErrorPrc ("Can't open layers library!");
+    ErrorPrc ("layers.library V37");
 
   if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
-    ErrorPrc ("Can't open utility library!");
+    ErrorPrc ("utility.library V37");
 
   if (!(CxBase = OpenLibrary ((char *) "commodities.library", 37L)))
-    ErrorPrc ("Can't open commodities library!");
+    ErrorPrc ("commodities.library V37");
 
   if (!(KeymapBase = OpenLibrary ((char *) "keymap.library", 37L)))
-    ErrorPrc ("Can't open keymap library!");
+    ErrorPrc ("keymap.library V37");
 
   if (!(GetPointerSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("Can't allocate semaphore 1!");
+      ErrorPrc ("semaphore #1");
 
   InitSemaphore (GetPointerSemaphore);
 
   if (!(MenuActSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("Can't allocate semaphore 2!");
+      ErrorPrc ("semaphore #2");
 
   InitSemaphore (MenuActSemaphore);
 
   if (!(RememberSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
-      ErrorPrc ("Can't allocate semaphore 3!");
+      ErrorPrc ("semaphore #3");
 
   if (!(IMsgReplyPort = CreateMsgPort ()))
-    ErrorPrc ("Cannot create IMsg reply port!");
+    ErrorPrc ("IMsg reply port");
 
   if (!(TimeoutPort = CreateMsgPort ()))
-    ErrorPrc ("Cannot create timeout reply port!");
+    ErrorPrc ("timeout reply port");
 
   if (!(TimeoutRequest = (struct timerequest *) CreateIORequest (TimeoutPort, sizeof (struct timerequest))))
-      ErrorPrc ("Cannot create timeout request!");
+      ErrorPrc ("timeout request");
 
   if (OpenDevice (TIMERNAME, UNIT_VBLANK, (struct IORequest *) TimeoutRequest, NULL))
-    ErrorPrc ("Cannot open timer.device!");
+    ErrorPrc ("timer.device");
 
   InitSemaphore (RememberSemaphore);
 
@@ -2295,7 +2331,7 @@ main (int argc, char **argv)
   if (Ok)
     Ok = (NULL == OpenDevice ((char *) TIMERNAME, UNIT_VBLANK, TimerIO, 0));
   if (!Ok)
-    ErrorPrc ("Can't initialize timer.device!");
+    ErrorPrc ("timer.device");
 
   TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
 
@@ -2308,7 +2344,7 @@ main (int argc, char **argv)
   if (Ok)
     Ok = (NULL == OpenDevice ((char *) INPUTNAME, NULL, InputIO, 0));
   if (!Ok)
-    ErrorPrc ("Can't initialize input.device!");
+    ErrorPrc ("input.device");
 
   InputBase = (struct Library *) InputIO->io_Device;
 
@@ -2316,27 +2352,17 @@ main (int argc, char **argv)
 
   AktPrefs = DefaultPrefs;
 
-  if (GetVar (PATHENV, ConfigPath, 200, 0) == -1)
-  {
-    Cx_Popup = TRUE;
-    strcpy (ConfigPath, "");
-  }
-
-  strcpy (ConfigFile, ConfigPath);
-  if (!AddPart (ConfigFile, "MagicMenu.config", 231))
-    ErrorPrc ("Can't create Config filename!");
-
-  if (!LoadPrefs (ConfigFile, FALSE))
+  if (!LoadPrefs ("ENVARC:MagicMenu.prefs", FALSE))
     Cx_Popup = TRUE;
 
   if (!(MMMsgPort = CreateMsgPort ()))
-    ErrorPrc ("Can't open MagicMenu MessagePort!");
+    ErrorPrc ("MagicMenu MsgPort");
 
   MMMsgPort->mp_Node.ln_Name = MMPORT_NAME;
   AddPort (MMMsgPort);
 
   if (!(CxMsgPort = CreateMsgPort ()))
-    ErrorPrc ("Can't open CxMsgPort!");
+    ErrorPrc ("CxMsgPort");
 
   CxSignalMask = 1l << CxMsgPort->mp_SigBit;
 
@@ -2357,18 +2383,18 @@ main (int argc, char **argv)
   else
   {
     ReleaseSemaphore (RememberSemaphore);
-    ErrorPrc ("Cannot install system patches!");
+    ErrorPrc ("system patches");
   }
 
   if (!MakeGlobalRemember ())
   {
     ReleaseSemaphore (RememberSemaphore);
-    ErrorPrc ("Cannot make Menu Remember!");
+    ErrorPrc ("menu cache");
   }
 
   ReleaseSemaphore (RememberSemaphore);
 
-  SPrintf (TitleText, "MagicMenu %ld.%ld (%s):", VERSION, REVISION, DATE);
+  SPrintf (TitleText, "MagicMenu %ld.%ld (%s)", VERSION, REVISION, DATE);
   NewBroker.nb_Title = TitleText;
 
   NewBroker.nb_Port = CxMsgPort;
@@ -2377,51 +2403,51 @@ main (int argc, char **argv)
   if (!(Broker = (LONG *) CxBroker (&NewBroker, &error)))
   {
     if (error != CBERR_DUP)
-      ErrorPrc ("Can't install Broker, System error!");
+      ErrorPrc ("input broker");
     CloseAll ();
     return;
   }
 
   if (!(MouseFilter = CxFilter (MouseKey)))
-    ErrorPrc ("Can't install mouse filter");
+    ErrorPrc ("mouse filter");
   SetFilterIX (MouseFilter, &MouseIX);
   AttachCxObj (Broker, MouseFilter);
 
   if (!(MouseSender = CxSender (CxMsgPort, EVT_MOUSEMENU)))
-    ErrorPrc ("Can't install mouse sender");
+    ErrorPrc ("mouse sender");
   AttachCxObj (MouseFilter, MouseSender);
 
   if (!(MouseTransl = CxTranslate (NULL)))
-    ErrorPrc ("Can't install mouse translator");
+    ErrorPrc ("mouse translator");
   AttachCxObj (MouseFilter, MouseTransl);
 
 
   if (!(KbdFilter = HotKey (AktPrefs.mmp_KCKeyStr, CxMsgPort, EVT_KBDMENU)))
-    ErrorPrc ("Keyboard hotkey sequence invalid");
+    ErrorPrc (GetString(MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT));
   AttachCxObj (Broker, KbdFilter);
 
   if (!(StdKbdFilter = CxFilter (MouseKey)))
-    ErrorPrc ("Can't install RAmiga - RCommand keyboard filter");
+    ErrorPrc ("RAmiga - RCommand keyboard filter");
   SetFilterIX (StdKbdFilter, &StdKbdIX);
   AttachCxObj (Broker, StdKbdFilter);
 
   if (!(StdKbdSender = CxSender (CxMsgPort, EVT_KBDMENU)))
-    ErrorPrc ("Can't install RAmiga - RCommand keyboard sender");
+    ErrorPrc ("RAmiga - RCommand keyboard sender");
   AttachCxObj (StdKbdFilter, StdKbdSender);
 
   if (!(StdKbdTransl = CxTranslate (NULL)))
-    ErrorPrc ("Can't install RAmiga - RCommand keyboard translator");
+    ErrorPrc ("RAmiga - RCommand keyboard translator");
   AttachCxObj (StdKbdFilter, StdKbdTransl);
 
   ActivateCxObj (StdKbdFilter, (AktPrefs.mmp_KCRAltRCommand == 1));
 
 
   if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
-    ErrorPrc ("Popup hotkey sequence invalid");
+    ErrorPrc (GetString(MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT));
   AttachCxObj (Broker, PrefsFilter);
 
   if (!(SetupMenuActiveData ()))
-    ErrorPrc ("Can't set up active menu data!");
+    ErrorPrc ("active menu data");
 
   Activate ();
 

@@ -10,6 +10,11 @@
 
 /*****************************************************************************************/
 
+#define CATCOMP_NUMBERS
+#include "magicmenu.h"
+
+/*****************************************************************************************/
+
 ULONG __asm CallOpenWindow (REG(a0) struct NewWindow *NW, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallOpenWindowTagList (REG(a0) struct NewWindow *NW, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallClearMenuStrip (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
@@ -257,6 +262,44 @@ MMWindowToFront (REG(a0) struct Window * W)
 }
 
 
+ULONG __asm __saveds
+MMWindowToBack (REG(a0) struct Window * W)
+
+{
+  ULONG Result;
+
+  DB (kprintf ("|%s| in WindowToBack patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (AttemptSemaphore (MenuActSemaphore))
+  {
+    Result = CallWindowToBack (W, IntuitionBase);
+    ReleaseSemaphore (MenuActSemaphore);
+    return (Result);
+  }
+  else
+    return (FALSE);
+}
+
+
+ULONG __asm __saveds
+MMMoveWindowInFrontOf (REG(a0) struct Window * Window,REG(a1) struct Window *Behind)
+
+{
+  ULONG Result;
+
+  DB (kprintf ("|%s| in MoveWindowInFrontOf patch\n", FindTask (NULL)->tc_Node.ln_Name));
+
+  if (AttemptSemaphore (MenuActSemaphore))
+  {
+    Result = CallMoveWindowInFrontOf (Window, Behind, IntuitionBase);
+    ReleaseSemaphore (MenuActSemaphore);
+    return (Result);
+  }
+  else
+    return (FALSE);
+}
+
+
 BOOL __asm __saveds
 MMModifyIDCMP (REG(a0) struct Window * window,
                REG(d0) ULONG flags)
@@ -442,6 +485,15 @@ CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
 BOOL
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
 {
+#if 1
+	extern VOID __asm RemapBitMap(REG(a0) struct BitMap *srcbm,REG(a1) struct BitMap *destbm,REG(a2) UBYTE *table,REG(d0) LONG width);
+
+	WaitBlit();
+	RemapBitMap(Src,Dst,Mapping,Width);
+
+	return(TRUE);
+#endif
+#if 0
   struct BitMap *SingleMap;
 
   /* Create a single bitplane bitmap. */
@@ -460,9 +512,9 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
        * single bitmap in all planes.
        */
 
-      InitBitMap (FullMap, DestDepth, Width, Height);
+      InitBitMap (FullMap, max(Src->Depth,DestDepth), Width, Height);
 
-      for (i = 0; i < DestDepth; i++)
+      for (i = 0; i < FullMap->Depth; i++)
         FullMap->Planes[i] = SingleMap->Planes[0];
 
       /* Clear the destination bitmap. */
@@ -500,7 +552,7 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 
         BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ONE, 1, NULL);
 
-        /* Isolate the pixels to match the colourspecified in `i'. */
+        /* Isolate the pixels to match the colour specified in `i'. */
 
         BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_AND_C, i, NULL);
 
@@ -529,6 +581,7 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
   }
 
   return (FALSE);
+#endif
 }
 
 BOOL
@@ -769,8 +822,9 @@ CheckEnde (void)
 {
   if (IMsgReplyCount > 0)
   {
-    if (SimpleRequest (NULL, "Magic Menu Message", "Sorry, Magic Menu cannot uninstall itself\nbecause there are unreplied messages pending!", "Ok|Force uninstall", NULL, 0, 0))
-      return (FALSE);
+    SimpleRequest (NULL, "MagicMenu", GetString(MSG_CANNOT_UNINSTALL_TXT), "Ok", NULL, 0, 0);
+
+    return (FALSE);
   }
 
   if (LibPatches)

@@ -17,6 +17,9 @@ extern struct Library *GadToolsBase;
 extern struct Library *KeymapBase;
 extern struct Library *UtilityBase;
 
+extern struct Library *LocaleBase;
+extern struct Catalog *Catalog;
+
 extern BOOL V39;
 
 extern struct MsgPort *TimerPort;
@@ -316,6 +319,8 @@ extern ULONG OldResetMenuStrip;
 extern ULONG OldCloseWindow;
 extern ULONG OldActivateWindow;
 extern ULONG OldWindowToFront;
+extern ULONG OldWindowToBack;
+extern ULONG OldMoveWindowInFrontOf;
 extern ULONG OldModifyIDCMP;
 extern ULONG OldObtainGIRPort;
 

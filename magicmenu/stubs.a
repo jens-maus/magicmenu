@@ -32,6 +32,8 @@ Call\1:
 	PATCH	CloseWindow
 	PATCH	ActivateWindow
 	PATCH	WindowToFront
+	PATCH	WindowToBack
+	PATCH	MoveWindowInFrontOf
 	PATCH	ModifyIDCMP
 	PATCH	ObtainGIRPort
 	PATCH	CreateUpfrontHookLayer

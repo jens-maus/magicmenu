@@ -18,6 +18,9 @@ struct Library *InputBase;
 struct Library *KeymapBase;
 struct Library *UtilityBase;
 
+struct Library *LocaleBase;
+struct Catalog *Catalog;
+
 BOOL V39;
 
 struct MsgPort *TimerPort;
@@ -205,34 +208,38 @@ WORD GlobalDMRCount;
 
 struct MMPrefs DefaultPrefs =
 {
-  MMP_MAGIC, sizeof (struct MMPrefs),
-  MT_AUTO,			/* MenuType */
-  {1,				/* Enabled */
-   1,				/* MarkSub */
-   0,				/* DblBorder */
-   0,				/* UseLayer */
-   1,				/* DirectDraw */
-   1,				/* ChunkyPlanes */
-   0,				/* NonBlocking */
-   1,				/* KCEnabled */
-   1,				/* KCGoTop */
-   1,				/* KCRAltRCommand */
-   1,				/* PUCenter */
-   0},				/* Dummy */
-  MODE_STD,			/* PDMode */
-  LOOK_MC,			/* PDLook */
-  MODE_STD,			/* PUMode */
-  LOOK_MC,			/* PULook */
-  "rcommand space",		/* KCKeyStr */
-  10,				/* TimeOut */
-  {0xffffffff, 0xffffffff, 0xffffffff},		/* LightEdge */
-  {0x00000000, 0x00000000, 0x00000000},		/* DarkEdge */
-  {0x95000000, 0x95000000, 0x95000000},		/* Background */
-  {0x00000000, 0x00000000, 0x00000000},		/* TextCol */
-  {0x00000000, 0x00000000, 0x00000000},		/* HiCol */
-  {0x3b000000, 0x67000000, 0xA3000000},		/* FillCol */
-  {0x60000000, 0x60000000, 0x60000000},		/* GhostLoCol */
-  {0xaf000000, 0xaf000000, 0xaf000000},		/* GhostHiCol */
+	MMP_MAGIC, sizeof(struct MMPrefs),
+
+	MT_AUTO,				/* MenuType */
+	TRUE,					/* Enabled */
+	TRUE,					/* MarkSub */
+	FALSE,					/* DblBorder */
+	FALSE,					/* UseLayer */
+	TRUE,					/* DirectDraw */
+	TRUE,					/* ChunkyPlanes */
+	TRUE,					/* NonBlocking */
+	TRUE,					/* KCEnabled */
+	TRUE,					/* KCGoTop */
+	TRUE,					/* KCRAltRCommand */
+	TRUE,					/* PUCenter */
+
+	MODE_STD,				/* PDMode */
+	LOOK_MC,				/* PDLook */
+	MODE_STD,				/* PUMode */
+	LOOK_MC,				/* PULook */
+
+	"rcommand space",			/* KCKeyStr */
+
+	10,					/* TimeOut */
+
+	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	/* LightEdge */
+	0x00000000, 0x00000000, 0x00000000,	/* DarkEdge */
+	0x95959595, 0x95959595, 0x95959595,	/* Background */
+	0x00000000, 0x00000000, 0x00000000,	/* TextCol */
+	0x00000000, 0x00000000, 0x00000000,	/* HiCol */
+	0x3B3B3B3B, 0x67676767, 0xa3a3a3a3,	/* FillCol */
+	0x60606060, 0x60606060, 0x60606060,	/* GhostLoCol */
+	0xAFAFAFAF, 0xAFAFAFAF, 0xAFAFAFAF	/* GhostHiCol */
 };
 
 
@@ -932,6 +939,8 @@ ULONG OldResetMenuStrip;
 ULONG OldCloseWindow;
 ULONG OldActivateWindow;
 ULONG OldWindowToFront;
+ULONG OldWindowToBack;
+ULONG OldMoveWindowInFrontOf;
 ULONG OldModifyIDCMP;
 ULONG OldObtainGIRPort;
 

@@ -1,0 +1,142 @@
+#
+#	$Id$
+#
+#	:ts=8
+#
+
+.c.o:
+	sc $(CFLAGS) $<
+	@ctags $< >tagfiles/$>.c
+
+.a.o:
+	asm -D -u $<
+
+.cd.h:
+	catcomp $*.cd cfile $*.h nocode noblock
+
+VERSION =	2
+
+GSTFILE =	system_headers.gst
+#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+CPU =		030
+#CPU =		any utillib
+DEBUG =		line
+CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
+		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
+
+LFLAGS =	sc sd noicons addsym \
+		define __CXM33=__UCXM33 define __CXD33=__UCXD33 \
+		define __CXM22=__UCXM22 define __CXD22=__UCXD22
+
+LIBS =		lib:amiga.lib lib:sc.lib lib:debug.lib
+
+###############################################################################
+
+MAIN_SOURCE =	main.c misc.c \
+		data.c wedge.c windowglyphs.c memory.c menuboxes.c \
+		dointuimenu.c sendintuimessage.c betatitle.c remap.a
+
+MAIN_OBJS =	main.o stubs.o misc.o \
+		data.o wedge.o windowglyphs.o memory.o menuboxes.o \
+		dointuimenu.o sendintuimessage.o betatitle.o remap.o
+
+###############################################################################
+
+PREFS_SOURCE =	edit.c DemoMenu-8.c DemoMenu-11.c remap.a
+
+PREFS_OBJS =	edit.o DemoMenu-8.o DemoMenu-11.o remap.o
+
+###############################################################################
+
+SOURCE =	betatitle.c data.c data.h defines.h \
+		dointuimenu.c edit.c global.h magicmenu.cd \
+		MagicMenuPrefs_rev.h MagicMenuPrefs_rev.i MagicMenuPrefs_rev.rev MagicMenu_rev.h \
+		MagicMenu_rev.i MagicMenu_rev.rev main.c memory.c \
+		menuboxes.c misc.c protos.h remap.a \
+		sendintuimessage.c smakefile structures.h stubs.a \
+		system_headers.c system_headers.h wedge.c windowglyphs.c \
+		DemoMenu-8.c DemoMenu-11.c
+
+###############################################################################
+
+all:		tagfiles $(GSTFILE) MagicMenu MagicMenuPrefs
+
+tagfiles:
+		makedir $@
+
+MagicMenu:	$(MAIN_OBJS)
+		slink lib:c.o $(MAIN_OBJS) to $@.debug lib $(LIBS) $(LFLAGS)
+		slink $@.debug to $@ noicons nodebug
+		@type "tagfiles/\#?" >t:tags
+		@copy t:tags tags
+		@delete quiet t:tags
+
+$(GSTFILE):	system_headers.c system_headers.h
+		gst unload $@
+		sc $(CFLAGS) nogst noobjname makegst=$@ system_headers.c
+
+MagicMenuPrefs: $(PREFS_OBJS)
+		slink lib:c.o $(PREFS_OBJS) to $@.debug lib $(LIBS) $(LFLAGS)
+		slink $@.debug to $@ noicons nodebug
+
+###############################################################################
+
+protos:
+	mkptypes -c >protos.h $(MAIN_SOURCE)
+#	mkptypes -c >prefs_protos.h $(PREFS_SOURCE)
+
+###############################################################################
+
+clean:
+		-delete \#?.o $(GSTFILE) MagicMenu MagicMenu.debug \
+		MagicMenuPrefs MagicMenuPrefs.debug
+
+###############################################################################
+
+bumpMM:
+		bumprev $(VERSION) MagicMenu
+
+bumpPrefs:
+		bumprev $(VERSION) MagicMenuPrefs
+
+bumprev:	bumpMM bumpPrefs
+
+###############################################################################
+
+mkid:
+		mkid -v \#?.(c|h|a|i)
+
+update:
+		mkid -v -u
+
+###############################################################################
+
+checkin:
+	ci -l$(VERSION) -m. -t-. $(SOURCE)
+
+lock:
+	rcs -l $(SOURCE)
+
+unlock:
+	rcs -u $(SOURCE)
+
+freeze:
+	rcsfreeze
+
+###############################################################################
+
+betatitle.o : betatitle.c MagicMenu_rev.h
+dointuimenu.o : dointuimenu.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+memory.o : memory.c
+data.o : data.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+main.o : main.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h magicmenu.h
+misc.o : misc.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h magicmenu.h
+menuboxes.o : menuboxes.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+remap.o : remap.a
+sendintuimessage.o : sendintuimessage.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+stubs.o : stubs.a
+wedge.o : wedge.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+DemoMenu-11.o : DemoMenu-11.c
+DemoMenu-8.o : DemoMenu-8.c
+windowglyphs.o : windowglyphs.c defines.h data.h prefs.h MagicMenu_rev.h protos.h structures.h Global.h
+edit.o : edit.c MagicMenuPrefs_rev.h magicmenu.h prefs.h

@@ -12,6 +12,7 @@
 #include <dos/datetime.h>
 #include <dos/dostags.h>
 #include <dos/dosasl.h>
+#include <dos/rdargs.h>
 
 #include <exec/execbase.h>
 #include <exec/memory.h>
@@ -27,6 +28,8 @@
 
 #include <libraries/commodities.h>
 #include <libraries/gadtools.h>
+#include <libraries/locale.h>
+#include <libraries/iffparse.h>
 #include <libraries/asl.h>
 
 #include <devices/inputevent.h>
@@ -35,6 +38,7 @@
 #include <hardware/blit.h>
 
 #include <workbench/startup.h>
+#include <workbench/workbench.h>
 
 #include <gadgets/gradientslider.h>
 #include <gadgets/colorwheel.h>
@@ -43,8 +47,10 @@
 #include <clib/gadtools_protos.h>
 #include <clib/intuition_protos.h>
 #include <clib/graphics_protos.h>
+#include <clib/iffparse_protos.h>
 #include <clib/utility_protos.h>
 #include <clib/keymap_protos.h>
+#include <clib/locale_protos.h>
 #include <clib/layers_protos.h>
 #include <clib/input_protos.h>
 #include <clib/timer_protos.h>
@@ -60,8 +66,10 @@
 #include <pragmas/gadtools_pragmas.h>
 #include <pragmas/intuition_pragmas.h>
 #include <pragmas/graphics_pragmas.h>
+#include <pragmas/iffparse_pragmas.h>
 #include <pragmas/utility_pragmas.h>
 #include <pragmas/keymap_pragmas.h>
+#include <pragmas/locale_pragmas.h>
 #include <pragmas/layers_pragmas.h>
 #include <pragmas/input_pragmas.h>
 #include <pragmas/timer_pragmas.h>
