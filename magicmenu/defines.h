@@ -46,23 +46,14 @@
 
 #define     PREF_IDCMPFLAGS        (IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_GADGETDOWN | IDCMP_GADGETUP | IDCMP_MENUPICK | IDCMP_VANILLAKEY)
 
-extern LONG __far LVOOpenWindow;
-extern LONG __far LVOOpenWindowTagList;
-extern LONG __far LVOClearMenuStrip;
-extern LONG __far LVOSetMenuStrip;
-extern LONG __far LVOResetMenuStrip;
-extern LONG __far LVOCloseWindow;
-extern LONG __far LVOActivateWindow;
-extern LONG __far LVOWindowToFront;
-extern LONG __far LVOModifyIDCMP;
-extern LONG __far LVOObtainGIRPort;
-
 #define     CHECKIMGWIDTH           (CHECKWIDTH - 4)
 #define     LOWCHECKIMGWIDTH        (LOWCHECKWIDTH - 4)
 
 #define PORTMASK(p)	(1L<<((p)->mp_SigBit))
 
 #define MAX_FILENAME_LENGTH	256
+
+#define REG(x)	register __##x
 
 #define DB(x)	;
 /*#define DB(x) x */

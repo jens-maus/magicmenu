@@ -18,7 +18,7 @@ struct Library *InputBase;
 struct Library *KeymapBase;
 struct Library *UtilityBase;
 
-SHORT GfxVersion;
+BOOL V39;
 
 struct MsgPort *TimerPort;
 struct timerequest *TimerIO;
@@ -934,6 +934,9 @@ ULONG OldActivateWindow;
 ULONG OldWindowToFront;
 ULONG OldModifyIDCMP;
 ULONG OldObtainGIRPort;
+
+ULONG OldCreateUpfrontHookLayer;
+ULONG OldCreateUpfrontLayer;
 
 LONG Cx_Pri;
 BOOL Cx_Popup;

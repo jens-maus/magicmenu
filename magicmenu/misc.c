@@ -10,17 +10,18 @@
 
 /*****************************************************************************************/
 
-ULONG __asm CallOpenWindow (register __a0 struct NewWindow *NW);
-ULONG __asm CallOpenWindowTagList (register __a0 struct NewWindow *NW, register __a1 struct TagItem *TI);
-ULONG __asm CallClearMenuStrip (register __a0 struct Window *W);
-ULONG __asm CallSetMenuStrip (register __a0 struct Window *W, register __a1 struct Menu *MS);
-ULONG __asm CallResetMenuStrip (register __a0 struct Window *W, register __a1 struct Menu *MS);
-ULONG __asm CallCloseWindow (register __a0 struct Window *W);
-ULONG __asm CallCloseWindow (register __a0 struct Window *W);
-ULONG __asm CallActivateWindow (register __a0 struct Window *W);
-ULONG __asm CallWindowToFront (register __a0 struct Window *W);
-BOOL __asm CallModifyIDCMP (register __a0 struct Window *window, register __d0 ULONG flags);
-struct RastPort *__asm CallObtainGIRPort (register __a0 struct GadgetInfo *GInfo);
+ULONG __asm CallOpenWindow (REG(a0) struct NewWindow *NW, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallOpenWindowTagList (REG(a0) struct NewWindow *NW, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallClearMenuStrip (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallSetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallResetMenuStrip (REG(a0) struct Window *W, REG(a1) struct Menu *MS, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallCloseWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallActivateWindow (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+ULONG __asm CallWindowToFront (REG(a0) struct Window *W, REG(a6) struct IntuitionBase *IntuitionBase);
+BOOL __asm CallModifyIDCMP (REG(a0) struct Window *window, REG(d0) ULONG flags, REG(a6) struct IntuitionBase *IntuitionBase);
+struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
+struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
 
 /*****************************************************************************************/
 
@@ -44,8 +45,8 @@ MMCheckScreen (void)
 }
 
 
-BOOL __asm
-MMCheckWindow (register __a0 struct Window * Win)
+BOOL
+MMCheckWindow (struct Window * Win)
 {
   BOOL Wait;
 
@@ -65,7 +66,7 @@ MMCheckWindow (register __a0 struct Window * Win)
 
 
 ULONG __asm __saveds
-MMOpenWindow (register __a0 struct NewWindow * NW)
+MMOpenWindow (REG(a0) struct NewWindow * NW)
 
 {
   ULONG Win;
@@ -74,11 +75,11 @@ MMOpenWindow (register __a0 struct NewWindow * NW)
 
   if (MMCheckScreen ())
   {
-    Win = CallOpenWindow (NW);
+    Win = CallOpenWindow (NW, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
   }
   else
-    Win = CallOpenWindow (NW);
+    Win = CallOpenWindow (NW, IntuitionBase);
 
   /*****************************************************************************************/
 
@@ -92,8 +93,8 @@ MMOpenWindow (register __a0 struct NewWindow * NW)
 
 
 ULONG __asm __saveds
-MMOpenWindowTagList (register __a0 struct NewWindow * NW,
-		     register __a1 struct TagItem * TI)
+MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
+                     REG(a1) struct TagItem * TI)
 
 {
   ULONG Win;
@@ -102,11 +103,11 @@ MMOpenWindowTagList (register __a0 struct NewWindow * NW,
 
   if (MMCheckScreen ())
   {
-    Win = CallOpenWindowTagList (NW, TI);
+    Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
   }
   else
-    Win = CallOpenWindowTagList (NW, TI);
+    Win = CallOpenWindowTagList (NW, TI, IntuitionBase);
 
   /*****************************************************************************************/
 
@@ -121,7 +122,7 @@ MMOpenWindowTagList (register __a0 struct NewWindow * NW,
 
 
 ULONG __asm __saveds
-MMClearMenuStrip (register __a0 struct Window * W)
+MMClearMenuStrip (REG(a0) struct Window * W)
 
 {
   ULONG Res;
@@ -130,19 +131,19 @@ MMClearMenuStrip (register __a0 struct Window * W)
 
   if (MMCheckWindow (W))
   {
-    Res = CallClearMenuStrip (W);
+    Res = CallClearMenuStrip (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
     return (Res);
   }
   else
   {
-    return (CallClearMenuStrip (W));
+    return (CallClearMenuStrip (W, IntuitionBase));
   }
 }
 
 ULONG __asm __saveds
-MMSetMenuStrip (register __a0 struct Window * W,
-		register __a1 struct Menu * MI)
+MMSetMenuStrip (REG(a0) struct Window * W,
+                REG(a1) struct Menu * MI)
 
 {
   ULONG Res;
@@ -151,14 +152,14 @@ MMSetMenuStrip (register __a0 struct Window * W,
 
   if (MMCheckWindow (W))
   {
-    Res = CallSetMenuStrip (W, MI);
+    Res = CallSetMenuStrip (W, MI, IntuitionBase);
     ClearRemember (W);
     ReleaseSemaphore (MenuActSemaphore);
     return (Res);
   }
   else
   {
-    Res = CallSetMenuStrip (W, MI);
+    Res = CallSetMenuStrip (W, MI, IntuitionBase);
     ClearRemember (W);
     return (Res);
   }
@@ -166,8 +167,8 @@ MMSetMenuStrip (register __a0 struct Window * W,
 
 
 ULONG __asm __saveds
-MMResetMenuStrip (register __a0 struct Window * W,
-		  register __a1 struct Menu * MI)
+MMResetMenuStrip (REG(a0) struct Window * W,
+                  REG(a1) struct Menu * MI)
 
 {
   ULONG Res;
@@ -176,20 +177,20 @@ MMResetMenuStrip (register __a0 struct Window * W,
 
   if (MMCheckWindow (W))
   {
-    Res = CallResetMenuStrip (W, MI);
+    Res = CallResetMenuStrip (W, MI, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
     return (Res);
   }
   else
   {
-    Res = CallResetMenuStrip (W, MI);
+    Res = CallResetMenuStrip (W, MI, IntuitionBase);
     return (Res);
   }
 }
 
 
 ULONG __asm __saveds
-MMCloseWindow (register __a0 struct Window * W)
+MMCloseWindow (REG(a0) struct Window * W)
 
 {
   ULONG Res;
@@ -199,13 +200,13 @@ MMCloseWindow (register __a0 struct Window * W)
   if (MMCheckScreen ())
   {
     ClearRemember (W);
-    Res = CallCloseWindow (W);
+    Res = CallCloseWindow (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
   }
   else
   {
     ClearRemember (W);
-    Res = CallCloseWindow (W);
+    Res = CallCloseWindow (W, IntuitionBase);
   }
 
   /*****************************************************************************************/
@@ -219,7 +220,7 @@ MMCloseWindow (register __a0 struct Window * W)
 
 
 ULONG __asm __saveds
-MMActivateWindow (register __a0 struct Window * W)
+MMActivateWindow (REG(a0) struct Window * W)
 
 {
   ULONG Result;
@@ -228,7 +229,7 @@ MMActivateWindow (register __a0 struct Window * W)
 
   if (AttemptSemaphore (MenuActSemaphore))
   {
-    Result = CallActivateWindow (W);
+    Result = CallActivateWindow (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
     return (Result);
   }
@@ -238,7 +239,7 @@ MMActivateWindow (register __a0 struct Window * W)
 
 
 ULONG __asm __saveds
-MMWindowToFront (register __a0 struct Window * W)
+MMWindowToFront (REG(a0) struct Window * W)
 
 {
   ULONG Result;
@@ -247,7 +248,7 @@ MMWindowToFront (register __a0 struct Window * W)
 
   if (AttemptSemaphore (MenuActSemaphore))
   {
-    Result = CallWindowToFront (W);
+    Result = CallWindowToFront (W, IntuitionBase);
     ReleaseSemaphore (MenuActSemaphore);
     return (Result);
   }
@@ -257,8 +258,8 @@ MMWindowToFront (register __a0 struct Window * W)
 
 
 BOOL __asm __saveds
-MMModifyIDCMP (register __a0 struct Window * window,
-	       register __d0 ULONG flags)
+MMModifyIDCMP (REG(a0) struct Window * window,
+               REG(d0) ULONG flags)
 
 {
   BOOL Result;
@@ -267,22 +268,22 @@ MMModifyIDCMP (register __a0 struct Window * window,
 
   if (MMCheckWindow (window))
   {
-    Result = CallModifyIDCMP (window, flags);
+    Result = CallModifyIDCMP (window, flags, IntuitionBase);
 
     ReleaseSemaphore (MenuActSemaphore);
   }
   else
-    Result = CallModifyIDCMP (window, flags);
+    Result = CallModifyIDCMP (window, flags, IntuitionBase);
 
   return (Result);
 }
 
 struct RastPort *__asm __saveds
-MMObtainGIRPort (register __a0 struct GadgetInfo *GInfo)
+MMObtainGIRPort (REG(a0) struct GadgetInfo *GInfo)
 {
   DB (kprintf ("|%s| in ObtainGIRPort patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
-  if (!AktPrefs.mmp_NonBlocking && GInfo)	/* GInfo kann tatsächlich (!) NULL sein. */
+  if (!AktPrefs.mmp_NonBlocking && GInfo)  /* GInfo kann tatsächlich (!) NULL sein. */
   {
     SafeObtainSemaphoreShared (GetPointerSemaphore);
 
@@ -294,12 +295,12 @@ MMObtainGIRPort (register __a0 struct GadgetInfo *GInfo)
 
       if (AttemptSemaphore (MenuActSemaphore))
       {
-	Result = CallObtainGIRPort (GInfo);
+        Result = CallObtainGIRPort (GInfo, IntuitionBase);
 
-	ReleaseSemaphore (MenuActSemaphore);
+        ReleaseSemaphore (MenuActSemaphore);
       }
       else
-	Result = NULL;
+        Result = NULL;
 
       return (Result);
     }
@@ -307,10 +308,106 @@ MMObtainGIRPort (register __a0 struct GadgetInfo *GInfo)
     ReleaseSemaphore (GetPointerSemaphore);
   }
 
-  return (CallObtainGIRPort (GInfo));
+  return (CallObtainGIRPort (GInfo, IntuitionBase));
 }
 
-	/* A couple of useful minterms. */
+struct Layer *__saveds __asm
+MMCreateUpfrontHookLayer (
+                           REG(a0) struct Layer_Info *LayerInfo,
+                           REG(a1) struct BitMap *BitMap,
+                           REG(d0) LONG x0,
+                           REG(d1) LONG y0,
+                           REG(d2) LONG x1,
+                           REG(d3) LONG y1,
+                           REG(d4) ULONG Flags,
+                           REG(a3) struct Hook *Hook,
+                           REG(a2) struct BitMap *Super,
+                           REG(a6) struct Library *LayersBase)
+{
+  struct Layer *Layer;
+
+  /* Bei SuperBitMap wird nichts geändert */
+
+  if (Flags & LAYERSUPER)
+    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y0, Flags, Hook, Super, LayersBase);
+  else
+  {
+    /* Wichtig: Der Layer wird gleich nach der
+       *          Erzeugung verändert und es muß
+       *          verhindert werden, daß ein anderer
+       *          Task an den Layers herumpfuscht, während
+       *          hier noch gearbeitet wird.
+     */
+
+    LockLayerInfo (LayerInfo);
+
+    /* Der Layer wird als Simple-Refresh und ohne Backfill-Funktion
+       * erzeugt. Das hat zwei Vorteile: da der Layer im Hintergrund
+       * erzeugt wird, entstehen automatisch Damage-Regions, wenn es
+       * sich um einen Smart-Refresh-Layer handelt; dies wird vermieden,
+       * indem er als Simple-Refresh-Layer erzeugt wird. Außerdem wird
+       * das Ausfüllen des Layers bis nach seiner Erzeugung verzögert.
+     */
+
+    if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, (Flags & ~LAYERSMART) | LAYERSIMPLE, LAYERS_NOBACKFILL, Super))
+    {
+      /* In den Vordergrund damit, Backdrop-Layers werden automatisch berücksichtigt */
+
+      UpfrontLayer (NULL, Layer);
+
+      /* Die ursprünglichen Flags (LAYERSIMPLE oder LAYERSMART)
+         * werden wieder eingetragen
+       */
+
+      Layer->Flags = (Layer->Flags & ~(LAYERSIMPLE | LAYERSMART)) | (Flags & (LAYERSIMPLE | LAYERSMART));
+
+      /* Der ursprüngliche Hook ebenfalls */
+
+      Layer->BackFill = Hook;
+
+      /* Weg mit der Damage-Liste, dieser Layer liegt im Vordergrund */
+
+      ClearRegion (Layer->DamageList);
+
+      /* Jetzt noch weg mit den Refresh-Flags */
+
+      Layer->Flags &= ~(LAYERIREFRESH | LAYERIREFRESH2 | LAYERREFRESH);
+
+      /* Jetzt wird die entsprechende Backfillfunktion aufgerufen */
+
+      if (Hook != LAYERS_NOBACKFILL)
+        DoHookClipRects (Hook, Layer->rp, NULL);
+    }
+
+    /* Wieder loslassen */
+
+    UnlockLayerInfo (LayerInfo);
+  }
+
+  /* Und fertig... */
+
+  return (Layer);
+}
+
+struct Layer *__asm
+MMCreateUpfrontLayer (
+                       REG(a0) struct Layer_Info *LayerInfo,
+                       REG(a1) struct BitMap *BitMap,
+                       REG(d0) LONG x0,
+                       REG(d1) LONG y0,
+                       REG(d2) LONG x1,
+                       REG(d3) LONG y1,
+                       REG(d4) ULONG Flags,
+                       REG(a2) struct BitMap *Super,
+                       REG(a6) struct Library *LayersBase)
+{
+  /* Sollte so eigentlich nicht nötig sein, aber die layers.library springt nicht
+   * durch den LVO in diese Routine.
+   */
+  return (CreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, LAYERS_BACKFILL, Super));
+}
+
+/*****************************************************************************************/
 
 #define MINTERM_ZERO		0
 #define MINTERM_ONE		ABC | ABNC | ANBC | ANBNC | NABC | NABNC | NANBC | NANBNC
@@ -319,11 +416,6 @@ MMObtainGIRPort (register __a0 struct GadgetInfo *GInfo)
 #define MINTERM_B_AND_C		ABC | NABC
 #define MINTERM_NOT_B_AND_C	ANBC | NANBC
 #define MINTERM_B_OR_C		ABC | ABNC | NABC | NABNC | ANBC | NANBC
-
-	/* CreateBitMapFromImage(struct Image *Image,struct BitMap *BitMap):
-
-	 *      Turn an Intuition Image into a Gfx BitMap.
-	 */
 
 VOID
 CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
@@ -350,15 +442,10 @@ CreateBitMapFromImage (const struct Image * Image, struct BitMap * BitMap)
     else
     {
       if (Image->PlaneOnOff & Mask)
-	BitMap->Planes[i] = (PLANEPTR) ~ 0;
+        BitMap->Planes[i] = (PLANEPTR) ~ 0;
     }
   }
 }
-
-	/* RecolourBitMap():
-
-	 *      Remap a BitMap to use a different colour selection.
-	 */
 
 BOOL
 RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG DestDepth, LONG Width, LONG Height)
@@ -384,7 +471,7 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
       InitBitMap (FullMap, DestDepth, Width, Height);
 
       for (i = 0; i < DestDepth; i++)
-	FullMap->Planes[i] = SingleMap->Planes[0];
+        FullMap->Planes[i] = SingleMap->Planes[0];
 
       /* Clear the destination bitmap. */
 
@@ -394,47 +481,43 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 
       if (Mapping[0])
       {
-	/* Clear the single plane bitmap. */
+        /* Clear the single plane bitmap. */
 
-	BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ZERO, 1, NULL);
+        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ZERO, 1, NULL);
 
-	/* Merge all source bitplane data. */
+        /* Merge all source bitplane data. */
 
-	BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_OR_C, Mask, NULL);
+        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_OR_C, Mask, NULL);
 
-	/* Invert the single plane bitmap, to give us
-	 * the zero colour bitmap we can work with.
-	 */
+        /* Invert the single plane bitmap, to give us
+           * the zero colour bitmap we can work with.
+         */
 
-	BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_NOT_C, 1, NULL);
+        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_NOT_C, 1, NULL);
 
-	/* Now set all the bits for colour zero. */
+        /* Now set all the bits for colour zero. */
 
-	BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[0], NULL);
+        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[0], NULL);
       }
 
       /* Run down the colours. */
 
       for (i = 1; i <= Mask; i++)
       {
-	/* Set the single plane bitmap to all 1's. */
+        /* Set the single plane bitmap to all 1's. */
 
-	BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ONE, 1, NULL);
+        BltBitMap (SingleMap, 0, 0, SingleMap, 0, 0, Width, Height, MINTERM_ONE, 1, NULL);
 
-	/* Isolate the pixels to match the colour
-	 * specified in `i'.
-	 */
+        /* Isolate the pixels to match the colourspecified in `i'. */
 
-	BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_AND_C, i, NULL);
+        BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_B_AND_C, i, NULL);
 
-	if (Mask ^ i)
-	  BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_NOT_B_AND_C, Mask ^ i, NULL);
+        if (Mask ^ i)
+          BltBitMap (Src, 0, 0, FullMap, 0, 0, Width, Height, MINTERM_NOT_B_AND_C, Mask ^ i, NULL);
 
-	/* Set the pixels in the destination bitmap,
-	 * use the designated colour.
-	 */
+        /* Set the pixels in the destination bitmap, use the designated colour. */
 
-	BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[i], NULL);
+        BltBitMap (FullMap, 0, 0, Dst, 0, 0, Width, Height, MINTERM_B_OR_C, Mapping[i], NULL);
       }
 
       /* Free the temporary bitmap. */
@@ -458,7 +541,7 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 
 BOOL
 MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
-		   UWORD Depth, UBYTE * RemapArray)
+                   UWORD Depth, UBYTE * RemapArray)
 
 {
   if (Depth > 8)
@@ -482,37 +565,37 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
       if ((*DestImage)->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP))
       {
-	CreateBitMapFromImage (*DestImage, &Dst);
+        CreateBitMapFromImage (*DestImage, &Dst);
 
-	if (SrcImage->Depth == -1)
-	{
-	  struct RastPort TempRPort;
+        if (SrcImage->Depth == -1)
+        {
+          struct RastPort TempRPort;
 
-	  InitRastPort (&TempRPort);
+          InitRastPort (&TempRPort);
 
-	  if (TempRPort.BitMap = allocBitMap (Depth, SrcImage->Width, SrcImage->Height, NULL, TRUE))
-	  {
-	    BOOL Result;
+          if (TempRPort.BitMap = allocBitMap (Depth, SrcImage->Width, SrcImage->Height, NULL, TRUE))
+          {
+            BOOL Result;
 
-	    DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
+            DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
 
-	    Result = RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
+            Result = RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
 
-	    disposeBitMap (TempRPort.BitMap, SrcImage->Width, SrcImage->Height, TRUE);
+            disposeBitMap (TempRPort.BitMap, SrcImage->Width, SrcImage->Height, TRUE);
 
-	    if (Result)
-	      return (TRUE);
-	  }
-	}
-	else
-	{
-	  struct BitMap Src;
+            if (Result)
+              return (TRUE);
+          }
+        }
+        else
+        {
+          struct BitMap Src;
 
-	  CreateBitMapFromImage (SrcImage, &Src);
+          CreateBitMapFromImage (SrcImage, &Src);
 
-	  if (RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height))
-	    return (TRUE);
-	}
+          if (RecolourBitMap (&Src, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height))
+            return (TRUE);
+        }
       }
     }
     else
@@ -535,6 +618,7 @@ FreeRemappedImage (struct Image * Image)
 {
   if (Image)
   {
+    WaitBlit ();
     FreeVec (Image->ImageData);
     FreeVecPooled (Image);
   }
@@ -543,9 +627,9 @@ FreeRemappedImage (struct Image * Image)
 
 struct timerequest *
 SendTimeRequest (struct timerequest *OrigIOReq,
-		 ULONG Seconds,
-		 ULONG Micros,
-		 struct MsgPort *ReplyPort)
+                 ULONG Seconds,
+                 ULONG Micros,
+                 struct MsgPort *ReplyPort)
 
 {
   struct timerequest *NewIOReq;
@@ -572,13 +656,13 @@ SendTimeRequest (struct timerequest *OrigIOReq,
 
 long __stdargs
 SimpleRequest (struct Window *RefWindow,
-	       const char *RequestTitle,
-	       const char *RequestText,
-	       const char *RequestGadgets,
-	       ULONG * IDCMPFlags,
-	       ULONG Seconds,
-	       APTR Arg1,
-	       ...)
+               const char *RequestTitle,
+               const char *RequestText,
+               const char *RequestGadgets,
+               ULONG * IDCMPFlags,
+               ULONG Seconds,
+               APTR Arg1,
+               ...)
 {
   struct EasyStruct ReqStruct;
   struct Window *ReqWindow;
@@ -620,48 +704,48 @@ SimpleRequest (struct Window *RefWindow,
     {
       if (TimeReq = SendTimeRequest (TimerIO, Seconds, 0, MyPort))
       {
-	SignalMask = 1 << ReqWindow->UserPort->mp_SigBit |
-	  1 << MyPort->mp_SigBit;
+        SignalMask = 1 << ReqWindow->UserPort->mp_SigBit |
+          1 << MyPort->mp_SigBit;
 
-	do
-	{
-	  DoWait = TRUE;
-	  Ende = FALSE;
+        do
+        {
+          DoWait = TRUE;
+          Ende = FALSE;
 
-	  if (Message = GetMsg (MyPort))
-	  {
-	    if (Message == (struct Message *) TimeReq)
-	    {
-	      Ende = TRUE;
-	      DoWait = FALSE;
-	      Answer = -2;
-	    }
-	  }
+          if (Message = GetMsg (MyPort))
+          {
+            if (Message == (struct Message *) TimeReq)
+            {
+              Ende = TRUE;
+              DoWait = FALSE;
+              Answer = -2;
+            }
+          }
 
-	  if (!Ende)
-	  {
-	    IDCMP = *IDCMPPtr;
-	    Answer = SysReqHandler (ReqWindow, &IDCMP, FALSE);
-	    if (Answer > -1)
-	    {
-	      *IDCMPPtr = IDCMP;
-	      Ende = TRUE;
-	      DoWait = FALSE;
-	    }
-	  }
+          if (!Ende)
+          {
+            IDCMP = *IDCMPPtr;
+            Answer = SysReqHandler (ReqWindow, &IDCMP, FALSE);
+            if (Answer > -1)
+            {
+              *IDCMPPtr = IDCMP;
+              Ende = TRUE;
+              DoWait = FALSE;
+            }
+          }
 
-	  if (DoWait)
-	    Wait (SignalMask);
+          if (DoWait)
+            Wait (SignalMask);
 
-	}
-	while (!Ende);
+        }
+        while (!Ende);
 
-	if (!CheckIO (TimeReq))
-	{
-	  AbortIO (TimeReq);
-	  WaitIO (TimeReq);
-	}
-	FreeVecPooled (TimeReq);
+        if (!CheckIO (TimeReq))
+        {
+          AbortIO (TimeReq);
+          WaitIO (TimeReq);
+        }
+        FreeVecPooled (TimeReq);
 
       }
       DeleteMsgPort (MyPort);
@@ -713,14 +797,14 @@ disposeBitMap (struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem)
 
   WaitBlit ();
 
-  if (GfxVersion >= 39 && !IsChipMem)
+  if (V39 && !IsChipMem)
     FreeBitMap (BitMap);
   else
   {
     for (z1 = 0; z1 < BitMap->Depth; z1++)
     {
       if (BitMap->Planes[z1])
-	FreeRaster (BitMap->Planes[z1], Width, Height);
+        FreeRaster (BitMap->Planes[z1], Width, Height);
     }
 
     FreeVecPooled (BitMap);
@@ -737,7 +821,7 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 
   Error = FALSE;
 
-  if (GfxVersion >= 39 && !WantChipMem)
+  if (V39 && !WantChipMem)
     return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth > 8) ? BMF_MINPLANES : NULL, Friend));
   else
   {
@@ -747,14 +831,14 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 
       for (z1 = 0; z1 < Depth; z1++)
       {
-	if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
-	  Error = TRUE;
+        if (!(BitMap->Planes[z1] = (PLANEPTR) AllocRaster (Width, Height)))
+          Error = TRUE;
       }
 
       if (Error)
       {
-	disposeBitMap (BitMap, Width, Height, TRUE);
-	return (NULL);
+        disposeBitMap (BitMap, Width, Height, TRUE);
+        return (NULL);
       }
 
       return (BitMap);
@@ -766,36 +850,24 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 
 
 void
-FreeRPort (struct RastPort *RastPort,
-	   struct BitMap *BitMap,
-	   struct Layer_Info *LayerInfo,
-	   struct Layer *Layer,
-	   LONG Depth, LONG Width, LONG Height)
+FreeRPort (struct BitMap *BitMap,
+           struct Layer_Info *LayerInfo,
+           struct Layer *Layer,
+           LONG Width, LONG Height)
 
 {
   if (Layer)
-  {
-    if (!DeleteLayer (0l, Layer))
-    {
-      DisplayBeep (NULL);
-      return;
-    }
-  }
-  else
-  {
-    if (RastPort)
-      FreeVecPooled (RastPort);
-  }
+    DeleteLayer (NULL, Layer);
 
   if (LayerInfo)
     DisposeLayerInfo (LayerInfo);
 
   if (BitMap)
-    disposeBitMap (BitMap, Width + 10, Height + 10, FALSE);
+    disposeBitMap (BitMap, Width, Height, FALSE);
 }
 
 
-STATIC ULONG 
+STATIC ULONG
 Dummy (VOID)
 {
   return (0);
@@ -817,50 +889,47 @@ GetNOPFillHook ()
 
 BOOL
 InstallRPort (LONG Depth, LONG Width, LONG Height,
-	      struct RastPort ** RastPort,
-	      struct BitMap ** BitMap,
-	      struct Layer_Info ** LayerInfo,
-	      struct Layer ** Layer,
-	      struct BitMap * Friend)
+              struct RastPort ** RastPortPtr,
+              struct BitMap ** BitMapPtr,
+              struct Layer_Info ** LayerInfoPtr,
+              struct Layer ** LayerPtr,
+              struct BitMap * Friend)
 
 {
-  *BitMap = NULL;
-  *RastPort = NULL;
-  *Layer = NULL;
-  *LayerInfo = NULL;
-  if ((*BitMap = allocBitMap (Depth, Width + 10, Height + 10, Friend, FALSE)) != NULL)
-  {
-    if (AktPrefs.mmp_UseLayer)
-    {
-      if (*LayerInfo = NewLayerInfo ())
-      {
-	if (*Layer = CreateUpfrontHookLayer (*LayerInfo, *BitMap, 0, 0, Width, Height, LAYERSIMPLE, GetNOPFillHook (), NULL))	
+  struct BitMap *BitMap;
+  struct Layer_Info *LayerInfo;
+  struct Layer *Layer;
 
-	{
-	  *RastPort = (*Layer)->rp;
-	  return (TRUE);
-	}
-	DisposeLayerInfo (*LayerInfo);
-      }
-    }
-    else
+  *BitMapPtr = NULL;
+  *RastPortPtr = NULL;
+  *LayerPtr = NULL;
+  *LayerInfoPtr = NULL;
+
+  if (BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE))
+  {
+    if (LayerInfo = NewLayerInfo ())
     {
-      if (*RastPort = AllocVecPooled (sizeof (struct RastPort), NULL))
+      if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width, Height, LAYERSIMPLE, GetNOPFillHook (), NULL))
       {
-	InitRastPort (*RastPort);
-	(*RastPort)->BitMap = *BitMap;
-	return (TRUE);
+        *BitMapPtr = BitMap;
+        *RastPortPtr = Layer->rp;
+        *LayerPtr = Layer;
+        *LayerInfoPtr = LayerInfo;
+
+        return (TRUE);
       }
+      DisposeLayerInfo (LayerInfo);
     }
-    disposeBitMap (*BitMap, Width + 10, Height + 10, FALSE);
+    disposeBitMap (BitMap, Width, Height, FALSE);
   }
+
   return (FALSE);
 }
 
 
 struct ClipRect *
 GetClipRect (struct BitMap *BitMap,
-	     LONG x1, LONG y1, LONG x2, LONG y2)
+             LONG x1, LONG y1, LONG x2, LONG y2)
 
 {
   struct ClipRect *CRect;
@@ -906,17 +975,17 @@ CheckDispClipVisible (WORD MinX, WORD MinY, WORD MaxX, WORD MaxY)
 
 void
 Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
-	    BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
+            BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
 
 {
   if (Width <= 0 || Height <= 0)
     return;
 
   if (Upward)
-    SetFgPen (rp, MenLightEdge);	
+    SetFgPen (rp, MenLightEdge);
 
   else
-    SetFgPen (rp, MenDarkEdge);	
+    SetFgPen (rp, MenDarkEdge);
 
   if (HiRes && (!LookMC))
   {
@@ -929,11 +998,11 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
     //      3
 
     DrawLinePairs (rp, 3, x + Width - 2, y,
-		   x, y,
-		   x, y + Height - 1);
+                   x, y,
+                   x, y + Height - 1);
 
     DrawLine (rp, x + 1, y + 1,
-	      x + 1, y + Height - 2);
+              x + 1, y + Height - 2);
 
     if (DoubleBorder)
     {
@@ -947,11 +1016,11 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
       //      3
 
       DrawLinePairs (rp, 3, x + Width - 3, y + 1,
-		     x + Width - 3, y + Height - 2,
-		     x + 3, y + Height - 2);
+                     x + Width - 3, y + Height - 2,
+                     x + 3, y + Height - 2);
 
       DrawLine (rp, x + Width - 4, y + 2,
-		x + Width - 4, y + Height - 2);
+                x + Width - 4, y + Height - 2);
     }
   }
   else
@@ -965,8 +1034,8 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
     //      3
 
     DrawLinePairs (rp, 3, x + Width - 1, y,
-		   x, y,
-		   x, y + Height - 1);	
+                   x, y,
+                   x, y + Height - 1);
 
     if (DoubleBorder)
     {
@@ -979,16 +1048,16 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
       //      3
 
       DrawLinePairs (rp, 3, x + Width - 2, y + 1,
-		     x + Width - 2, y + Height - 2,
-		     x + 1, y + Height - 2);
+                     x + Width - 2, y + Height - 2,
+                     x + 1, y + Height - 2);
     }
   }
 
   if (Upward)
-    SetFgPen (rp, MenDarkEdge);	
+    SetFgPen (rp, MenDarkEdge);
 
   else
-    SetFgPen (rp, MenLightEdge);	
+    SetFgPen (rp, MenLightEdge);
 
   if (HiRes && (!LookMC))
   {
@@ -1001,11 +1070,11 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
     //      -1-------->2
 
     DrawLinePairs (rp, 3, x + 1, y + Height - 1,
-		   x + Width - 1, y + Height - 1,
-		   x + Width - 1, y);
+                   x + Width - 1, y + Height - 1,
+                   x + Width - 1, y);
 
     DrawLine (rp, x + Width - 2, y + Height - 2,
-	      x + Width - 2, y + 1);
+              x + Width - 2, y + 1);
 
     if (DoubleBorder)
     {
@@ -1019,11 +1088,11 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
       //      -1-------->2
 
       DrawLinePairs (rp, 3, x + 2, y + Height - 2,
-		     x + 2, y + 1,
-		     x + Width - 4, y + 1);
+                     x + 2, y + 1,
+                     x + Width - 4, y + 1);
 
       DrawLine (rp, x + 3, y + Height - 3,
-		x + 3, y + 2);
+                x + 3, y + 2);
     }
   }
   else
@@ -1037,8 +1106,8 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
     //      -1-------->2
 
     DrawLinePairs (rp, 3, x + 1, y + Height - 1,
-		   x + Width - 1, y + Height - 1,
-		   x + Width - 1, y + 1);
+                   x + Width - 1, y + Height - 1,
+                   x + Width - 1, y + 1);
 
     if (DoubleBorder)
     {
@@ -1051,8 +1120,8 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
       //      -1-------->2
 
       DrawLinePairs (rp, 3, x + 1, y + Height - 2,
-		     x + 1, y + 1,
-		     x + Width - 2, y + 1);
+                     x + 1, y + 1,
+                     x + Width - 2, y + 1);
     }
   }
 
@@ -1072,7 +1141,7 @@ DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   if (Width <= 0 || Height <= 0)
     return;
 
-  SetFgPen (rp, MenBackGround);	
+  SetFgPen (rp, MenBackGround);
 
   //      1-------->2
   //      ^         |
@@ -1082,10 +1151,10 @@ DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   //      4<--------3
 
   DrawLinePairs (rp, 5, x, y,
-		 x + Width - 1, y,
-		 x + Width - 1, y + Height - 1,
-		 x, y + Height - 1,
-		 x, y);
+                 x + Width - 1, y,
+                 x + Width - 1, y + Height - 1,
+                 x, y + Height - 1,
+                 x, y);
 }
 
 
@@ -1105,12 +1174,12 @@ GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   // zu halten, sollte man eigentlich MenDarkEdge nehmen.
   //    -olsen
 
-  SetPens (rp, MenBackGround, 0, JAM1);		
+  SetPens (rp, MenBackGround, 0, JAM1);
 
   RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 
   SetAfPt (rp, NULL, 0);
-  SetFgPen (rp, MenTextCol);	
+  SetFgPen (rp, MenTextCol);
 
 }
 
@@ -1121,15 +1190,15 @@ CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 {
   if (Width > 0 && Height > 0)
   {
-      SetDrawMask (rp, MenComplMsk);	
+    SetDrawMask (rp, MenComplMsk);
 
-      SetPens (rp, MenComplMsk, 0, COMPLEMENT);	
+    SetPens (rp, MenComplMsk, 0, COMPLEMENT);
 
-      RectFill (rp, x, y, x + Width - 1, y + Height - 1);
+    RectFill (rp, x, y, x + Width - 1, y + Height - 1);
 
-      SetDrawMask (rp, ~0);		
+    SetDrawMask (rp, ~0);
 
-      SetDrMd (rp, JAM1);
+    SetDrMd (rp, JAM1);
   }
 }
 
@@ -1140,15 +1209,15 @@ HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highl
 {
   if (Width > 0 && Height > 0)
   {
-      SetPens (rp, (Highlited) ? MenFillCol : MenBackGround, 0, JAM1);	
+    SetPens (rp, (Highlited) ? MenFillCol : MenBackGround, 0, JAM1);
 
-      RectFill (rp, x, y, x + Width - 1, y + Height - 1);
+    RectFill (rp, x, y, x + Width - 1, y + Height - 1);
   }
 }
 
 
 BOOL
-MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent * Event, struct Screen * Scr)
+MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr)
 
 {
   struct InputEvent *MyNewEvent;
@@ -1174,18 +1243,18 @@ MoveMouse (UWORD NewX, UWORD NewY, BOOL AddEvent, struct InputEvent * Event, str
 
       if (AddEvent)
       {
-	CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
-	MyNewEvent->ie_NextEvent = NULL;
+        CopyMem (Event, MyNewEvent, sizeof (struct InputEvent));
+        MyNewEvent->ie_NextEvent = NULL;
 
-	InputIO->io_Data = (APTR) MyNewEvent;
-	InputIO->io_Length = sizeof (struct InputEvent);
-	InputIO->io_Command = IND_WRITEEVENT;
-	DoIO ((struct IORequest *) InputIO);
+        InputIO->io_Data = (APTR) MyNewEvent;
+        InputIO->io_Length = sizeof (struct InputEvent);
+        InputIO->io_Command = IND_WRITEEVENT;
+        DoIO ((struct IORequest *) InputIO);
       }
 
       success = TRUE;
 
-      FreeVecPooled (MyNewEvent);	
+      FreeVecPooled (MyNewEvent);
 
     }
 
@@ -1208,7 +1277,7 @@ SPrintf (STRPTR buffer, STRPTR formatString,...)
 VOID
 SetPens (struct RastPort * RPort, ULONG FgPen, ULONG BgPen, ULONG DrawMode)
 {
-  if (GfxVersion >= 39)
+  if (V39)
     SetABPenDrMd (RPort, FgPen, BgPen, DrawMode);
   else
   {
@@ -1228,7 +1297,7 @@ SetFgPen (struct RastPort *rp, LONG pen)
 {
   LONG old;
 
-  if (GfxVersion >= 39)
+  if (V39)
     old = GetAPen (rp);
   else
     old = rp->FgPen;
@@ -1242,7 +1311,7 @@ SetDrawMode (struct RastPort *rp, LONG mode)
 {
   LONG old;
 
-  if (GfxVersion >= 39)
+  if (V39)
     old = GetDrMd (rp);
   else
     old = rp->DrawMode;
@@ -1254,7 +1323,7 @@ SetDrawMode (struct RastPort *rp, LONG mode)
 VOID
 SetDrawMask (struct RastPort *rp, LONG mask)
 {
-  if (GfxVersion >= 39)
+  if (V39)
     SetWriteMask (rp, mask);
   else
     rp->Mask = mask;
@@ -1263,7 +1332,7 @@ SetDrawMask (struct RastPort *rp, LONG mask)
 ULONG
 GetBitMapDepth (struct BitMap *BitMap)
 {
-  if (GfxVersion >= 39)
+  if (V39)
     return (GetBitMapAttr (BitMap, BMA_DEPTH));
   else
     return (BitMap->Depth);
@@ -1294,7 +1363,7 @@ SafeObtainSemaphoreShared (struct SignalSemaphore * Semaphore)
     if (!AttemptSemaphoreShared (Semaphore))
     {
       if (!AttemptSemaphore (Semaphore))
-	ObtainSemaphoreShared (Semaphore);
+        ObtainSemaphoreShared (Semaphore);
     }
   }
 }

@@ -1827,7 +1827,7 @@ CheckArguments (VOID)
 }
 
 
-BOOL 
+BOOL
 LoadPrefs (char *ConfigFile, BOOL Report)
 {
   BPTR FH;
@@ -2036,7 +2036,7 @@ CloseAll (VOID)
       if (!CheckReply (msg))
 	ReplyMsg (msg);
     }
-    DeletePort (CxMsgPort);
+    DeleteMsgPort (CxMsgPort);
     CxMsgPort = NULL;
   }
 
@@ -2054,7 +2054,7 @@ CloseAll (VOID)
     DeleteIORequest ((struct IORequest *) InputIO);
     InputIO = NULL;
 
-    DeletePort (InputPort);
+    DeleteMsgPort (InputPort);
     InputPort = NULL;
   }
 
@@ -2072,7 +2072,7 @@ CloseAll (VOID)
     DeleteIORequest ((struct IORequest *) TimerIO);
     TimerIO = NULL;
 
-    DeletePort (TimerPort);
+    DeleteMsgPort (TimerPort);
     TimerPort = NULL;
   }
 
@@ -2241,7 +2241,7 @@ main (int argc, char **argv)
 
   StartHihoTask ();
 
-  GfxVersion = GfxBase->LibNode.lib_Version;
+  V39 = (BOOL)(GfxBase->LibNode.lib_Version >= 39);
 
   if (!MemoryInit ())
     ErrorPrc ("Cannot set up memory allocator");

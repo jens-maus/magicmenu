@@ -17,7 +17,7 @@ extern struct Library *GadToolsBase;
 extern struct Library *KeymapBase;
 extern struct Library *UtilityBase;
 
-extern SHORT GfxVersion;
+extern BOOL V39;
 
 extern struct MsgPort *TimerPort;
 extern struct timerequest *TimerIO;
@@ -318,6 +318,9 @@ extern ULONG OldActivateWindow;
 extern ULONG OldWindowToFront;
 extern ULONG OldModifyIDCMP;
 extern ULONG OldObtainGIRPort;
+
+extern ULONG OldCreateUpfrontHookLayer;
+extern ULONG OldCreateUpfrontLayer;
 
 extern LONG Cx_Pri;
 extern BOOL Cx_Popup;

@@ -14,11 +14,10 @@ PATCH	macro
 	xdef	Call\1
 
 Call\1:
-	movem.l a0-a6/d1-d7,-(sp)
-	move.l	IntuitionBase(a4),a6
-	move.l	Old\1(a4),a3
-	jsr	(a3)
-	movem.l (sp)+,a0-a6/d1-d7
+	movem.l a0-a5/d1-d7,-(sp)
+	move.l	Old\1(a4),a4
+	jsr	(a4)
+	movem.l (sp)+,a0-a5/d1-d7
 	rts
 
 	endm
@@ -35,12 +34,7 @@ Call\1:
 	PATCH	WindowToFront
 	PATCH	ModifyIDCMP
 	PATCH	ObtainGIRPort
-
-*--------------------------------------------------------------------------
-
-	section __MERGED,data
-
-	xref	IntuitionBase
+	PATCH	CreateUpfrontHookLayer
 
 *--------------------------------------------------------------------------
 
