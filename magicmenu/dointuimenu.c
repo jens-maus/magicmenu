@@ -29,7 +29,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   UWORD Code, Err;
   struct InputEvent *NewEvent;
   BOOL lending = FALSE;
-
+  ENTER();
   /* Zum Zeichnen des Hintergrundes müssen wir das vormerken.
    * Diese Flag entscheidet, ob der Transparenzmodus wirklich
    * aktiv werden darf.
@@ -81,6 +81,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     /* Intuition wieder starten. */
     UnlockIBase (IBaseLock);
     ReleaseSemaphore (GetPointerSemaphore);
+	LEAVE();
     return (FALSE);
   }
 
@@ -110,6 +111,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
     {
       D(("code=%ld err=%ld", Code, Err));
       EndIntuiMenu (FALSE);
+	  LEAVE();
       return (TRUE);
     }
 
@@ -228,6 +230,6 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   UnlockIBase (IBaseLock);
 
   EndIntuiMenu (TRUE);
-
+  LEAVE();
   return (TRUE);
 }

@@ -24,6 +24,10 @@
 #include "system_headers.h"
 #endif	/* _SYSTEM_HEADERS_H */
 
+#include <libraries/amigaguide.h>
+
+#include <proto/amigaguide.h>
+
 /******************************************************************************/
 
 #include "MagicMenuPrefs_rev.h"
@@ -38,7 +42,11 @@ STRPTR VersTag = VERSTAG;
 
 /******************************************************************************/
 
+#ifdef __STORMGCC__
+long __stacksize = 16000;
+#else
 long __stack = 16000;
+#endif
 
 /******************************************************************************/
 
@@ -93,7 +101,10 @@ struct MMPrefs DefaultPrefs =
 	0,					/* SeparatorBarStyle */
 	FALSE,					/* VerifyPatches */
 	FALSE,					/* FixPatches */
-	""
+	"",
+	TRUE,
+	FALSE,
+	FALSE
 };
 
 struct MMPrefs CurrentPrefs;
@@ -165,13 +176,16 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
 	DECLARE_ITEM(MMPrefs,mmp_FixPatches,		SIT_BOOLEAN,	"FixPatches"),
 	DECLARE_ITEM(MMPrefs,mmp_BackFill,		SIT_TEXT,	"Backfill"),
+	DECLARE_ITEM(MMPrefs,mmp_PDTransparent,		SIT_BOOLEAN,	"PDTransparent"),
+	DECLARE_ITEM(MMPrefs,mmp_TransHighlight,	SIT_BOOLEAN,	"TransHighlight"),
+	DECLARE_ITEM(MMPrefs,mmp_TransBackfill,		SIT_BOOLEAN,	"TransBackfill")
 };
 
 /******************************************************************************/
 
 #define NUM_ELEMENTS(a) (sizeof(a) / sizeof(a[0]))
 
-#define SPREAD(c)	(0x01010101UL * (c))
+#define SPREAD(c)	((c)<<24|(c)<<16|(c)<<8|c)	//(0x01010101UL * (c))
 
 enum
 {
@@ -226,7 +240,11 @@ enum
 	GAD_SeparatorBarStyle,
 	GAD_VerifyPatches,
 	GAD_FixPatches,
-	GAD_BackFillStr
+	GAD_BackFillStr,
+	GAD_GetFile,
+	GAD_TransHighlight,
+	GAD_TransBackfill,
+	GAD_PDTransparent
 };
 
 enum
@@ -271,6 +289,7 @@ struct Library		*AslBase;
 struct Library		*LocaleBase;
 struct Library		*IconBase;
 struct Library		*GTLayoutBase;
+struct Library		*AmigaGuideBase;
 
 /******************************************************************************/
 
@@ -347,6 +366,11 @@ struct Hook		 SampleRefreshHook;
 
 struct MsgPort		*ReplyPort;
 struct MsgPort		*GlobalPort;
+
+/******************************************************************************/
+
+AMIGAGUIDECONTEXT	agc = NULL;
+struct NewAmigaGuide	nag;
 
 /******************************************************************************/
 
@@ -526,7 +550,7 @@ GetString(ULONG ID)
 /******************************************************************************/
 
 LONG SAVEDS STDARGS
-PrecisionDispFunc( struct Gadget *UnusedGadget, WORD Offset )
+PrecisionDispFunc( struct Gadget *UnusedGadget, LONG Offset )
 {
 	LONG Which;
 
@@ -757,7 +781,12 @@ UpdateGradient(struct MMPrefs *Prefs,WORD WhichPen)
 
 	for(i = 0 ; i < GradientPensUsed ; i++)
 	{
-		ColorHSB.cw_Brightness = SPREAD((255 - (255 * i) / (GradientPensUsed - 1)));
+		LONG	t = (255 - (255 * i) / (GradientPensUsed - 1));
+
+		if( t > 255 ) t = 255;
+		else if( t < 0 ) t = 0;
+
+		ColorHSB.cw_Brightness = SPREAD(t);
 		ConvertHSBToRGB(&ColorHSB,&ColorRGB);
 
 		SetRGB32(VPort,GradientPens[i],ColorRGB.cw_Red,ColorRGB.cw_Green,ColorRGB.cw_Blue);
@@ -1103,7 +1132,7 @@ ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 	}
 	else
 	{
-		if(NumItemsFound == 37 && Error == ERROR_REQUIRED_ARG_MISSING)
+		if(NumItemsFound >= 37 && Error == ERROR_REQUIRED_ARG_MISSING)
 		{
 			CopyMem(&LocalPrefs,HerePlease,sizeof(struct MMPrefs));
 			Error = 0;
@@ -1383,6 +1412,10 @@ CloseAll(VOID)
 	if(Catalog)
 		CloseCatalog(Catalog);
 
+	if( agc ) CloseAmigaGuide(agc);
+
+	CloseLibrary(AmigaGuideBase);
+
 	CloseLibrary(GradientSliderBase);
 	CloseLibrary(ColorWheelBase);
 
@@ -1440,6 +1473,8 @@ OpenAll(struct WBStartup *StartupMsg)
 
 	if(!(GTLayoutBase = SafeOpenLibrary("gtlayout.library",37)))
 		return("gtlayout.library V37");
+
+	AmigaGuideBase = OpenLibrary( "amigaguide.library", 39L );
 
 	if(LocaleBase = OpenLibrary("locale.library",38))
 	{
@@ -1890,6 +1925,13 @@ OpenAll(struct WBStartup *StartupMsg)
 							LACY_LabelTable,LookLabelTable,
 						TAG_DONE);
 
+						LT_New(Handle,
+							LA_Type,	CHECKBOX_KIND,
+							LA_ID,		GAD_PDTransparent,
+							LA_LabelID,	MSG_PD_TRANSPARENT_GAD,
+							LA_BYTE,	&CurrentPrefs.mmp_PDTransparent,
+						TAG_DONE);
+
 						LT_EndGroup(Handle);
 					}
 
@@ -1968,17 +2010,28 @@ OpenAll(struct WBStartup *StartupMsg)
 						TAG_DONE);
 
 						LT_New(Handle,
-							LA_Type,	STRING_KIND,
-							LA_ID,		GAD_BackFillStr,
-							LA_LabelID,	MSG_BACKFILL_GAD,
-							LA_Chars,	20,
-							LA_STRPTR,	CurrentPrefs.mmp_BackFill,
-							GTST_MaxChars,	199,
+							LA_Type,	HORIZONTAL_KIND,
 						TAG_DONE);
+						{
 
-						LT_New(Handle,
-							LA_Type,BLANK_KIND,
-						TAG_DONE);
+							LT_New(Handle,
+								LA_Type,	STRING_KIND,
+								LA_ID,		GAD_BackFillStr,
+								LA_LabelID,	MSG_BACKFILL_GAD,
+								LA_Chars,	20,
+								LA_STRPTR,	CurrentPrefs.mmp_BackFill,
+								GTST_MaxChars,	199,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	BUTTON_KIND,
+								LA_ID,		GAD_GetFile,
+								LA_LabelText,	"...",
+								LA_NoKey,	TRUE,
+							TAG_DONE);
+
+							LT_EndGroup(Handle);
+						}
 
 						LT_EndGroup(Handle);
 					}
@@ -2024,6 +2077,14 @@ OpenAll(struct WBStartup *StartupMsg)
 								LA_ID,		GAD_VerifyPatches,
 								LA_LabelID,	MSG_VERIFY_PATCHES_GAD,
 								LA_BYTE,	&CurrentPrefs.mmp_VerifyPatches,
+							TAG_DONE);
+
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_FixPatches,
+								LA_LabelID,	MSG_FIX_PATCHES_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_FixPatches,
 							TAG_DONE);
 
 							LT_EndGroup(Handle);
@@ -2072,11 +2133,19 @@ OpenAll(struct WBStartup *StartupMsg)
 								LA_BYTE,	&CurrentPrefs.mmp_Transparency,
 							TAG_DONE);
 
+
 							LT_New(Handle,
 								LA_Type,	CHECKBOX_KIND,
-								LA_ID,		GAD_FixPatches,
-								LA_LabelID,	MSG_FIX_PATCHES_GAD,
-								LA_BYTE,	&CurrentPrefs.mmp_FixPatches,
+								LA_ID,		GAD_TransHighlight,
+								LA_LabelID,	MSG_HIGHLIGHT_TRANSPARENT_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_TransHighlight,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,	CHECKBOX_KIND,
+								LA_ID,		GAD_TransBackfill,
+								LA_LabelID,	MSG_BACKFILL_TRANSPARENT_GAD,
+								LA_BYTE,	&CurrentPrefs.mmp_TransBackfill,
 							TAG_DONE);
 
 							LT_EndGroup(Handle);
@@ -2328,11 +2397,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Chars,		10,
 							GTSL_Min,		PRECISION_EXACT,
 							GTSL_Max,		PRECISION_GUI,
-#ifdef __STORMGCC__
-							GTSL_DispFunc,		PrecisionDispFuncAsm, /* gnuc holt stets langwörter vom stack */
-#else
 							GTSL_DispFunc,		PrecisionDispFunc,
-#endif
 							GTSL_LevelFormat,	"%s",
 							LASL_FullCheck,		TRUE,
 						TAG_DONE);
@@ -2604,23 +2669,49 @@ UpdateSettings(struct MMPrefs *Prefs)
 VOID
 EventLoop(struct WBStartup *StartupMsg)
 {
-	ULONG Signals,WindowMask;
+	ULONG Signals,WindowMask, AGuideMsk;
 	BOOL Done;
 	LONG Error;
 
 	WindowMask = 1L<<Handle->Window->UserPort->mp_SigBit;
+	if( agc != NULL ) AGuideMsk = AmigaGuideSignal( agc );
+	else AGuideMsk = NULL;
 
 	Done = FALSE;
 
 	do
 	{
-		Signals = Wait(WindowMask | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F);
+		Signals = Wait(WindowMask | AGuideMsk | SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_E | SIGBREAKF_CTRL_F);
 
 		if(Signals & (SIGBREAKF_CTRL_C|SIGBREAKF_CTRL_E))
 			break;
 
 		if(Signals & SIGBREAKF_CTRL_F)
 			LT_ShowWindow(Handle,TRUE);
+
+		if(Signals & AGuideMsk)
+		{
+			struct AmigaGuideMsg	*agm;
+
+			while (agm = GetAmigaGuideMsg (agc))
+			{
+				switch (agm->agm_Type)
+				{
+					case ToolCmdReplyID:
+					case ToolStatusID:
+					case ShutdownMsgID:
+						if (agm->agm_Pri_Ret)
+						{
+							STRPTR	str = GetAmigaGuideString( agm->agm_Sec_Ret );
+
+							if( str ) ShowRequest( str );
+						}
+					break;
+				}
+
+				ReplyAmigaGuideMsg( agm );
+			}
+		}
 
 		if(Signals & WindowMask)
 		{
@@ -2646,20 +2737,45 @@ EventLoop(struct WBStartup *StartupMsg)
 					case IDCMP_RAWKEY:
 						if( MsgCode == 0x5f ) // HELP
 						{
-							BPTR	fh;
+							struct TagItem	tags[] = {
+								AGA_Context, 0,
+								TAG_DONE
+							};
 
-							if( fh = Open( "NIL:", MODE_NEWFILE ) )
+							if( agc == NULL )
 							{
-								if( SystemTags( "MultiView HELP:MagicMenu.guide",
-									SYS_Input, fh,
-									SYS_Output, NULL,
-									SYS_Asynch, TRUE,
-									NP_StackSize, 8192L,
-									TAG_DONE ) == -1L )
+								STATIC STRPTR	context[] = {
+									"MAIN", NULL
+								};
+
+								nag.nag_Lock 		= NULL;
+								nag.nag_Name		= "MagicMenu.guide";
+								nag.nag_Screen		= Handle->Window->WScreen;
+								nag.nag_PubScreen	= NULL;
+								nag.nag_HostPort	= NULL;
+								nag.nag_ClientPort	= NULL;
+								nag.nag_BaseName	= NULL;
+								nag.nag_Flags		= 0L;
+								nag.nag_Context		= context;
+								nag.nag_Node		= NULL;
+								nag.nag_Line		= 0L;
+								nag.nag_Extens		= NULL;
+								nag.nag_Client		= NULL;
+
+								if( agc = OpenAmigaGuideAsyncA( &nag, NULL ) )
 								{
-									Close( fh );
+									SendAmigaGuideCmdA( agc, NULL, tags );
+									AGuideMsk = AmigaGuideSignal( agc );
+									break;
 								}
 							}
+							else
+							{
+								SendAmigaGuideCmdA( agc, NULL, tags );
+								break;
+							}
+
+							DisplayBeep( 0L );
 						}
 						break;
 
@@ -2673,6 +2789,75 @@ EventLoop(struct WBStartup *StartupMsg)
 
 						switch(MsgGadget->GadgetID)
 						{
+							case GAD_GetFile:
+							{
+								struct FileRequester *FileRequester;
+
+								if( FileRequester = AllocAslRequestTags(ASL_FileRequest, TAG_DONE) )
+								{
+									TEXT	file[108], drawer[MAX_FILENAME_LENGTH-sizeof(file)];
+
+									strncpy( drawer, CurrentPrefs.mmp_BackFill, sizeof( drawer ) );
+									*FilePart( drawer ) = 0;
+									strncpy( file, FilePart( CurrentPrefs.mmp_BackFill ), sizeof( file ) );
+
+									LT_LockWindow(Window);
+
+									if(AslRequestTags(FileRequester,
+										ASLFR_InitialFile,	(ULONG) file,
+										ASLFR_InitialDrawer,	(ULONG) drawer,
+										ASLFR_Window,		Window,
+										ASLFR_Flags1,		FRF_DOPATTERNS | FRF_PRIVATEIDCMP | FRF_REJECTICONS,
+										TAG_DONE))
+									{
+										if(FileRequester->fr_File[0])
+										{
+											STRPTR	p = FileRequester->fr_Drawer;
+											UBYTE	LocalBuffer[MAX_FILENAME_LENGTH];
+											BOOL	expand = TRUE;
+
+											strncpy( LocalBuffer, FileRequester->fr_Drawer, sizeof( LocalBuffer ) - 1 );
+											LocalBuffer[sizeof(LocalBuffer)-1] = '\0';
+											/* Feature request: Absolute Pfade nicht
+											 * ändern (zB. SYS: -> Work:)
+											 */
+											while( *p )
+											{
+												if( *p++ == ':' )
+												{
+													expand = FALSE;
+													break;
+												}
+											}
+
+											if( expand )
+											{
+												BPTR  fl;
+
+												if( fl = Lock( LocalBuffer, SHARED_LOCK ) )
+												{
+													NameFromLock( fl, LocalBuffer, sizeof(LocalBuffer) );
+													UnLock( fl );
+												}
+											}
+
+											if(AddPart(LocalBuffer,FileRequester->fr_File,sizeof(LocalBuffer)))
+											{
+												LT_SetAttributes(Handle,GAD_BackFillStr,
+													GTST_String,	LocalBuffer,
+													TAG_DONE);
+											}
+										}
+									}
+
+									LT_UnlockWindow(Window);
+
+									FreeAslRequest( FileRequester );
+								}
+
+							}
+							break;
+
 							case GAD_Test:
 
 								LT_LockWindow(Window);
@@ -2777,8 +2962,8 @@ EventLoop(struct WBStartup *StartupMsg)
 								LA_Height, &height,
 								TAG_DONE );
 
-							left += ( width - SampleMenuWidth ) / 2;
-							top += ( height - SampleMenuHeight ) / 2;
+							left += ( ( width - SampleMenuWidth ) / 2 ) - 1;
+							top += ( ( height - SampleMenuHeight ) / 2 ) - 1;
 
 							if(Pen = ReadPixel(&SampleRPort,MsgX-left,MsgY-top))
 							{

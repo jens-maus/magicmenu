@@ -1612,12 +1612,32 @@ SetDrawMask (struct RastPort *rp, LONG mask)
 }
 
 ULONG
-GetBitMapDepth (struct BitMap *BitMap)
+GetBitMapDepth (struct BitMap *bm)
 {
 	if (V39)
-		return (GetBitMapAttr (BitMap, BMA_DEPTH));
-	else
-		return (BitMap->Depth);
+	{
+		UWORD	d;
+
+		d = GetBitMapAttr( bm, BMA_DEPTH );
+
+		if( CyberGfxBase )
+		{
+			if( GetCyberMapAttr( bm, CYBRMATTR_ISCYBERGFX ) )
+			{
+				UWORD t;
+
+				t = GetCyberMapAttr( bm, CYBRMATTR_DEPTH );
+				/*
+				**	Need this when SAVEMEM is activated
+				*/
+				if( t > 8 ) d = t;
+			}
+		}
+
+		return d;
+	}
+
+	return (bm->Depth);
 }
 
 LONG
@@ -1929,6 +1949,45 @@ TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
 	}
 }
 
+STATIC BOOL
+TintPixelBuffer2(UBYTE * pix,LONG width,LONG height,struct BitMap *bm, LONG bwidth, LONG bheight)
+{
+	UBYTE	*buf;
+
+	if( buf = AllocVecPooled( bwidth*3, MEMF_PUBLIC ) )
+	{
+		struct RastPort	rp;
+		LONG 					x,y;
+
+		InitRastPort( &rp );
+		rp.BitMap = bm;
+
+		for(y = 0 ; y < height ; y++)
+		{
+			ReadPixelArray( buf, 0,0, 0, &rp, 0, y % bheight, bwidth, 1, RECTFMT_RGB );
+
+			for(x = 0 ; x < width ; x++)
+			{
+				int r,g,b, t = (x % bwidth)*3;
+
+				r = buf[t++];
+				g = buf[t++];
+				b = buf[t];
+
+				(*pix) = min(255,((*pix) + r + 1) / 2);	pix++;
+				(*pix) = min(255,((*pix) + g + 1) / 2);	pix++;
+				(*pix) = min(255,((*pix) + b + 1) / 2);	pix++;
+			}
+		}
+
+		FreeVecPooled( buf );
+
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 #ifdef __MIXEDBINARY__
 struct BlitArgs {
 	UBYTE	*src;
@@ -1946,8 +2005,10 @@ struct BlitArgs {
 
 BOOL PPCDirect = FALSE;
 
+extern VOID BlurAndTintPixelBuffer2PPCDirect(struct BlitArgs *blit,struct BitMap *bm,LONG bmwidth, LONG bmheight);
 extern VOID BlurAndTintPixelBufferPPC(UBYTE * pix,LONG width,LONG height,int r,int g,int b);
 extern VOID BlurAndTintPixelBufferPPCDirect(struct BlitArgs *blit, int r,int g,int b);
+extern VOID BlurAndTintPixelBuffer2PPC(UBYTE * pix,LONG width,LONG height,struct BitMap *bm,LONG bmwidth, LONG bmheight);
 #endif
 
 
@@ -2014,8 +2075,11 @@ CreateBackgroundCover(
 {
 	struct BackgroundCover * bgc = NULL;
 
-	if(/*GlobalPopUp &&*/(AktPrefs.mmp_Transparency || BackFillBM != NULL) && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	if((AktPrefs.mmp_Transparency || BackFillBM != NULL) && LookMC && CyberGfxBase != NULL && (GetBitMapDepth(friend) >= 15) && AllocateShadowBuffer(width,height))
 	{
+		if( ! GlobalPopUp && ! AktPrefs.mmp_PDTransparent && ! BackFillBM )
+			return NULL;
+
 		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
 		if(bgc != NULL)
 		{
@@ -2030,19 +2094,22 @@ CreateBackgroundCover(
 				InitRastPort(&rp);
 				rp.BitMap = bgc->bgc_BitMap;
 
-				if (BackFillBM != NULL)
+				if( ! AktPrefs.mmp_TransBackfill )
 				{
-					struct Rectangle	rect = {
-						0,0, width-1, height-1
-					};
-					CopyTiledBitMap( BackFillBM, 0,0, BFWidth,BFHeight, bgc->bgc_BitMap, &rect );
-					return bgc;
+					if (BackFillBM != NULL)
+					{
+						struct Rectangle	rect = {
+							0,0, width-1, height-1
+						};
+						CopyTiledBitMap( BackFillBM, 0,0, BFWidth,BFHeight, bgc->bgc_BitMap, &rect );
+						return bgc;
+					}
 				}
 				/* Fülle den Hintergrund mit BARBLOCKPEN, wenn wir den
 				 * MenuStrip eines PullDownMenüs haben. Dies sieht (wohl?)
 				 * besser aus, da der Titeltext nicht mehr durchscheint.
 				 */
-				if(strip)
+				if(strip&&!BackFillBM)
 				{
 					ULONG	tab[3], r, g, b;
 
@@ -2085,7 +2152,8 @@ CreateBackgroundCover(
 								blit.dsty = 0;
 								blit.buf = ShadowBuffer;
 
-								BlurAndTintPixelBufferPPCDirect(&blit, AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+								if (BackFillBM) BlurAndTintPixelBuffer2PPCDirect(&blit, BackFillBM, BFWidth, BFHeight );
+								else BlurAndTintPixelBufferPPCDirect(&blit, AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
 
 								UnLockBitMap(handle2);
 							}
@@ -2097,7 +2165,10 @@ CreateBackgroundCover(
 					{
 						rp.BitMap = friend;
 						ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
-						BlurAndTintPixelBufferPPC(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+
+						if(!BackFillBM) BlurAndTintPixelBufferPPC(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+						else BlurAndTintPixelBuffer2PPC(ShadowBuffer,width,height,BackFillBM,BFWidth,BFHeight);
+
 						rp.BitMap = bgc->bgc_BitMap;
 						WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
 					}
@@ -2112,6 +2183,7 @@ CreateBackgroundCover(
 					rp.BitMap = friend;
 					ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,left,top,width,height,RECTFMT_RGB);
 #endif
+
 #ifdef AMITHLON
 					if( BlurAndTintPixelBufferX86 != NULL )
 					{
@@ -2127,7 +2199,8 @@ CreateBackgroundCover(
 #endif
 					{
 						BlurPixelBuffer(ShadowBuffer,width,height);
-						TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
+						if( BackFillBM ) TintPixelBuffer2(ShadowBuffer,width,height,BackFillBM,BFWidth,BFHeight);
+						else TintPixelBuffer(ShadowBuffer,width,height,AktPrefs.mmp_Background.R >> 24,AktPrefs.mmp_Background.G >> 24,AktPrefs.mmp_Background.B >> 24);
 					}
 
 					rp.BitMap = bgc->bgc_BitMap;
@@ -2182,7 +2255,7 @@ DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,LONG par
 		width	= (maxX - minX) + 1;
 		height	= (maxY - minY) + 1;
 
-		if(AllocateShadowBuffer(width,height) && GetCyberMapAttr(rp->BitMap,CYBRMATTR_DEPTH) >= 15)
+		if(AllocateShadowBuffer(width,height) && GetBitMapDepth(rp->BitMap) >= 15)
 		{
 			const int shadowLevel = 256/4;
 
@@ -2229,7 +2302,10 @@ HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY
 		{
 			ReadPixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 
-			BrightenPixelBuffer(ShadowBuffer,width,height);
+			if( ! AktPrefs.mmp_TransHighlight )
+				BrightenPixelBuffer(ShadowBuffer,width,height);
+			else
+				TintPixelBuffer(ShadowBuffer,width,height, AktPrefs.mmp_FillCol.R >> 24, AktPrefs.mmp_FillCol.G >> 24, AktPrefs.mmp_FillCol.B >> 24);
 
 			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
 

@@ -1,3 +1,26 @@
+2002-03-19  Stephan Rupprecht <mail@stephan-rupprecht.de>
+
+  * transparency can be disabled for pull-down menus, now.
+  * for standard menus dri_CheckMark was used instead of
+    Win->CheckMark (unless dri_CheckMark was NULL).
+  * fixed a problem with CGFX and the SAVEMEM option of it.
+    MagicMenu was using GetCyberMapAttr() on non cgx
+    bitmaps causing some garbage because the transparency
+    feature got activated on <= 4bit screens.
+  * the highlighting color is used to highlight the 
+    currently active item when transparency is used. Before
+    the item was brighten by 25%. You can switch between
+    both possibilities.
+  * due to heavy demand the background image can be 
+    made transparent, too.
+  * MagicMenuPrefs: fixed the color precision slider
+    once again (this time the compiler grabbed the
+    parameter with the right order from the stack).
+  * MagicMenuPrefs: the stackswapping code was missing
+    in 2.34.
+  * MagicMenuPrefs: the path of the background image
+    will be turned into an absolute one, now.
+
 2002-01-13  Stephan Rupprecht <mail@stephan-rupprecht.de>
  
   * added PPCDIRECT tooltype. When set to YES, the PPC will
@@ -7,6 +30,8 @@
     have a backdrop image.
   * transparency didn't work when blocking mode was enabled and
     cast shadows off (two uninitialized variables) <Sensei>.
+  * the extra code used for interleaved screens seems to fix
+    Andreas problem.
 
 2001-11-15  Stephan Rupprecht <mail@stephan-rupprecht.de>
   

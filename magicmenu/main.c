@@ -371,6 +371,8 @@ FreeMenuRemember (struct MenuRemember *Remember)
 	struct MenuRmb *MenRmb, *NextMenu;
 	struct ItemRmb *ItemRmb, *NextItem;
 
+	ENTER();
+
 	MenRmb = Remember->FirstMenu;
 
 	while (MenRmb)
@@ -388,6 +390,8 @@ FreeMenuRemember (struct MenuRemember *Remember)
 		FreeVecPooled (MenRmb);
 		MenRmb = NextMenu;
 	}
+
+	LEAVE();
 
 	FreeVecPooled (Remember);
 }
@@ -410,10 +414,10 @@ MakeMenuRemember (struct Window *Win)
 	long Length;
 
 	if (Win->MenuStrip == NULL)
-		return (NULL);
+	return (NULL);
 
 	if (!(NewRemember = AllocVecPooled (sizeof (struct MenuRemember), MEMF_CLEAR)))
-			return (NULL);
+	return (NULL);
 
 	MenScr = Win->WScreen;
 
@@ -430,267 +434,267 @@ MakeMenuRemember (struct Window *Win)
 	LookMenu = Win->MenuStrip;
 	while (LookMenu)
 	{
-		if (!(NewMenRmb = AllocVecPooled (sizeof (struct MenuRmb), MEMF_CLEAR)))
-		{
-			FreeMenuRemember (NewRemember);
-			return (NULL);
-		}
+	if (!(NewMenRmb = AllocVecPooled (sizeof (struct MenuRmb), MEMF_CLEAR)))
+	{
+	FreeMenuRemember (NewRemember);
+	return (NULL);
+	}
 
-		NewMenRmb->Menu = LookMenu;
-		NewMenRmb->AktItemNum = 0;
-		NewMenRmb->AktItem = 0;
+	NewMenRmb->Menu = LookMenu;
+	NewMenRmb->AktItemNum = 0;
+	NewMenRmb->AktItem = 0;
 
-		NewMenRmb->Height = 0;
-		NewMenRmb->Width = 0;
-		NewMenRmb->ZwTop = 0x7fff;
-		NewMenRmb->ZwLeft = 0x7fff;
-		NewMenRmb->CmdOffs = 0;
+	NewMenRmb->Height = 0;
+	NewMenRmb->Width = 0;
+	NewMenRmb->ZwTop = 0x7fff;
+	NewMenRmb->ZwLeft = 0x7fff;
+	NewMenRmb->CmdOffs = 0;
 
-		HasCheck = FALSE;
+	HasCheck = FALSE;
 
-		ZwItem = LookMenu->FirstItem;
+	ZwItem = LookMenu->FirstItem;
 
-		while (ZwItem)
-		{
-			if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
-				HasCheck = TRUE;
+	while (ZwItem)
+	{
+	if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
+	HasCheck = TRUE;
 
-			CommandText.ITextFont = &MenTextAttr;
+	CommandText.ITextFont = &MenTextAttr;
 
-			NW = ZwItem->LeftEdge + ZwItem->Width;
-			NH = ZwItem->TopEdge + ZwItem->Height;
+	NW = ZwItem->LeftEdge + ZwItem->Width;
+	NH = ZwItem->TopEdge + ZwItem->Height;
 
-			if (ZwItem->Flags & ITEMTEXT)
-			{
-				IntTxt = (struct IntuiText *) ZwItem->ItemFill;
+	if (ZwItem->Flags & ITEMTEXT)
+	{
+	IntTxt = (struct IntuiText *) ZwItem->ItemFill;
 
-				while (IntTxt)
-				{
-					if (IntTxt->ITextFont == NULL)
-					{
-						IntTxt->ITextFont = &MenTextAttr;
-						N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-						N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-						IntTxt->ITextFont = NULL;
-					}
-					else
-					{
-						N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-						N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-						CommandText.ITextFont = IntTxt->ITextFont;
-					}
+	while (IntTxt)
+	{
+	if (IntTxt->ITextFont == NULL)
+	{
+	IntTxt->ITextFont = &MenTextAttr;
+	N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+	N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+	IntTxt->ITextFont = NULL;
+	}
+	else
+	{
+	N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+	N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+	CommandText.ITextFont = IntTxt->ITextFont;
+	}
 
-					if (N1 > NW)
-						NW = N1;
+	if (N1 > NW)
+	NW = N1;
 
-					if (N2 > NH)
-						NH = N2;
+	if (N2 > NH)
+	NH = N2;
 
-					IntTxt = IntTxt->NextText;
-				}
-			}
-			else
-			{
-				IntImg = (struct Image *) ZwItem->ItemFill;
-				while (IntImg)
-				{
-					N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
-					if (N1 > NW)
-						NW = N1;
+	IntTxt = IntTxt->NextText;
+	}
+	}
+	else
+	{
+	IntImg = (struct Image *) ZwItem->ItemFill;
+	while (IntImg)
+	{
+	N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
+	if (N1 > NW)
+	NW = N1;
 
-					N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
-					if (N1 > NH)
-						NH = N1;
+	N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
+	if (N1 > NH)
+	NH = N1;
 
-					IntImg = IntImg->NextImage;
-				}
-			}
+	IntImg = IntImg->NextImage;
+	}
+	}
 
-			if (NW > NewMenRmb->Width)
-				NewMenRmb->Width = NW;
-			if (NH > NewMenRmb->Height)
-				NewMenRmb->Height = NH;
+	if (NW > NewMenRmb->Width)
+	NewMenRmb->Width = NW;
+	if (NH > NewMenRmb->Height)
+	NewMenRmb->Height = NH;
 
-			if (ZwItem->LeftEdge < NewMenRmb->ZwLeft)
-				NewMenRmb->ZwLeft = ZwItem->LeftEdge;
-			if (ZwItem->TopEdge < NewMenRmb->ZwTop)
-				NewMenRmb->ZwTop = ZwItem->TopEdge;
+	if (ZwItem->LeftEdge < NewMenRmb->ZwLeft)
+	NewMenRmb->ZwLeft = ZwItem->LeftEdge;
+	if (ZwItem->TopEdge < NewMenRmb->ZwTop)
+	NewMenRmb->ZwTop = ZwItem->TopEdge;
 
-			if (ZwItem->Flags & COMMSEQ)
-			{
-				CommText[0] = ZwItem->Command;
-				CommText[1] = 0;
+	if (ZwItem->Flags & COMMSEQ)
+	{
+	CommText[0] = ZwItem->Command;
+	CommText[1] = 0;
 
-				Length = IntuiTextLength (&CommandText);
-				if (Length > NewMenRmb->CmdOffs)
-					NewMenRmb->CmdOffs = Length;
-			}
+	Length = IntuiTextLength (&CommandText);
+	if (Length > NewMenRmb->CmdOffs)
+	NewMenRmb->CmdOffs = Length;
+	}
 
-			ZwItem = ZwItem->NextItem;
-		}
+	ZwItem = ZwItem->NextItem;
+	}
 
-		NewMenRmb->Height -= NewMenRmb->ZwTop;
-		NewMenRmb->Width -= NewMenRmb->ZwLeft;
+	NewMenRmb->Height -= NewMenRmb->ZwTop;
+	NewMenRmb->Width -= NewMenRmb->ZwLeft;
 
-		NewMenRmb->NextMenu = NewRemember->FirstMenu;
-		NewRemember->FirstMenu = NewMenRmb;
+	NewMenRmb->NextMenu = NewRemember->FirstMenu;
+	NewRemember->FirstMenu = NewMenRmb;
 
-		if (NewMenRmb->Height != 0 && NewMenRmb->Width != 0)
-		{
-			if (ScrHiRes)
-			{
-				NewMenRmb->Height += 6;
-				NewMenRmb->Width += 10;
-				NewMenRmb->LeftBorder = 5;
-				NewMenRmb->TopBorder = 3;
-			}
-			else
-			{
-				NewMenRmb->Height += 6;
-				NewMenRmb->Width += 6;
-				NewMenRmb->TopBorder = 3;
-				NewMenRmb->LeftBorder = 3;
-			}
+	if (NewMenRmb->Height != 0 && NewMenRmb->Width != 0)
+	{
+	if (ScrHiRes)
+	{
+	NewMenRmb->Height += 6;
+	NewMenRmb->Width += 10;
+	NewMenRmb->LeftBorder = 5;
+	NewMenRmb->TopBorder = 3;
+	}
+	else
+	{
+	NewMenRmb->Height += 6;
+	NewMenRmb->Width += 6;
+	NewMenRmb->TopBorder = 3;
+	NewMenRmb->LeftBorder = 3;
+	}
 
-			NewMenRmb->TopOffs = NewMenRmb->TopBorder - NewMenRmb->ZwTop;
-			NewMenRmb->LeftOffs = NewMenRmb->LeftBorder - NewMenRmb->ZwLeft;
+	NewMenRmb->TopOffs = NewMenRmb->TopBorder - NewMenRmb->ZwTop;
+	NewMenRmb->LeftOffs = NewMenRmb->LeftBorder - NewMenRmb->ZwLeft;
 
-			LookItem = LookMenu->FirstItem;
+	LookItem = LookMenu->FirstItem;
 
-			while (LookItem)
-			{
-				if (!(NewItemRmb = AllocVecPooled (sizeof (struct ItemRmb), MEMF_CLEAR)))
-				{
-					FreeMenuRemember (NewRemember);
-					return (NULL);
-				}
+	while (LookItem)
+	{
+	if (!(NewItemRmb = AllocVecPooled (sizeof (struct ItemRmb), MEMF_CLEAR)))
+	{
+	FreeMenuRemember (NewRemember);
+	return (NULL);
+	}
 
-				NewItemRmb->Item = LookItem;
-				NewItemRmb->AktSubItemNum = 0;
-				NewItemRmb->AktSubItem = NULL;
+	NewItemRmb->Item = LookItem;
+	NewItemRmb->AktSubItemNum = 0;
+	NewItemRmb->AktSubItem = NULL;
 
-				NewItemRmb->Height = 0;
-				NewItemRmb->Width = 0;
-				NewItemRmb->ZwTop = 0x7fff;
-				NewItemRmb->ZwLeft = 0x7fff;
-				NewItemRmb->CmdOffs = 0;
+	NewItemRmb->Height = 0;
+	NewItemRmb->Width = 0;
+	NewItemRmb->ZwTop = 0x7fff;
+	NewItemRmb->ZwLeft = 0x7fff;
+	NewItemRmb->CmdOffs = 0;
 
-				ZwItem = LookItem->SubItem;
+	ZwItem = LookItem->SubItem;
 
-				HasCheck = FALSE;
+	HasCheck = FALSE;
 
-				while (ZwItem)
-				{
-					if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
-						HasCheck = TRUE;
+	while (ZwItem)
+	{
+	if (!HasCheck && (ZwItem->Flags & CHECKIT) && (!ZwItem->SubItem) && (ZwItem->Flags & HIGHNONE) != HIGHNONE)
+	HasCheck = TRUE;
 
-					CommandText.ITextFont = &MenTextAttr;
+	CommandText.ITextFont = &MenTextAttr;
 
-					NW = ZwItem->LeftEdge + ZwItem->Width;
-					NH = ZwItem->TopEdge + ZwItem->Height;
+	NW = ZwItem->LeftEdge + ZwItem->Width;
+	NH = ZwItem->TopEdge + ZwItem->Height;
 
-					if (ZwItem->Flags & ITEMTEXT)
-					{
-						IntTxt = (struct IntuiText *) ZwItem->ItemFill;
-						while (IntTxt)
-						{
-							if (IntTxt->ITextFont == NULL)
-							{
-								IntTxt->ITextFont = &MenTextAttr;
-								N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-								N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-								IntTxt->ITextFont = NULL;
-							}
-							else
-							{
-								N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
-								N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
-								CommandText.ITextFont = IntTxt->ITextFont;
-							}
+	if (ZwItem->Flags & ITEMTEXT)
+	{
+	IntTxt = (struct IntuiText *) ZwItem->ItemFill;
+	while (IntTxt)
+	{
+	if (IntTxt->ITextFont == NULL)
+	{
+	IntTxt->ITextFont = &MenTextAttr;
+	N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+	N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+	IntTxt->ITextFont = NULL;
+	}
+	else
+	{
+	N1 = IntTxt->LeftEdge + IntuiTextLength (IntTxt) + ZwItem->LeftEdge;
+	N2 = IntTxt->TopEdge + IntTxt->ITextFont->ta_YSize + ZwItem->TopEdge;
+	CommandText.ITextFont = IntTxt->ITextFont;
+	}
 
-							if (N1 > NW)
-								NW = N1;
+	if (N1 > NW)
+	NW = N1;
 
-							if (N2 > NH)
-								NH = N2;
+	if (N2 > NH)
+	NH = N2;
 
-							IntTxt = IntTxt->NextText;
-						}
-					}
-					else
-					{
-						IntImg = (struct Image *) ZwItem->ItemFill;
-						while (IntImg)
-						{
-							N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
-							if (N1 > NW)
-								NW = N1;
+	IntTxt = IntTxt->NextText;
+	}
+	}
+	else
+	{
+	IntImg = (struct Image *) ZwItem->ItemFill;
+	while (IntImg)
+	{
+	N1 = IntImg->LeftEdge + IntImg->Width + ZwItem->LeftEdge;
+	if (N1 > NW)
+	NW = N1;
 
-							N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
-							if (N1 > NH)
-								NH = N1;
+	N1 = IntImg->TopEdge + IntImg->Height + ZwItem->TopEdge;
+	if (N1 > NH)
+	NH = N1;
 
-							IntImg = IntImg->NextImage;
-						}
-					}
+	IntImg = IntImg->NextImage;
+	}
+	}
 
-					if (NW > NewItemRmb->Width)
-						NewItemRmb->Width = NW;
-					if (NH > NewItemRmb->Height)
-						NewItemRmb->Height = NH;
+	if (NW > NewItemRmb->Width)
+	NewItemRmb->Width = NW;
+	if (NH > NewItemRmb->Height)
+	NewItemRmb->Height = NH;
 
-					if (ZwItem->LeftEdge < NewItemRmb->ZwLeft)
-						NewItemRmb->ZwLeft = ZwItem->LeftEdge;
-					if (ZwItem->TopEdge < NewItemRmb->ZwTop)
-						NewItemRmb->ZwTop = ZwItem->TopEdge;
+	if (ZwItem->LeftEdge < NewItemRmb->ZwLeft)
+	NewItemRmb->ZwLeft = ZwItem->LeftEdge;
+	if (ZwItem->TopEdge < NewItemRmb->ZwTop)
+	NewItemRmb->ZwTop = ZwItem->TopEdge;
 
-					if (ZwItem->Flags & COMMSEQ)
-					{
-						CommText[0] = ZwItem->Command;
-						CommText[1] = 0;
+	if (ZwItem->Flags & COMMSEQ)
+	{
+	CommText[0] = ZwItem->Command;
+	CommText[1] = 0;
 
-						Length = IntuiTextLength (&CommandText);
-						if (Length > NewItemRmb->CmdOffs)
-							NewItemRmb->CmdOffs = Length;
-					}
+	Length = IntuiTextLength (&CommandText);
+	if (Length > NewItemRmb->CmdOffs)
+	NewItemRmb->CmdOffs = Length;
+	}
 
-					ZwItem = ZwItem->NextItem;
-				}
+	ZwItem = ZwItem->NextItem;
+	}
 
-				NewItemRmb->Height -= NewItemRmb->ZwTop;
-				NewItemRmb->Width -= NewItemRmb->ZwLeft;
+	NewItemRmb->Height -= NewItemRmb->ZwTop;
+	NewItemRmb->Width -= NewItemRmb->ZwLeft;
 
-				if (NewItemRmb->Height != NULL && NewItemRmb->Width != NULL)
-				{
-					if (ScrHiRes)
-					{
-						NewItemRmb->Height += 6;
-						NewItemRmb->Width += 10;
-						NewItemRmb->LeftBorder = 5;
-						NewItemRmb->TopBorder = 3;
-					}
-					else
-					{
-						NewItemRmb->Height += 6;
-						NewItemRmb->Width += 6;
-						NewItemRmb->TopBorder = 3;
-						NewItemRmb->LeftBorder = 3;
-					}
+	if (NewItemRmb->Height != NULL && NewItemRmb->Width != NULL)
+	{
+	if (ScrHiRes)
+	{
+	NewItemRmb->Height += 6;
+	NewItemRmb->Width += 10;
+	NewItemRmb->LeftBorder = 5;
+	NewItemRmb->TopBorder = 3;
+	}
+	else
+	{
+	NewItemRmb->Height += 6;
+	NewItemRmb->Width += 6;
+	NewItemRmb->TopBorder = 3;
+	NewItemRmb->LeftBorder = 3;
+	}
 
-					NewItemRmb->TopOffs = NewItemRmb->TopBorder - NewItemRmb->ZwTop;
-					NewItemRmb->LeftOffs = NewItemRmb->LeftBorder - NewItemRmb->ZwLeft;
+	NewItemRmb->TopOffs = NewItemRmb->TopBorder - NewItemRmb->ZwTop;
+	NewItemRmb->LeftOffs = NewItemRmb->LeftBorder - NewItemRmb->ZwLeft;
 
-				}
+	}
 
-				NewItemRmb->NextItem = NewMenRmb->FirstItem;
-				NewMenRmb->FirstItem = NewItemRmb;
+	NewItemRmb->NextItem = NewMenRmb->FirstItem;
+	NewMenRmb->FirstItem = NewItemRmb;
 
-				LookItem = LookItem->NextItem;
-			}
+	LookItem = LookItem->NextItem;
+	}
 
-		}
+	}
 
-		LookMenu = LookMenu->NextMenu;
+	LookMenu = LookMenu->NextMenu;
 	}
 
 	return (NewRemember);
@@ -702,6 +706,8 @@ FreeGlobalRemember (VOID)
 {
 	struct MenuRemember *NextRemember;
 
+	ENTER();
+
 	ObtainSemaphore (RememberSemaphore);
 
 	while (GlobalRemember)
@@ -712,6 +718,8 @@ FreeGlobalRemember (VOID)
 	}
 
 	ReleaseSemaphore (RememberSemaphore);
+
+	LEAVE();
 }
 
 BOOL
@@ -721,6 +729,8 @@ MakeGlobalRemember (VOID)
 	struct Window *Win;
 	struct MenuRemember *NewMenuRemember;
 	long ILock;
+
+	ENTER();
 
 	ILock = LockIBase (NULL);
 
@@ -741,6 +751,7 @@ MakeGlobalRemember (VOID)
 					FreeGlobalRemember ();
 					ReleaseSemaphore (RememberSemaphore);
 					UnlockIBase (ILock);
+					LEAVE();
 					return (FALSE);
 				}
 				NewMenuRemember->NextRemember = GlobalRemember;
@@ -755,6 +766,8 @@ MakeGlobalRemember (VOID)
 
 	UnlockIBase (ILock);
 
+	LEAVE();
+
 	return (TRUE);
 }
 
@@ -764,6 +777,8 @@ ClearRemember (struct Window * Win)
 	struct MenuRemember *LookRemember;
 	struct MenuRemember *LastRemember;
 	struct MenuRemember *NextRemember;
+
+	ENTER();
 
 	ObtainSemaphore (RememberSemaphore);
 
@@ -788,6 +803,8 @@ ClearRemember (struct Window * Win)
 	}
 
 	ReleaseSemaphore (RememberSemaphore);
+
+	LEAVE();
 }
 
 BOOL
@@ -797,12 +814,18 @@ UpdateRemember (struct Window *Window)
 	struct MenuRmb *LookMenRmb;
 	struct ItemRmb *LookItemRmb;
 
+	ENTER();
+
 	ObtainSemaphore (RememberSemaphore);
 
 	ClearRemember (Window);
 
 	if (!(NewRemember = MakeMenuRemember (Window)))
+	{
+		ReleaseSemaphore (RememberSemaphore); /* STEPHAN */
+		LEAVE();
 		return (FALSE);
+	}
 
 	NewRemember->NextRemember = GlobalRemember;
 	GlobalRemember = NewRemember;
@@ -822,6 +845,7 @@ UpdateRemember (struct Window *Window)
 		if (!AktMenRmb)
 		{
 			ReleaseSemaphore (RememberSemaphore);
+			LEAVE();
 			return (FALSE);
 		}
 
@@ -838,11 +862,13 @@ UpdateRemember (struct Window *Window)
 			if (!AktItemRmb)
 			{
 				ReleaseSemaphore (RememberSemaphore);
+				LEAVE();
 				return (FALSE);
 			}
 		}
 	}
 	ReleaseSemaphore (RememberSemaphore);
+	LEAVE();
 	return (TRUE);
 }
 
@@ -871,6 +897,8 @@ ResetMenu (struct Menu *Menu, BOOL MenNull)
 	struct Menu *ZwMenu;
 	struct MenuItem *ZwItem, *ZwSubItem;
 
+	ENTER();
+
 	ZwMenu = Menu;
 	while (ZwMenu)
 	{
@@ -895,11 +923,15 @@ ResetMenu (struct Menu *Menu, BOOL MenNull)
 		ZwMenu->Flags &= ~MIDRAWN;
 		ZwMenu = ZwMenu->NextMenu;
 	}
+
+	LEAVE();
 }
 
 VOID
 CleanUpMenu (VOID)
 {
+	ENTER();
+
 	CleanUpMenuSubBox ();
 	CleanUpMenuBox ();
 	CleanUpMenuStrip ();
@@ -914,6 +946,8 @@ CleanUpMenu (VOID)
 	MenWin->Flags &= ~WFLG_MENUSTATE;
 
 	ResetBrokerSetup ();
+
+	LEAVE();
 }
 
 BOOL
@@ -923,6 +957,8 @@ MenuSelected (BOOL LastSelect)
 	BOOL SubItem;
 	ULONG MExcl;
 	LONG t, l, h, w;
+
+	ENTER();
 
 	SelItem = NULL;
 
@@ -1049,6 +1085,8 @@ MenuSelected (BOOL LastSelect)
 
 	LastSelectedMenu = SelItem;
 
+	LEAVE();
+
 	return (TRUE);
 }
 
@@ -1065,6 +1103,8 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
 	struct Menu *SavMenu;
 	UWORD SavMenuNum, SavItemNum, SavSubItemNum;
 	ULONG CurrSecs, CurrMics;
+
+	ENTER();
 
 	*Cancel = FALSE;
 	Ende = FALSE;
@@ -1436,6 +1476,8 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
 		}
 	}
 
+	LEAVE();
+
 	return (Ende);
 }
 
@@ -1449,6 +1491,8 @@ ProcessIntuiMenu (VOID)
 	ULONG TimeMask;
 	BOOL Poll, Ticking;
 	LONG LastX,LastY,NewX,NewY,DeltaX,DeltaY;
+
+	ENTER();
 
 	Ende = FALSE;
 	Cancel = FALSE;
@@ -1545,11 +1589,15 @@ ProcessIntuiMenu (VOID)
 		LastSelectedMenu = NULL;
 		FirstMenuNum = MENUNULL;
 	}
+
+	LEAVE();
 }
 
 VOID
 EndIntuiMenu (BOOL ReleaseMenuAct)
 {
+	ENTER();
+
 	ObtainSemaphore (GetPointerSemaphore);
 
 	MenScr = NULL;
@@ -1560,6 +1608,8 @@ EndIntuiMenu (BOOL ReleaseMenuAct)
 
 	if (ReleaseMenuAct)
 		ReleaseSemaphore (MenuActSemaphore);
+
+	LEAVE();
 }
 
 BOOL
@@ -1593,6 +1643,7 @@ CheckCxMsg (CxMsg * Msg)
 	{VTAG_VIEWPORTEXTRA_GET, NULL,
 	 VTAG_END_CM, NULL};
 
+	ENTER();
 
 	if (CheckReply ((struct Message *) Msg))
 		return (FALSE);
@@ -1813,6 +1864,8 @@ CheckCxMsg (CxMsg * Msg)
 	if (DoGlobalQuit)
 		Ende = TRUE;
 
+	LEAVE();
+
 	return (Ende);
 }
 
@@ -1820,6 +1873,8 @@ BOOL
 CheckMMMsgPort (struct MMMessage * MMMsg)
 {
 	BOOL Ende;
+
+	ENTER();
 
 	Ende = FALSE;
 
@@ -1900,6 +1955,9 @@ CheckMMMsgPort (struct MMMessage * MMMsg)
 		ReplyMsg (MMMsg);
 		break;
 	}
+
+	LEAVE();
+
 	return (Ende);
 }
 
@@ -1938,6 +1996,8 @@ ProcessCommodity (VOID)
 	struct Message *Msg;
 	struct MMMessage *MMMsg;
 	struct IntuiMessage *IMsg;
+
+	ENTER();
 
 	MMMsgPortMask = PORTMASK (MMMsgPort);
 	IMsgReplyMask = PORTMASK (IMsgReplyPort);
@@ -2015,6 +2075,8 @@ ProcessCommodity (VOID)
 			}
 		}
 	}
+
+	LEAVE();
 }
 
 VOID
@@ -2047,6 +2109,7 @@ StartPrefs (VOID)
 				SYS_Output, Out,
 				SYS_Asynch, TRUE,
 				NP_Name, "MagicMenuPrefs",
+				NP_StackSize, 8192L,
 				TAG_DONE);
 		}
 		else
@@ -2201,6 +2264,9 @@ LoadPrefs (char *Name, BOOL Report)
 		DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,			SIT_BOOLEAN,	"VerifyPatches"),
 		DECLARE_ITEM(MMPrefs,mmp_FixPatches,			SIT_BOOLEAN,	"FixPatches"),
 		DECLARE_ITEM(MMPrefs,mmp_BackFill,				SIT_TEXT,		"BackFill"),
+		DECLARE_ITEM(MMPrefs,mmp_PDTransparent,		SIT_BOOLEAN,	"PDTransparent"),
+		DECLARE_ITEM(MMPrefs,mmp_TransHighlight,	SIT_BOOLEAN,	"TransHighlight"),
+		DECLARE_ITEM(MMPrefs,mmp_TransBackfill,		SIT_BOOLEAN,	"TransBackfill")
 	};
 
 	struct MMPrefs LocalPrefs;
@@ -2212,7 +2278,7 @@ LoadPrefs (char *Name, BOOL Report)
 	Error = RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs,&NumItemsFound);
 	if(Error != 0)
 	{
-		if(NumItemsFound != 37 || Error != ERROR_REQUIRED_ARG_MISSING)
+		if(NumItemsFound < 37 || Error != ERROR_REQUIRED_ARG_MISSING)
 		{
 			if(Report)
 				ShowRequest(GetString(MSG_ERROR_IN_CONFIGURATION_FILE_TXT));
@@ -2257,35 +2323,54 @@ LoadPrefs (char *Name, BOOL Report)
 VOID
 ResetBrokerSetup ()
 {
+	ENTER();
+
 	if (CxChanged)
 	{
 		struct Message *msg;
+		while (msg = GetMsg (CxMsgPort))
+		{
+			if (!CheckReply (msg))
+			{
+				ReplyMsg (msg);
+			}
+		}
 
 		ActivateCxObj (Broker, FALSE);
 
 		SetFilterIX (MouseFilter, &MouseIX);
 
 		RemoveCxObj (ActKbdFilter);
+
 		RemoveCxObj (MouseMoveFilter);
+
 		RemoveCxObj (MousePositionFilter);
+
 		RemoveCxObj (MouseNewPositionFilter);
+
 		RemoveCxObj (TickFilter);
 
 		while (msg = GetMsg (CxMsgPort))
 		{
 			if (!CheckReply (msg))
+			{
 				ReplyMsg (msg);
+			}
 		}
 
 		ActivateCxObj (Broker, TRUE);
 
 		CxChanged = FALSE;
 	}
+
+	LEAVE();
 }
 
 VOID
 ChangeBrokerSetup ()
 {
+	ENTER();
+
 	if (!CxChanged)
 	{
 		struct Message *msg;
@@ -2309,6 +2394,8 @@ ChangeBrokerSetup ()
 		ActivateCxObj (Broker, TRUE);
 		CxChanged = TRUE;
 	}
+
+	LEAVE();
 }
 
 VOID
@@ -2593,6 +2680,8 @@ main (int argc, char **argv)
 	LONG z1;
 	char *SPtr;
 
+	ENTER();
+
 	if(SysBase->lib_Version < 37)
 	{
 		((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
@@ -2650,7 +2739,8 @@ main (int argc, char **argv)
 	if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ("intuition.library", 37)))
 		ErrorPrc ("");
 
-	CyberGfxBase = OpenLibrary("cybergraphics.library",0);
+	if( FindSemaphore( "cybergraphics.library" ) )
+		CyberGfxBase = OpenLibrary("cybergraphics.library",0);
 
 	if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
 		ErrorPrc ("graphics.library V37");
@@ -2766,7 +2856,7 @@ main (int argc, char **argv)
 	{
 		if( x86elf = open_elf("PROGDIR:mmx86.elf") )
 			BlurAndTintPixelBufferX86 = find_slowcall( x86elf, "BlurAndTintPixelBufferX86" );
-		else Complain( "Can't load x86 support code" );
+/*		else Complain( "Can't load x86 support code" );	*/
 	}
 #endif
 	ObtainSemaphore (RememberSemaphore);
@@ -2859,6 +2949,8 @@ main (int argc, char **argv)
 		StartPrefs ();
 
 	ProcessCommodity ();
+
+	LEAVE();
 
 	CloseAll ();
 

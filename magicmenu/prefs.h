@@ -69,6 +69,10 @@ struct MMPrefs
   BOOLEAN mmp_FixPatches;
   
   char mmp_BackFill[256];
+  
+  BOOLEAN mmp_PDTransparent;
+  BOOLEAN mmp_TransHighlight;
+  BOOLEAN mmp_TransBackfill;
 };
 
 enum

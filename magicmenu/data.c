@@ -274,6 +274,16 @@ struct MMPrefs DefaultPrefs =
 	0x00000000, 0x00000000, 0x00000000,	/* TextCol */
 	0x00000000, 0x00000000, 0x00000000,	/* HiCol */
 	0x3B3B3B3B, 0x67676767, 0xa3a3a3a3,	/* FillCol */
+
+	FALSE,					/* Transparency */
+	FALSE,					/* HighlightDisabled */
+	0,					/* SeparatorBarStyle */
+	FALSE,					/* VerifyPatches */
+	FALSE,					/* FixPatches */
+	"",
+	TRUE,
+	FALSE,
+	FALSE
 };
 
 

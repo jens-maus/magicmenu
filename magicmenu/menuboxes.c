@@ -140,6 +140,8 @@ OpenCommonWindow(
 	LONG Black;
 	BOOL success = FALSE;
 
+	ENTER();
+
 	if(V39 && MenXENBlack)
 		Black = MenXENBlack;
 	else
@@ -227,6 +229,8 @@ OpenCommonWindow(
 
 	(*resultWindowPtr) = Window;
 	(*resultBackgroundCoverPtr) = bgc;
+
+	LEAVE();
 
 	return(success);
 }
@@ -878,6 +882,8 @@ GetSubItemContCoor (struct MenuItem *MenuItem, LONG * t, LONG * l, LONG * w, LON
 VOID
 CleanUpMenuSubBox (VOID)
 {
+	ENTER();
+
 	if (AktItemRmb)
 	{
 		if (AktSubItem)
@@ -913,6 +919,8 @@ CleanUpMenuSubBox (VOID)
 	if (AktItem)
 		AktItem->Flags &= ~ISDRAWN;
 	AktSubItem = NULL;
+
+	LEAVE();
 }
 
 BOOL
@@ -1902,6 +1910,8 @@ DrawNormMenu (struct Menu *Menu)
 VOID
 CleanUpMenuStrip (VOID)
 {
+	ENTER();
+
 	if (AktMenuRemember)
 	{
 		if (AktMenu)
@@ -1967,6 +1977,8 @@ CleanUpMenuStrip (VOID)
 		CloseFont (MenOpenedFont);
 		MenOpenedFont = NULL;
 	}
+
+	LEAVE();
 }
 
 VOID
@@ -2807,7 +2819,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 	UWORD *Pens;
 	LONG MaxMapPen,MaxMapDepth;
 /*  UWORD CheckWidth,CommandWidth;*/
-
+	ENTER();
 	IsBlocking = !AktPrefs.mmp_NonBlocking;
 	ThisTask = FindTask(NULL);
 
@@ -3069,8 +3081,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 /*    LookMC = (MenTextCol != MenBackGround && MenBackGround != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);*/
 			/* 2.23: Eigentlich sollte es reichen, wenn man den Text lesen kann und
 			 *       sieht, welchen Eintrag man gerade am Wickel hat.
+			 *
+			 * Stephan 2.36: 2te Bedingung auskommentiert. Erscheint mir nicht sinnvoll und man
+			 * kann dann nicht beide Farben gleichsetzen (User request).
 			 */
-			LookMC = (MenTextCol != MenBackGround && MenTextCol != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenBackGround);
+			LookMC = (MenTextCol != MenBackGround && /*MenTextCol != MenFillCol &&*/ MenHiCol != MenFillCol && MenStdGrey0 != MenBackGround);
 
 			if(LookMC)
 			{
@@ -3382,9 +3397,22 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 			MenTrimPen = Pens[BARTRIMPEN];
 			MenComplMsk = (MenTextCol | MenBackGround);
 			NoCheckImage = NoMXImage = NULL;
-			CheckImage = DrawInfo->dri_CheckMark;
+/*			CheckImage = DrawInfo->dri_CheckMark;
 			if (!CheckImage)
+				CheckImage = MenWin->CheckMark;*/
+
+			/* Stephan: MenWin->CheckMark ersetzt
+			 * DrawInfo->dri_CheckMark! Eigentlich
+			 * ist MenWin->CheckMark immer != NULL
+			 * von daher ist diese Prüfung eigentlich
+			 * nicht notwendig (siehe Intuition/screens.c).
+			 * Aber man weiß ja nie...
+			 */
+			if(MenWin->CheckMark)
 				CheckImage = MenWin->CheckMark;
+			else
+				CheckImage = DrawInfo->dri_CheckMark;
+
 			MXImage = CheckImage;
 
 			CommandImage = DrawInfo->dri_AmigaKey;
@@ -3506,6 +3534,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 		CleanUpMenuStrip ();
 		DoGlobalQuit = TRUE;
 		DisplayBeep (NULL);
+		LEAVE();
 		return (FALSE);
 	}
 
@@ -3528,6 +3557,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 		{
 			CleanUpMenuStrip ();
 			DoGlobalQuit = TRUE;
+			LEAVE();
 			DisplayBeep (NULL);
 			return (FALSE);
 		}
@@ -3670,12 +3700,15 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 			LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
 	}
 
+	LEAVE();
+
 	return (TRUE);
 }
 
 VOID
 Shoot()
 {
+	ENTER();
 	if(MenuNotDrawn)
 	{
 		if(AktMenu)
@@ -3691,4 +3724,5 @@ Shoot()
 		else
 			SubNotDrawn = FALSE;
 	}
+	LEAVE();
 }

@@ -1,6 +1,6 @@
 ;
 ; MagicMenu catalog description
-; $VER: magicmenu.cd 1.12 (20.11.01)
+; $VER: magicmenu.cd 1.13 (20.03.02)
 ;
 ; $Id$
 ;
@@ -279,4 +279,13 @@ Backfillimage:
 ;
 MSG_CANNOT_LOAD_BACKFILL (//)
 Can't load backfillimage
+;
+MSG_PD_TRANSPARENT_GAD (//)
+Allow transparency:
+;
+MSG_BACKFILL_TRANSPARENT_GAD (//)
+Transparent backfill image:
+;
+MSG_HIGHLIGHT_TRANSPARENT_GAD (//)
+Don't brighten selected entry:
 ;

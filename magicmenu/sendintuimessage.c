@@ -38,8 +38,11 @@ SendIntuiMessage (
   ULONG Signals;
   BOOL Done;
 
+  ENTER();
+
   if (!(Sent = AllocVecPooled (sizeof (struct ExtIntuiMessage), MEMF_PUBLIC | MEMF_CLEAR)))
   {
+	LEAVE();
     if (WaitForReply)
       UnlockIBase (IntuiLock);
 
@@ -80,6 +83,7 @@ SendIntuiMessage (
       UnlockIBase (IntuiLock);
 
     FreeVecPooled (Sent);
+	LEAVE();
     return(Result);	/* Es kann keine Antwort geben. */
   }
 
@@ -138,6 +142,6 @@ SendIntuiMessage (
 
     WaitIO ((struct IORequest *) TimeoutRequest);
   }
-
+  LEAVE();
   return (Result);
 }

@@ -31,7 +31,7 @@
  *            all the necessary dependency lines in place).
  */
 
-/*#define DEBUG*/
+//#define DEBUG
 
 /****************************************************************************/
 
@@ -45,7 +45,7 @@
 #define PUSH_ALL()	PUSHDEBUGLEVEL(2)
 #define POP()		POPDEBUGLEVEL()
 
-#if defined(DEBUG) && defined(__SASC)
+#if defined(DEBUG) /* && defined(__SASC) */
  void _ASSERT(int x,const char *xs,const char *file,int line,const char *function);
  void _SHOWVALUE(unsigned long value,int size,const char *name,const char *file,int line);
  void _SHOWSTRING(const char *string,const char *name,const char *file,int line);
