@@ -87,8 +87,9 @@ STATIC PatchEntry PatchTable[] =
   &IntuitionBase, 37, NULL, (LONG) & LVORefreshWindowFrame, (APTR) MMRefreshWindowFrame, &OldRefreshWindowFrame,
   &IntuitionBase, 39, NULL, (LONG) & LVOLendMenus, (APTR) MMLendMenus, &OldLendMenus,
 
-  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontHookLayer, (APTR) MMCreateUpfrontHookLayer, &OldCreateUpfrontHookLayer,
-  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontLayer, (APTR) MMCreateUpfrontLayer, &OldCreateUpfrontLayer,
+/*  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontHookLayer, (APTR) MMCreateUpfrontHookLayer, &OldCreateUpfrontHookLayer,*/
+/*  &LayersBase, 39, NULL, (LONG) & LVOCreateUpfrontLayer, (APTR) MMCreateUpfrontLayer, &OldCreateUpfrontLayer,*/
+
 };
 
 #define PATCHCOUNT (sizeof(PatchTable) / sizeof(PatchEntry))

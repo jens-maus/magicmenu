@@ -31,19 +31,94 @@ BOOL LinesAndShadows = FALSE;
 
 /******************************************************************************/
 
+struct LayerMsg
+{
+	struct Layer *		Layer;
+	struct Rectangle	Bounds;
+};
+
+struct FatHook
+{
+	struct Hook		Hook;
+	struct BitMap *		BitMap;
+	UWORD			Width;
+	UWORD			Height;
+};
+
+VOID __saveds __asm
+WindowBackfillRoutine(
+	register __a0 struct FatHook *	Hook,
+	register __a2 struct RastPort *	RPort,
+	register __a1 struct LayerMsg *	Bounds)
+{
+	LONG FromX,FromY;
+
+	FromX = Bounds->Bounds.MinX - Bounds->Layer->bounds.MinX;
+	FromY = Bounds->Bounds.MinY - Bounds->Layer->bounds.MinY;
+
+	BltBitMap(
+		Hook->BitMap,FromX,FromY,
+		RPort->BitMap,Bounds->Bounds.MinX,Bounds->Bounds.MinY,
+		Bounds->Bounds.MaxX - Bounds->Bounds.MinX + 1,
+		Bounds->Bounds.MaxY - Bounds->Bounds.MinY + 1,
+		MINTERM_COPY,~0,NULL);
+}
+
+/******************************************************************************/
+
 #define SHADOW_SIZE 4
 
-STATIC struct Window *
-OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level,BOOL DontCare)
+STATIC VOID
+CopyBackWindow(struct Window * win)
 {
-	struct Window *Window;
-	ULONG Flag;
-	LONG OriginalHeight,OriginalWidth,ShadowSize;
+	if(win != NULL && win->UserData != NULL)
+	{
+		struct FatHook * hook = (struct FatHook *)win->UserData;
 
-	if(DontCare)
-		Flag = WFLG_SIMPLE_REFRESH;
-	else
-		Flag = 0;
+		BltBitMap(
+			win->WScreen->RastPort.BitMap,win->LeftEdge,win->TopEdge,
+			hook->BitMap,0,0,
+			win->Width,win->Height,
+			MINTERM_COPY,~0,NULL);
+	}
+}
+
+STATIC VOID
+CloseCommonWindow(struct Window * win)
+{
+	if(win != NULL)
+	{
+		struct FatHook * hook;
+		struct BitMap * bitmap;
+
+		hook = (struct FatHook *)win->UserData;
+
+		CloseWindow(win);
+
+		bitmap = hook->BitMap;
+
+		if(V39)
+		{
+			WaitBlit();
+			FreeBitMap(bitmap);
+		}
+		else
+		{
+			DeleteBitMap(bitmap, hook->Width, hook->Height);
+		}
+
+		FreeVec(hook);
+	}
+}
+
+STATIC struct Window *
+OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
+{
+	struct Window *Window = NULL;
+	LONG OriginalHeight,OriginalWidth,ShadowSize;
+	struct BitMap * CustomBitMap;
+	LONG Depth;
+	struct FatHook * Hook;
 
 	if(V39 && Look3D && AktPrefs.mmp_CastShadows)
 	{
@@ -64,33 +139,67 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level,BOOL DontC
 	else
 		ShadowSize = 0;
 
-	Window = OpenWindowTags(NULL,
-		WA_Left,		Left,
-		WA_Top,			Top,
-		WA_Width,		Width,
-		WA_Height,		Height,
-		WA_CustomScreen,	MenScr,
-		WA_Flags,		WFLG_BORDERLESS | WFLG_RMBTRAP | WFLG_NOCAREREFRESH | Flag,
-		WA_BackFill,		GetNOPFillHook(),
-		WA_ScreenTitle,		MenWin->ScreenTitle,
-	TAG_DONE);
+	Depth = GetBitMapDepth(MenScr->RastPort.BitMap);
 
-	if(Window != NULL && ShadowSize > 0)
+	if(V39)
+		CustomBitMap = AllocBitMap(Width,Height,Depth,BMF_MINPLANES,MenScr->RastPort.BitMap);
+	else
+		CustomBitMap = CreateBitMap(Depth,Width,Height);
+
+	Hook = AllocVec(sizeof(*Hook),MEMF_ANY|MEMF_PUBLIC|MEMF_CLEAR);
+
+	if(CustomBitMap != NULL && Hook != NULL)
 	{
-		STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
+		BltBitMap(MenScr->RastPort.BitMap,Left,Top,CustomBitMap,0,0,Width,Height,MINTERM_COPY,~0,NULL);
 
-		struct RastPort *RPort;
+		Hook->Hook.h_Entry	= (HOOKFUNC)WindowBackfillRoutine;
+		Hook->BitMap		= CustomBitMap;
+		Hook->Width		= Width;
+		Hook->Height		= Height;
 
-		RPort = Window->RPort;
+		Window = OpenWindowTags(NULL,
+			WA_Left,		Left,
+			WA_Top,			Top,
+			WA_Width,		Width,
+			WA_Height,		Height,
+			WA_CustomScreen,	MenScr,
+			WA_Flags,		WFLG_BORDERLESS | WFLG_RMBTRAP | WFLG_NOCAREREFRESH | WFLG_SIMPLE_REFRESH,
+			WA_BackFill,		Hook,
+			WA_ScreenTitle,		MenWin->ScreenTitle,
+		TAG_DONE);
 
-		SetAfPt (RPort, Crosshatch, 1);
+		if(Window != NULL)
+		{
+			Window->UserData = (APTR)Hook;
 
-		SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+			if(ShadowSize > 0)
+			{
+				STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
 
-		RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
-		RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+				struct RastPort *RPort;
 
-		SetAfPt (RPort, NULL, 0);
+				RPort = Window->RPort;
+
+				SetAfPt (RPort, Crosshatch, 1);
+
+				SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+
+				RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+				RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+
+				SetAfPt (RPort, NULL, 0);
+			}
+		}
+	}
+
+	if(Window == NULL)
+	{
+		if(V39)
+			FreeBitMap(CustomBitMap);
+		else
+			DeleteBitMap(CustomBitMap, Width, Height);
+
+		FreeVec(Hook);
 	}
 
 	return(Window);
@@ -658,7 +767,7 @@ CleanUpMenuSubBox (VOID)
     {
       if (SubBoxWin)
       {
-        CloseWindow (SubBoxWin);
+        CloseCommonWindow (SubBoxWin);
         SubBoxWin = NULL;
       }
     }
@@ -948,7 +1057,7 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(SubBoxWin = OpenCommonWindow(SubBoxLeft,SubBoxTop,SubBoxWidth,SubBoxHeight,2,TRUE)))
+    if (!(SubBoxWin = OpenCommonWindow(SubBoxLeft,SubBoxTop,SubBoxWidth,SubBoxHeight,2)))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
@@ -962,8 +1071,8 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   }
   else
   {
-    if (!InstallRPort (SubBoxDepth, SubBoxWidth, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer,
-                       MenScr->RastPort.BitMap))
+    if (!InstallRPort (SubBoxLeft, SubBoxTop, SubBoxDepth, SubBoxWidth, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer, &SubBoxCRect,
+                       &ScrRPort))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
@@ -1044,7 +1153,7 @@ CleanUpMenuBox (VOID)
     {
       if (BoxWin)
       {
-        CloseWindow (BoxWin);
+        CloseCommonWindow (BoxWin);
         BoxWin = NULL;
       }
     }
@@ -1364,7 +1473,7 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(BoxWin = OpenCommonWindow(BoxLeft,BoxTop,BoxWidth,BoxHeight,1,NoSubs)))
+    if (!(BoxWin = OpenCommonWindow(BoxLeft,BoxTop,BoxWidth,BoxHeight,1)))
     {
       CleanUpMenuBox ();
       return (FALSE);
@@ -1375,11 +1484,14 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
     BoxDrawTop = 0;
 
     DrawMenuBoxContents (Menu, BoxDrawRPort, BoxDrawLeft, BoxDrawTop);
+
+    if(!NoSubs)
+      CopyBackWindow(BoxWin);
   }
   else
   {
-    if (!InstallRPort (BoxDepth, BoxWidth, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer,
-                       MenScr->RastPort.BitMap))
+    if (!InstallRPort (BoxLeft, BoxTop, BoxDepth, BoxWidth, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer, &BoxCRect,
+                       &ScrRPort))
     {
       CleanUpMenuBox ();
       return (FALSE);
@@ -1693,7 +1805,7 @@ CleanUpMenuStrip (VOID)
     if (AktPrefs.mmp_NonBlocking)
     {
       if (StripWin)
-        CloseWindow (StripWin);
+        CloseCommonWindow (StripWin);
       StripWin = NULL;
     }
     else
@@ -3295,12 +3407,25 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   if (!PopUp)
   {
+    LONG height;
+
+    /* Neu in 2.16: Höhe der Menüs in der Bildschirmtitelzeile
+     *              wird aus der Höhe der Screen-Titelzeile
+     *              "errechnet".
+     */
+    height = MenScr->BarHeight+1;
+
+/*    if(height < MenFont->tf_YSize + 3)*/
+/*      height = MenFont->tf_YSize + 3;*/
+
     StripPopUp = FALSE;
-    StripHeight = MenFont->tf_YSize + 3;
+/*    StripHeight = MenFont->tf_YSize + 3;*/
+    StripHeight = height;
     StripWidth = MenScr->Width;
     StripTopOffs = 0;
     StripLeftOffs = 0;
-    StripMinHeight = MenFont->tf_YSize + 2;
+/*    StripMinHeight = MenFont->tf_YSize + 2;*/
+    StripMinHeight = height-1;
     StripMinWidth = 0;
     StripLeft = 0;
     StripTop = 0;
@@ -3359,7 +3484,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(StripWin = OpenCommonWindow(StripLeft,StripTop,StripWidth,StripHeight,0,FALSE)))
+    if (!(StripWin = OpenCommonWindow(StripLeft,StripTop,StripWidth,StripHeight,0)))
     {
       CleanUpMenuStrip ();
       return (FALSE);
@@ -3370,11 +3495,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     StripDrawTop = 0;
 
     DrawMenuStripContents (StripDrawRPort, StripDrawLeft, StripDrawTop);
+
+    CopyBackWindow(StripWin);
   }
   else
   {
-    if (!InstallRPort (StripDepth, StripWidth, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer,
-                       MenScr->RastPort.BitMap))
+    if (!InstallRPort (StripLeft, StripTop, StripDepth, StripWidth, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer, &StripCRect,
+                       &ScrRPort))
     {
       CleanUpMenuStrip ();
       return (FALSE);

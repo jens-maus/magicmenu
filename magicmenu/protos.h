@@ -78,7 +78,7 @@ void disposeBitMap(struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMe
 struct BitMap *allocBitMap(LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem);
 void FreeRPort(struct BitMap *BitMap, struct Layer_Info *LayerInfo, struct Layer *Layer, LONG Width, LONG Height);
 struct Hook *GetNOPFillHook(VOID);
-BOOL InstallRPort(LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct BitMap *Friend);
+BOOL InstallRPort(LONG Left, LONG Top, LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct ClipRect **ClipRectPtr, struct RastPort *FriendRPort);
 void SwapRPortClipRect(struct RastPort *RPort, struct ClipRect *ClipRect);
 struct ClipRect *GetClipRect(struct BitMap *BitMap, LONG x1, LONG y1, LONG x2, LONG y2);
 void CheckDispClipVisible(WORD MinX, WORD MinY, WORD MaxX, WORD MaxY);
@@ -100,6 +100,8 @@ VOID DrawLine(struct RastPort *rp, LONG x0, LONG y0, LONG x1, LONG y1);
 VOID DrawLinePairs(struct RastPort *rp, LONG totalPairs, LONG left, LONG top, ...);
 VOID PlaceText(struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len);
 LONG AllocateColour(struct ColorMap *ColorMap, ULONG Red, ULONG Green, ULONG Blue);
+VOID DeleteBitMap(struct BitMap *BitMap, LONG Width, LONG Height);
+struct BitMap *CreateBitMap(LONG Depth, LONG Width, LONG Height);
 
 /* data.c */
 
@@ -123,6 +125,7 @@ VOID MemoryExit(VOID);
 BOOL MemoryInit(VOID);
 
 /* menuboxes.c */
+VOID __saveds __asm WindowBackfillRoutine(register __a0 struct FatHook *Hook, register __a2 struct RastPort *RPort, register __a1 struct LayerMsg *Bounds);
 VOID LocalPrintIText(struct RastPort *rp, struct IntuiText *itext, WORD left, WORD top);
 VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);

@@ -562,27 +562,29 @@ MMCreateUpfrontHookLayer (
 {
   struct Layer *Layer;
 
-  /* Bei SuperBitMap wird nichts geändert */
-
-  if (Flags & LAYERSUPER)
-    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, Hook, Super, LayersBase);
-  else
+  /* Neu in 2.17:
+  /* Bei SuperBitMap wird nichts geändert. Da dieser Patch auch
+   * nur für das Zeichnen der Schatten nötig ist, wird er auch
+   * nur dann aktiv, wenn welche gemalt werden sollen. Das
+   * vermeidet Ärger mit CyberGraphX V3.x.
+   */
+  if(V39 && Look3D && AktPrefs.mmp_CastShadows && !(Flags & LAYERSUPER))
   {
     /* Wichtig: Der Layer wird gleich nach der
-       *          Erzeugung verändert und es muß
-       *          verhindert werden, daß ein anderer
-       *          Task an den Layers herumpfuscht, während
-       *          hier noch gearbeitet wird.
+     *          Erzeugung verändert und es muß
+     *          verhindert werden, daß ein anderer
+     *          Task an den Layers herumpfuscht, während
+     *          hier noch gearbeitet wird.
      */
 
     LockLayerInfo (LayerInfo);
 
     /* Der Layer wird als Simple-Refresh und ohne Backfill-Funktion
-       * erzeugt. Das hat zwei Vorteile: da der Layer im Hintergrund
-       * erzeugt wird, entstehen automatisch Damage-Regions, wenn es
-       * sich um einen Smart-Refresh-Layer handelt; dies wird vermieden,
-       * indem er als Simple-Refresh-Layer erzeugt wird. Außerdem wird
-       * das Ausfüllen des Layers bis nach seiner Erzeugung verzögert.
+     * erzeugt. Das hat zwei Vorteile: da der Layer im Hintergrund
+     * erzeugt wird, entstehen automatisch Damage-Regions, wenn es
+     * sich um einen Smart-Refresh-Layer handelt; dies wird vermieden,
+     * indem er als Simple-Refresh-Layer erzeugt wird. Außerdem wird
+     * das Ausfüllen des Layers bis nach seiner Erzeugung verzögert.
      */
 
     if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, (Flags & ~LAYERSMART) | LAYERSIMPLE, LAYERS_NOBACKFILL, Super))
@@ -619,8 +621,10 @@ MMCreateUpfrontHookLayer (
 
     UnlockLayerInfo (LayerInfo);
   }
-
-  /* Und fertig... */
+  else
+  {
+    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, Hook, Super, LayersBase);
+  }
 
   return (Layer);
 }
@@ -954,21 +958,26 @@ GetNOPFillHook ()
 }
 
 BOOL
-InstallRPort (LONG Depth, LONG Width, LONG Height,
+InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
               struct RastPort ** RastPortPtr,
               struct BitMap ** BitMapPtr,
               struct Layer_Info ** LayerInfoPtr,
               struct Layer ** LayerPtr,
-              struct BitMap * Friend)
+              struct ClipRect ** ClipRectPtr,
+              struct RastPort * FriendRPort)
 {
+  struct BitMap *Friend;
   struct BitMap *BitMap;
   struct Layer_Info *LayerInfo;
   struct Layer *Layer;
+
+  Friend = FriendRPort->BitMap;
 
   *BitMapPtr = NULL;
   *RastPortPtr = NULL;
   *LayerPtr = NULL;
   *LayerInfoPtr = NULL;
+  *ClipRectPtr = NULL;
 
   if (BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE))
   {
@@ -1529,4 +1538,56 @@ AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
 		OBP_FailIfBad,	TRUE,
 		OBP_Precision,	AktPrefs.mmp_Precision,
 	TAG_DONE));
+}
+
+/******************************************************************************/
+
+VOID
+DeleteBitMap(struct BitMap *BitMap, LONG Width, LONG Height)
+{
+	if(BitMap)
+	{
+		LONG i;
+
+		WaitBlit();
+
+		for(i = 0 ; i < BitMap->Depth ; i++)
+		{
+			if(BitMap->Planes[i])
+				FreeRaster(BitMap->Planes[i], Width, Height);
+		}
+
+		FreeVec(BitMap);
+	}
+}
+
+struct BitMap *
+CreateBitMap(LONG Depth,LONG Width,LONG Height)
+{
+	struct BitMap *BitMap;
+	LONG Extra;
+
+	if(Depth > 8)
+		Extra = sizeof(PLANEPTR) * (Depth - 8);
+	else
+		Extra = 0;
+
+	if(BitMap = AllocVec(sizeof(struct BitMap) + Extra,MEMF_ANY|MEMF_CLEAR|MEMF_PUBLIC))
+	{
+		LONG i;
+
+		InitBitMap(BitMap,Depth,Width,Height);
+
+		for(i = 0 ; i < BitMap->Depth ; i++)
+		{
+			if(!(BitMap->Planes[i] = AllocRaster(Width,Height)))
+			{
+				DeleteBitMap(BitMap,Width,Height);
+
+				return(NULL);
+			}
+		}
+	}
+
+	return(BitMap);
 }
