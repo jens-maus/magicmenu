@@ -67,7 +67,7 @@ SOURCE =	betatitle.c data.c data.h defines.h \
 		menuboxes.c misc.c protos.h remap.a \
 		sendintuimessage.c smakefile structures.h stubs.a \
 		system_headers.c system_headers.h wedge.c windowglyphs.c \
-		demoimagedata.c storage.c storage.h releasenodes MagicMenu.guide
+		demoimagedata.c storage.c storage.h releasenotes MagicMenu.guide
 
 ###############################################################################
 
