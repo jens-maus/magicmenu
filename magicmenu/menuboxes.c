@@ -12,10 +12,10 @@
 
 #define SHADOW_SIZE 6
 
-static void
+STATIC VOID
 AddShadow (struct RastPort *RPort, LONG Width, LONG Height)
 {
-  static UWORD Crosshatch[2] =
+  STATIC UWORD Crosshatch[2] =
   {0x5555, 0xAAAA};
 
   SetAfPt (RPort, Crosshatch, 1);
@@ -29,7 +29,7 @@ AddShadow (struct RastPort *RPort, LONG Width, LONG Height)
   SetAfPt (RPort, NULL, 0);
 }
 
-static void
+STATIC VOID
 ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height, LONG * widthPtr, LONG * heightPtr)
 {
   width += SHADOW_SIZE;
@@ -49,12 +49,12 @@ ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height
 
 #define NUM_MENU_PENS 21
 
-static ULONG MenuColours[NUM_MENU_PENS * 3];
-static ULONG *MenuColour;
-static LONG MenuPens[NUM_MENU_PENS];
+STATIC ULONG MenuColours[NUM_MENU_PENS * 3];
+STATIC ULONG *MenuColour;
+STATIC LONG MenuPens[NUM_MENU_PENS];
 
-static void
-ResetMenuColours (void)
+STATIC VOID
+ResetMenuColours (VOID)
 {
   LONG i;
 
@@ -64,7 +64,7 @@ ResetMenuColours (void)
     MenuPens[i] = -1;
 }
 
-static void
+STATIC VOID
 AddMenuColour (ULONG red, ULONG green, ULONG blue)
 {
   *MenuColour++ = red;
@@ -72,7 +72,7 @@ AddMenuColour (ULONG red, ULONG green, ULONG blue)
   *MenuColour++ = blue;
 }
 
-static void
+STATIC VOID
 AddMenuColour8 (LONG red, LONG green, LONG blue)
 {
   if (red > 255)
@@ -95,7 +95,7 @@ AddMenuColour8 (LONG red, LONG green, LONG blue)
   *MenuColour++ = 0x01010101UL * blue;
 }
 
-static void
+STATIC VOID
 FreeMenuColours (struct ColorMap *cmap)
 {
   if (V39)
@@ -110,10 +110,10 @@ FreeMenuColours (struct ColorMap *cmap)
   }
 }
 
-static BOOL
+STATIC BOOL
 AllocateMenuColours (struct ColorMap *cmap)
 {
-  static Tag Tags[] =
+  STATIC Tag Tags[] =
   {
     OBP_Precision, PRECISION_GUI,
     OBP_FailIfBad, TRUE,
@@ -140,18 +140,18 @@ AllocateMenuColours (struct ColorMap *cmap)
 
 /******************************************************************************/
 
-void
+VOID
 DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted)
 {
   struct IntuiText *Text;
   struct IntuiText MyText;
   struct Image MyImage;
-  struct Image *Image, *RemappedImage;
+  struct Image *Image;
   UWORD StartX, StartY;
   UWORD ImageYOffs;
   UWORD ZwWidth, NW;
   LONG z1;
-  BOOL DrawCheck, YOffsOk, Ghosted, Ok;
+  BOOL DrawCheck, YOffsOk, Ghosted;
 
   StartX = x + Item->LeftEdge;
   StartY = y + Item->TopEdge;
@@ -252,6 +252,8 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
   }
   else
   {
+    struct Image *ThatImage;
+
     CommandText.ITextFont = &MenTextAttr;
 
     if (Highlighted)
@@ -261,43 +263,34 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
 
     while (Image)
     {
-      MyImage = *Image;
+      if(Image->NextImage)
+      {
+        MyImage = *Image;
 
-      MyImage.NextImage = NULL;
+        MyImage.NextImage = NULL;
+
+        ThatImage = &MyImage;
+      }
+      else
+        ThatImage = Image;
 
       if (Look3D)
       {
-        if (LookMC && MyImage.PlanePick == 0 && MyImage.Height <= 2)
+        if (LookMC && ThatImage->PlanePick == 0 && ThatImage->Height <= 2)
         {
           SetFgPen (rp, MenStdGrey0);
+          RectFill (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
+                    StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
 
-          RectFill (rp, StartX + MyImage.LeftEdge, StartY + MyImage.TopEdge,
-                    StartX + MyImage.LeftEdge + MyImage.Width - 1, StartY + MyImage.TopEdge);
           SetFgPen (rp, MenStdGrey2);
-
-          RectFill (rp, StartX + MyImage.LeftEdge, StartY + MyImage.TopEdge + 1,
-                    StartX + MyImage.LeftEdge + MyImage.Width - 1, StartY + MyImage.TopEdge + 1);
+          RectFill (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1,
+                    StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
         }
         else
-        {
-          if (LookMC)
-            Ok = MakeRemappedImage (&RemappedImage, &MyImage, StripDepth, (Highlighted) ? DreiDActiveRemapArray :
-                                    (Ghosted) ? DreiDGhostedRemapArray :
-                                    DreiDRemapArray);
-          else
-            Ok = MakeRemappedImage (&RemappedImage, &MyImage, StripDepth, DreiDRemapArray);
-
-          if (Ok)
-          {
-            DrawImage (rp, RemappedImage, StartX, StartY);
-            FreeRemappedImage (RemappedImage);
-          }
-          else
-            DrawImage (rp, &MyImage, StartX, StartY);
-        }
+         DrawImage (rp, ThatImage, StartX, StartY);
       }
       else
-        DrawImage (rp, &MyImage, StartX, StartY);
+        DrawImage (rp, ThatImage, StartX, StartY);
 
       Image = Image->NextImage;
     }
@@ -306,23 +299,33 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
 
   if (DrawCheck)
   {
+    struct Image *WhichImage;
+
     if (LookMC)
     {
       if (Item->MutualExclude == 0 || !MXImageRmp)
       {
         if (Item->Flags & CHECKED)
-          DrawImage (rp, (Ghosted) ? CheckImageGhosted : (Highlighted) ? CheckImageActive : CheckImage,
-            StartX, StartY + (short) ImageYOffs - (CheckImage->Height / 2));
+        {
+          if(Ghosted)
+            WhichImage = CheckImageGhosted;
+          else
+          {
+            if(Highlighted)
+              WhichImage = CheckImageActive;
+            else
+              WhichImage = CheckImage;
+          }
+        }
         else
         {
           NoCheckImage->PlaneOnOff = (Highlighted) ? MenFillCol : MenBackGround;
-          DrawImage (rp, NoCheckImage, StartX, StartY + (short) ImageYOffs - (NoCheckImage->Height / 2));
+
+          WhichImage = NoCheckImage;
         }
       }
       else
       {
-        struct Image *WhichImage;
-
         if (Item->Flags & CHECKED)
         {
           if (Ghosted)
@@ -347,14 +350,10 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
               WhichImage = NoMXImageRmp;
           }
         }
-
-        DrawImage (rp, WhichImage, StartX, StartY + (short) ImageYOffs - (WhichImage->Height / 2));
       }
     }
     else
     {
-      struct Image *WhichImage;
-
       if (Item->MutualExclude == 0)
       {
         if (Item->Flags & CHECKED)
@@ -369,9 +368,9 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
         else
           WhichImage = NoMXImage;
       }
-
-      DrawImage (rp, WhichImage, StartX, StartY + (short) ImageYOffs - (WhichImage->Height / 2));
     }
+
+    DrawImage (rp, WhichImage, StartX, StartY + (short) ImageYOffs - (WhichImage->Height / 2));
   }
 
   z1 = StartX + Item->Width;
@@ -387,35 +386,50 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       if (Ghosted)
       {
         DrawImage (rp, CommandImageGhosted, z1 - CommandImageGhosted->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImageGhosted->Height / 2));
+
         CommandText.FrontPen = MenStdGrey2;
         PrintIText (rp, &CommandText, z1 - CmdOffs + 1, StartY + 1);
+
         CommandText.FrontPen = MenStdGrey0;
         CommandText.DrawMode = JAM1;
-        PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
       }
       else
       {
         DrawImage (rp, (Highlighted) ? CommandImageActive : CommandImage, z1 - CommandImageGhosted->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImageGhosted->Height / 2));
+
         CommandText.FrontPen = (Highlighted) ? MenHiCol : MenTextCol;
         CommandText.DrawMode = JAM1;
-        PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
       }
     }
     else
     {
       DrawImage (rp, CommandImage, z1 - CommandImage->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImage->Height / 2));
-      PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
     }
+
+    PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
   }
   else if ((Item->SubItem) && (AktPrefs.mmp_MarkSub == 1))
   {
     if (ZwWidth < Item->Width - SubArrowImage->Width - 5)
     {
+      struct Image *WhichImage;
+
       if (LookMC)
-        DrawImage (rp, (Highlighted) ? SubArrowImageActive :
-                   (Ghosted) ? SubArrowImageGhosted : SubArrowImage, z1 - SubArrowImage->Width - 3, StartY + ImageYOffs - (SubArrowImage->Height / 2));
+      {
+        if(Highlighted)
+          WhichImage = SubArrowImageActive;
+        else
+        {
+          if(Ghosted)
+            WhichImage = SubArrowImageGhosted;
+          else
+            WhichImage = SubArrowImage;
+        }
+      }
       else
-        DrawImage (rp, SubArrowImage, z1 - SubArrowImage->Width - 3, StartY + ImageYOffs - (SubArrowImage->Height / 2));
+        WhichImage = SubArrowImage;
+
+      DrawImage (rp, WhichImage, z1 - WhichImage->Width - 3, StartY + ImageYOffs - (WhichImage->Height / 2));
     }
   }
 
@@ -430,15 +444,18 @@ GetSubItemContCoor (struct MenuItem *MenuItem, LONG * t, LONG * l, LONG * w, LON
   *l = MenuItem->LeftEdge + SubBoxLeftOffs - SelBoxOffs;
   *h = MenuItem->Height + SelBoxOffs * 2;
   *w = MenuItem->Width + SelBoxOffs * 2;
+
   if (*t < 0 || *l < 0 || *t + *h > SubBoxHeight || *l + *w > SubBoxWidth)
     return (FALSE);
+
   (*t) += SubBoxDrawTop;
   (*l) += SubBoxDrawLeft;
+
   return (TRUE);
 }
 
-void
-CleanUpMenuSubBox (void)
+VOID
+CleanUpMenuSubBox (VOID)
 {
   if (AktItemRmb)
   {
@@ -495,6 +512,7 @@ DrawHiSubItem (struct MenuItem *Item)
     {
       if (MenuMode == MODE_KEYBOARD)
         CheckDispClipVisible (l + (SubBoxLeft - SubBoxDrawLeft), t + (SubBoxTop - SubBoxDrawTop), l + w - 1, t + h - 1);
+
       HiFlags = Item->Flags & HIGHFLAGS;
 
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
@@ -576,6 +594,7 @@ DrawNormSubItem (struct MenuItem * Item)
       {
         if (!LookMC && HiFlags != HIGHIMAGE && Item->Flags & ITEMENABLED && (!SubBoxGhosted) && (!BoxGhosted))
           CompRect (SubBoxDrawRPort, l, t, w, h);
+
         DrawNormRect (SubBoxDrawRPort, l, t, w, h);
         DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE);
       }
@@ -587,6 +606,7 @@ DrawNormSubItem (struct MenuItem * Item)
           {
             if (HiFlags == HIGHBOX)
               CompRect (SubBoxDrawRPort, l - 4, t - 2, w + 8, h + 4);
+
             CompRect (SubBoxDrawRPort, l, t, w, h);
           }
         }
@@ -598,7 +618,7 @@ DrawNormSubItem (struct MenuItem * Item)
   return (FALSE);
 }
 
-void
+VOID
 DrawMenuSubBoxContents (struct MenuItem *Item, struct RastPort *RPort, UWORD Left, UWORD Top)
 {
   struct MenuItem *ZwItem;
@@ -803,15 +823,18 @@ GetItemContCoor (struct MenuItem * MenuItem, LONG * t, LONG * l, LONG * w, LONG 
   *l = MenuItem->LeftEdge + BoxLeftOffs - SelBoxOffs;
   *h = MenuItem->Height + SelBoxOffs * 2;
   *w = MenuItem->Width + SelBoxOffs * 2;
+
   if (*t < 0 || *l < 0 || *t + *h > BoxHeight || *l + *w > BoxWidth)
     return (FALSE);
+
   (*t) += BoxDrawTop;
   (*l) += BoxDrawLeft;
+
   return (TRUE);
 }
 
-void
-CleanUpMenuBox (void)
+VOID
+CleanUpMenuBox (VOID)
 {
   if (AktMenRmb)
   {
@@ -851,6 +874,7 @@ CleanUpMenuBox (void)
   if (AktMenu)
     AktMenu->Flags &= ~MIDRAWN;
   AktItem = NULL;
+  DisarmMenu();
 }
 
 BOOL
@@ -972,7 +996,7 @@ DrawNormItem (struct MenuItem * Item)
   return (FALSE);
 }
 
-void
+VOID
 DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD Top)
 {
   struct MenuItem *ZwItem;
@@ -1198,6 +1222,7 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   MenuBoxSwapped = TRUE;
 
   AktItem = NULL;
+  DisarmMenu();
 
   if (ActivateItem)
   {
@@ -1351,7 +1376,7 @@ GhostMenu (struct Menu * Menu, struct RastPort * RPort, UWORD Left, UWORD Top)
   return (FALSE);
 }
 
-void
+VOID
 DrawNormMenu (struct Menu *Menu)
 {
   LONG t, l, h, w;
@@ -1428,8 +1453,8 @@ DrawNormMenu (struct Menu *Menu)
   }
 }
 
-void
-CleanUpMenuStrip (void)
+VOID
+CleanUpMenuStrip (VOID)
 {
   if (AktMenuRemember)
   {
@@ -1492,6 +1517,7 @@ CleanUpMenuStrip (void)
   }
 
   AktMenu = NULL;
+  DisarmMenu();
 
   if (MenOpenedFont)
   {
@@ -1500,7 +1526,7 @@ CleanUpMenuStrip (void)
   }
 }
 
-void
+VOID
 GetSubItemCoors (struct MenuItem *Item, UWORD * x1, UWORD * y1, UWORD * x2, UWORD * y2)
 {
   *x1 = Item->LeftEdge + SubBoxLeftOffs + SubBoxLeft;
@@ -1509,7 +1535,7 @@ GetSubItemCoors (struct MenuItem *Item, UWORD * x1, UWORD * y1, UWORD * x2, UWOR
   *y2 = *y1 + Item->Height - 1;
 }
 
-void
+VOID
 GetItemCoors (struct MenuItem *Item, UWORD * x1, UWORD * y1, UWORD * x2, UWORD * y2)
 {
   *x1 = Item->LeftEdge + BoxLeftOffs + BoxLeft;
@@ -1518,7 +1544,7 @@ GetItemCoors (struct MenuItem *Item, UWORD * x1, UWORD * y1, UWORD * x2, UWORD *
   *y2 = *y1 + Item->Height - 1;
 }
 
-void
+VOID
 GetMenuCoors (struct Menu *Menu, UWORD * x1, UWORD * y1, UWORD * x2, UWORD * y2)
 {
   struct Menu *ZwMen;
@@ -1547,7 +1573,7 @@ GetMenuCoors (struct Menu *Menu, UWORD * x1, UWORD * y1, UWORD * x2, UWORD * y2)
   }
 }
 
-void
+VOID
 ChangeAktSubItem (struct MenuItem *NewItem, UWORD NewSubItemNum)
 {
   if (AktSubItem)
@@ -1682,7 +1708,7 @@ SelectPrevSubItem (WORD NeuItemNum)
   return (SubItemNum);
 }
 
-void
+VOID
 ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
 {
   if (AktItem)
@@ -1692,6 +1718,7 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
     AktItem->Flags &= ~HIGHITEM;
     AktItem = NULL;
     ItemNum = NOITEM;
+    DisarmMenu();
   }
 
   if (NewItem)
@@ -1702,14 +1729,20 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
       AktItem->Flags |= HIGHITEM;
       if (MenuMode != MODE_KEYBOARD)
       {
-        if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
-          DisplayBeep (MenScr);
+/*        if(LookMC)*/
+/*          ArmMenu();*/
+/*        else*/
+        {
+          if (!DrawMenuSubBox (AktMenu, AktItem, TRUE))
+            DisplayBeep (MenScr);
+        }
       }
     }
     else
     {
       ItemNum = NOITEM;
       AktItem = NULL;
+      DisarmMenu();
     }
   }
 }
@@ -1779,9 +1812,8 @@ SelectNextItem (WORD NeuItemNum)
   WORD z1;
 
   ZwItem = BoxItems;
-   
 
-    z1 = 0;
+  z1 = 0;
   while (ZwItem && (((ZwItem->Flags & HIGHNONE) == HIGHNONE) || z1 <= NeuItemNum))
   {
     ZwItem = ZwItem->NextItem;
@@ -1825,7 +1857,7 @@ SelectPrevItem (WORD NeuItemNum)
   return (ItemNum);
 }
 
-void
+VOID
 ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
 {
   if (AktMenu)
@@ -1834,6 +1866,7 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     CleanUpMenuBox ();
     DrawNormMenu (AktMenu);
     AktMenu = NULL;
+    DisarmMenu();
     MenuNum = NOMENU;
   }
 
@@ -1843,13 +1876,21 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
     if (DrawHiMenu (AktMenu = NewMenu))
     {
       if (MenuMode != MODE_KEYBOARD)
-        if (!DrawMenuBox (AktMenu, TRUE))
-          DisplayBeep (MenScr);
+      {
+/*        if(LookMC)*/
+/*          ArmMenu();*/
+/*        else*/
+        {
+          if (!DrawMenuBox (AktMenu, TRUE))
+            DisplayBeep (MenScr);
+        }
+      }
     }
     else
     {
       MenuNum = NOMENU;
       AktMenu = NULL;
+      DisarmMenu();
     }
   }
 }
@@ -1952,8 +1993,7 @@ SelectPrevMenu (WORD NeuMenuNum)
 }
 
 BOOL
-LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
-/* True, wenn ausserhalb des Menüs */
+LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb des Menüs */
 {
   UWORD x1, y1, x2, y2;
   UWORD z1;
@@ -1966,6 +2006,7 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
     if (AktSubItem)
     {
       GetSubItemCoors (AktSubItem, &x1, &y1, &x2, &y2);
+
       if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
         return (FALSE);
     }
@@ -1978,7 +2019,9 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
         AktSubItem->Flags &= ~HIGHITEM;
         AktSubItem = NULL;
       }
+
       SubItemNum = NOSUB;
+
       if (MouseX >= SubBoxLeft && MouseX < SubBoxLeft + SubBoxWidth &&
           MouseY >= SubBoxTop && MouseY < SubBoxTop + SubBoxHeight)
       {
@@ -1998,26 +2041,34 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
             return (FALSE);
         }
       }
+
       return (TRUE);
     }
 
     ZwItem = SubBoxItems;
     Weiter = TRUE;
+
     z1 = 0;
+
     while (ZwItem && Weiter)
     {
       GetSubItemCoors (ZwItem, &x1, &y1, &x2, &y2);
+
       if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
       {
         ChangeAktSubItem (ZwItem, z1);
         Weiter = FALSE;
       }
+
       ZwItem = ZwItem->NextItem;
       z1++;
     }
+
     if (!Weiter)
       return (FALSE);
+
     ChangeAktSubItem (NULL, NOSUB);
+
     if (MouseX >= SubBoxLeft && MouseX < SubBoxLeft + SubBoxWidth &&
         MouseY >= SubBoxTop && MouseY < SubBoxTop + SubBoxHeight)
       return (FALSE);
@@ -2028,6 +2079,7 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
     if (AktItem)
     {
       GetItemCoors (AktItem, &x1, &y1, &x2, &y2);
+
       if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
         return (FALSE);
     }
@@ -2035,13 +2087,17 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
     if (!NewSelect)
     {
       CleanUpMenuSubBox ();
+
       if (AktItem)
       {
         DrawNormItem (AktItem);
         AktItem->Flags &= ~HIGHITEM;
         AktItem = NULL;
+        DisarmMenu();
       }
+
       ItemNum = NOITEM;
+
       if (MouseX >= BoxLeft && MouseX < BoxLeft + BoxWidth &&
           MouseY >= BoxTop && MouseY < BoxTop + BoxHeight)
       {
@@ -2053,27 +2109,34 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
             MouseY >= StripTop && MouseY < StripTop + StripHeight)
           return (FALSE);
       }
+
       return (TRUE);
     }
 
     ZwItem = BoxItems;
     Weiter = TRUE;
     z1 = 0;
+
     while (ZwItem && Weiter)
     {
       GetItemCoors (ZwItem, &x1, &y1, &x2, &y2);
+
       if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
       {
         ChangeAktItem (ZwItem, z1);
         Weiter = FALSE;
       }
+
       ZwItem = ZwItem->NextItem;
       z1++;
     }
+
     if (!Weiter)
       return (FALSE);
+
     if (AktItem && (!AktItem->SubItem))
       ChangeAktItem (NULL, NOITEM);
+
     if (MouseX >= BoxLeft && MouseX < BoxLeft + BoxWidth &&
         MouseY >= BoxTop && MouseY < BoxTop + BoxHeight)
       return (FALSE);
@@ -2082,6 +2145,7 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
   if (AktMenu)
   {
     GetMenuCoors (AktMenu, &x1, &y1, &x2, &y2);
+
     if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
       return (FALSE);
   }
@@ -2090,41 +2154,53 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect)
   {
     CleanUpMenuSubBox ();
     CleanUpMenuBox ();
+
     if (AktMenu)
     {
       DrawNormMenu (AktMenu);
       AktMenu = NULL;
+      DisarmMenu();
     }
+
     MenuNum = NOMENU;
+
     if (MouseX >= StripLeft && MouseX < StripLeft + StripWidth &&
         MouseY >= StripTop && MouseY < StripTop + StripHeight)
       return (FALSE);
+
     return (TRUE);
   }
 
   ZwMenu = MenStrip;
   Weiter = TRUE;
   z1 = 0;
+
   while (ZwMenu && Weiter)
   {
     GetMenuCoors (ZwMenu, &x1, &y1, &x2, &y2);
+
     if (MouseX >= x1 && MouseX <= x2 && MouseY >= y1 && MouseY <= y2)
     {
       ChangeAktMenu (ZwMenu, z1);
       Weiter = FALSE;
     }
+
     ZwMenu = ZwMenu->NextMenu;
+
     z1++;
+
     if (!Weiter)
       return (FALSE);
   }
+
   if (MouseX >= StripLeft && MouseX < StripLeft + StripWidth &&
       MouseY >= StripTop && MouseY < StripTop + StripHeight)
     return (FALSE);
+
   return (TRUE);
 }
 
-void
+VOID
 CopyImageDimensions (struct Image *Dest, struct Image *Source)
 {
   Dest->LeftEdge = Source->LeftEdge;
@@ -2133,7 +2209,7 @@ CopyImageDimensions (struct Image *Dest, struct Image *Source)
   Dest->Width = Source->Width;
 }
 
-void
+VOID
 DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
 {
   struct Menu *ZwMenu;
@@ -2375,6 +2451,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
     if (AllocateMenuColours (ColorMap))
     {
+
       LONG *Pen;
 
       Pen = MenuPens;
@@ -2405,21 +2482,25 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenHiCol = *Pen++;
       MenFillCol = *Pen++;
 
-/*
-      MenXENGrey0 = 0;
-      MenXENBlack = 1;
-      MenXENWhite = 2;
-      MenXENBlue = 3;
-      MenXENGrey1 = 4;
-      MenXENGrey2 = 5;
-      MenXENBeige = 6;
-      MenXENPink = 7;
+  /*
+      MenXENGrey0 = 1;
+      MenXENBlack = 2;
+      MenXENWhite = 3;
+      MenXENBlue = 4;
+      MenXENGrey1 = 5;
+      MenXENGrey2 = 6;
+      MenXENBeige = 7;
+      MenXENPink = 8;
 
-      MenSectGrey = 8;
+      MenSectGrey = 9;
 
-      MenStdGrey0 = 9;
-      MenStdGrey1 = 10;
-      MenStdGrey2 = 11;
+      MenStdGrey0 = 10;
+      MenStdGrey1 = 11;
+      MenStdGrey2 = 12;
+
+      MenActiveGrey0 = 13;
+      MenActiveGrey1 = 14;
+      MenActiveGrey2 = 15;
 
       MenLightEdge = 16;
       MenDarkEdge = 17;
@@ -2427,7 +2508,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenTextCol = 19;
       MenHiCol = 20;
       MenFillCol = 21;
-*/
+  */
       LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
 
       if(LookMC)
@@ -2553,13 +2634,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       {
         if (!CommandImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageRmp, &AmigaNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageGhosted, &AmigaGhosted, MaxMapDepth, StdRemapArray);
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageActive, &AmigaNormal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2568,13 +2647,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (!CheckImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageRmp, &CheckNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageGhosted, &CheckGhosted, MaxMapDepth, StdRemapArray);
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageActive, &CheckNormal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2586,14 +2663,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         NoCheckImage->PlaneOnOff = MenBackGround;
         CopyImageDimensions (NoCheckImage, CheckImage);
 
-/*        StdRemapArray[8] = MenBackGround;*/
-
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageRmp, &ArrowNormal, MaxMapDepth, StdRemapArray);
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageGhosted, &ArrowGhosted, MaxMapDepth, StdRemapArray);
 
-/*        StdRemapArray[8] = MenFillCol;*/
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageActive, &ArrowNormal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2601,7 +2675,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (!SpecialCheckImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageRmp, &MXDownNormal, MaxMapDepth, StdRemapArray);
           if (Ok)
@@ -2614,7 +2687,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
           MXImage = MXImageRmp;
           NoMXImage = NoMXImageRmp;
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageActive, &MXDownNormal, MaxMapDepth, DreiDActiveRemapArray);
           if (Ok)
@@ -2627,13 +2699,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       {
         if (!CommandImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageRmp, &Amiga8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageGhosted, &Amiga8_Ghosted, MaxMapDepth, StdRemapArray);
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&CommandImageActive, &Amiga8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2642,13 +2712,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (!CheckImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageRmp, &Check8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageGhosted, &Check8_Ghosted, MaxMapDepth, StdRemapArray);
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&CheckImageActive, &Check8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2660,14 +2728,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         NoCheckImage->PlaneOnOff = MenBackGround;
         CopyImageDimensions (NoCheckImage, CheckImage);
 
-/*        StdRemapArray[8] = MenBackGround;*/
-
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageRmp, &Arrow8_Normal, MaxMapDepth, StdRemapArray);
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageGhosted, &Arrow8_Ghosted, MaxMapDepth, StdRemapArray);
 
-/*        StdRemapArray[8] = MenFillCol;*/
         if (Ok)
           Ok = MakeRemappedImage (&SubArrowImageActive, &Arrow8_Normal, MaxMapDepth, DreiDActiveRemapArray);
 
@@ -2675,7 +2740,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
         if (!SpecialCheckImage)
         {
-/*          StdRemapArray[8] = MenBackGround;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageRmp, &MXDown8_Normal, MaxMapDepth, StdRemapArray);
           if (Ok)
@@ -2688,7 +2752,6 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
           MXImage = MXImageRmp;
           NoMXImage = NoMXImageRmp;
 
-/*          StdRemapArray[8] = MenFillCol;*/
           if (Ok)
             Ok = MakeRemappedImage (&MXImageActive, &MXDown8_Normal, MaxMapDepth, DreiDActiveRemapArray);
           if (Ok)
@@ -3044,6 +3107,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   AktMenu = NULL;
   MenuStripSwapped = TRUE;
+  DisarmMenu();
 
 
   if (ActivateMenu)

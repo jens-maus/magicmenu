@@ -111,7 +111,6 @@ enum
 	GAD_MarkSub,
 	GAD_DblBorder,
 	GAD_NonBlocking,
-	GAD_TimeOut,
 	GAD_KCEnabled,
 	GAD_KCGoTop,
 	GAD_KCRAltRCommand,
@@ -177,7 +176,7 @@ struct ColorWheelHSB	 ColorHSB;
 /******************************************************************************/
 
 #define GRADIENT_PENS	 16
-#define COLOUR_PENS	 18
+#define COLOUR_PENS	 21
 
 WORD			 GradientPens[GRADIENT_PENS+1];
 WORD			 GradientPensUsed;
@@ -218,8 +217,8 @@ UBYTE			 FileName[MAX_FILENAME_LENGTH];
 
 /******************************************************************************/
 
-extern struct Image	 DemoMenu11;
-extern struct Image	 DemoMenu8;
+extern struct Image	 Demo_8_Image;
+extern struct Image	 Demo_11_Image;
 
 /******************************************************************************/
 
@@ -597,11 +596,11 @@ ClampColour(ULONG *RGB,LONG Red,LONG Green,LONG Blue)
 VOID
 UpdateSample(struct MMPrefs *Prefs)
 {
-	struct LoadThatColour LoadTable[10+1];
+	struct LoadThatColour LoadTable[13+1];
 	struct ColorWheelRGB *Colours;
 	LONG i,Red,Green,Blue;
 
-	for(i = 0 ; i < 10 ; i++)
+	for(i = 0 ; i < 13 ; i++)
 	{
 		LoadTable[i].One	= 1;
 		LoadTable[i].Which	= Pens[8+i];
@@ -611,26 +610,34 @@ UpdateSample(struct MMPrefs *Prefs)
 
 	Colours = (struct ColorWheelRGB *)&Prefs->mmp_LightEdge;
 
-	for(i = 0 ; i < 6 ; i++)
-	{
-		LoadTable[i].Red	= Colours[i].cw_Red;
-		LoadTable[i].Green	= Colours[i].cw_Green;
-		LoadTable[i].Blue	= Colours[i].cw_Blue;
-	}
-
 	Red	= (Prefs->mmp_LightEdge.R >> 24) + (Prefs->mmp_DarkEdge.R >> 24);
 	Green	= (Prefs->mmp_LightEdge.G >> 24) + (Prefs->mmp_DarkEdge.G >> 24);
 	Blue	= (Prefs->mmp_LightEdge.B >> 24) + (Prefs->mmp_DarkEdge.B >> 24);
 
-	ClampColour((ULONG *)&LoadTable[i++].Red,(Red + 1) / 1,(Green + 1) / 1,(Blue + 1) / 1);
+	ClampColour((ULONG *)&LoadTable[0].Red,(Red + 1) / 1,(Green + 1) / 1,(Blue + 1) / 1);
 
 	Red	= Prefs->mmp_Background.R >> 24;
 	Green	= Prefs->mmp_Background.G >> 24;
 	Blue	= Prefs->mmp_Background.B >> 24;
 
-	ClampColour((ULONG *)&LoadTable[i++].Red,Red - 26,Green - 26,Blue - 26);
-	ClampColour((ULONG *)&LoadTable[i++].Red,Red,Green,Blue);
-	ClampColour((ULONG *)&LoadTable[i  ].Red,Red + 26,Green + 26,Blue + 26);
+	ClampColour((ULONG *)&LoadTable[1].Red,Red - 26,Green - 26,Blue - 26);
+	ClampColour((ULONG *)&LoadTable[2].Red,Red,Green,Blue);
+	ClampColour((ULONG *)&LoadTable[3].Red,Red + 26,Green + 26,Blue + 26);
+
+	Red	= Prefs->mmp_FillCol.R >> 24;
+	Green	= Prefs->mmp_FillCol.G >> 24;
+	Blue	= Prefs->mmp_FillCol.B >> 24;
+
+	ClampColour((ULONG *)&LoadTable[4].Red,Red - 26,Green - 26,Blue - 26);
+	ClampColour((ULONG *)&LoadTable[5].Red,Red,Green,Blue);
+	ClampColour((ULONG *)&LoadTable[6].Red,Red + 26,Green + 26,Blue + 26);
+
+	for(i = 0 ; i < 6 ; i++)
+	{
+		LoadTable[7+i].Red	= Colours[i].cw_Red;
+		LoadTable[7+i].Green	= Colours[i].cw_Green;
+		LoadTable[7+i].Blue	= Colours[i].cw_Blue;
+	}
 
 	LoadRGB32(&PubScreen->ViewPort,(ULONG *)LoadTable);
 }
@@ -1443,43 +1450,20 @@ OpenAll(struct WBStartup *StartupMsg)
 			}
 
 			if(PubScreen->Font->ta_YSize >= 11)
-				WhichImage = &DemoMenu11;
+				WhichImage = &Demo_11_Image;
 			else
-				WhichImage = &DemoMenu8;
+				WhichImage = &Demo_8_Image;
 
 			if(SampleMenu = CreateBitMap(MaxDepth,SampleMenuWidth = WhichImage->Width,SampleMenuHeight = WhichImage->Height))
 			{
 				struct BitMap WhichBitMap;
 				UBYTE Mapping[32];
-				LONG *Pen;
+				LONG i;
 
 				memset(Mapping,0,sizeof(Mapping));
-				Pen = Pens;
 
-				Mapping[ 0] = *Pen++;	/* XENGrey0 */
-				Mapping[ 1] = *Pen++;	/* XENBlack */
-				Mapping[ 2] = *Pen++;	/* XENWhite */
-				Mapping[ 3] = *Pen++;	/* XENBlue */
-				Mapping[ 4] = *Pen++;	/* XENGrey1 */
-				Mapping[ 5] = *Pen++;	/* XENGrey2 */
-				Mapping[ 6] = *Pen++;	/* XENBeige */
-				Mapping[ 7] = *Pen++;	/* XENPink */
-
-				Mapping[16] = *Pen++;	/* LightEdge */
-				Mapping[17] = *Pen++;	/* DarkEdge */
-				Mapping[18] = *Pen++;	/* BackGround */
-				Mapping[19] = *Pen++;	/* TextCol */
-				Mapping[20] = *Pen++;	/* HiCol */
-				Mapping[21] = *Pen++;	/* FillCol */
-
-				Mapping[ 8] = *Pen++;	/* SectGrey */
-
-				Mapping[ 9] = *Pen++;	/* StdGrey0 */
-				Mapping[10] = *Pen++;	/* StdGrey1 */
-				Mapping[11] = *Pen;	/* StdGrey2 */
-
-				Mapping[22] = Mapping[ 9];
-				Mapping[23] = Mapping[11];
+				for(i = 0 ; i < 21 ; i++)
+					Mapping[i+1] = Pens[i];
 
 				CreateBitMapFromImage(WhichImage,&WhichBitMap);
 
@@ -1686,16 +1670,6 @@ OpenAll(struct WBStartup *StartupMsg)
 						LA_ID,		GAD_NonBlocking,
 						LA_LabelID,	MSG_NON_BLOCKING_GAD,
 						LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
-					TAG_DONE);
-
-					LT_New(Handle,
-						LA_Type,	INTEGER_KIND,
-						LA_ID,		GAD_TimeOut,
-						LA_LabelID,	MSG_MENU_TIMEOUT_GAD,
-						LA_WORD,	&CurrentPrefs.mmp_TimeOut,
-						LAIN_Min,	0,
-						LAIN_Max,	60,
-						LAIN_UseIncrementers,TRUE,
 					TAG_DONE);
 
 					LT_EndGroup(Handle);
@@ -2035,6 +2009,23 @@ OpenAll(struct WBStartup *StartupMsg)
 */
 			LAMN_ItemID,			MSG_REMOVE_MEN,
 				LAMN_ID,		MEN_Remove,
+/*
+		LAMN_TitleText, 		"Demo",
+			LAMN_ItemText,		"Checkmark",
+				LAMN_CheckIt,	TRUE,
+				LAMN_Checked,	TRUE,
+			LAMN_ItemText,		"M\0Shortcut",
+			LAMN_ItemText,		NM_BARLABEL,
+			LAMN_ItemText,		"Submenu",
+				LAMN_SubText,		"Submenu Item",
+			LAMN_ItemText,		"G\0Ghosted",
+				LAMN_CheckIt,	TRUE,
+				LAMN_Checked,	TRUE,
+				LAMN_Disabled,	TRUE,
+			LAMN_ItemText,		"Ghosted Sub",
+				LAMN_Disabled,	TRUE,
+				LAMN_SubText,		"Submenu Item",
+*/
 	TAG_DONE)))
 		return("menu");
 
@@ -2101,10 +2092,6 @@ UpdateSettings(struct MMPrefs *Prefs)
 
 	LT_SetAttributes(Handle,GAD_NonBlocking,
 		GTCB_Checked,	Prefs->mmp_NonBlocking,
-	TAG_DONE);
-
-	LT_SetAttributes(Handle,GAD_TimeOut,
-		GTIN_Number,	Prefs->mmp_TimeOut,
 	TAG_DONE);
 
 	LT_SetAttributes(Handle,GAD_KCEnabled,
@@ -2235,15 +2222,15 @@ EventLoop(VOID)
 							{
 								LONG i;
 
-								for(i = 8 ; i < 16 ; i++)
+								for(i = 15 ; i <= 20 ; i++)
 								{
 									if(Pens[i] == Pen)
 									{
 										LT_SetAttributes(Handle,GAD_WhichPen,
-											GTCY_Active,i - 8,
+											GTCY_Active,i - 15,
 										TAG_DONE);
 
-										ChangePen(&CurrentPrefs,i - 8);
+										ChangePen(&CurrentPrefs,i - 15);
 										break;
 									}
 								}

@@ -51,7 +51,6 @@ MMCheckScreen (void)
   return (TRUE);
 }
 
-
 BOOL
 MMCheckWindow (struct Window * Win)
 {
@@ -71,10 +70,8 @@ MMCheckWindow (struct Window * Win)
   return (TRUE);
 }
 
-
 ULONG __asm __saveds
 MMOpenWindow (REG(a0) struct NewWindow * NW)
-
 {
   ULONG Win;
 
@@ -98,11 +95,9 @@ MMOpenWindow (REG(a0) struct NewWindow * NW)
   return (Win);
 }
 
-
 ULONG __asm __saveds
 MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
                      REG(a1) struct TagItem * TI)
-
 {
   ULONG Win;
 
@@ -126,11 +121,8 @@ MMOpenWindowTagList (REG(a0) struct NewWindow * NW,
   return (Win);
 }
 
-
-
 ULONG __asm __saveds
 MMClearMenuStrip (REG(a0) struct Window * W)
-
 {
   ULONG Res;
 
@@ -151,7 +143,6 @@ MMClearMenuStrip (REG(a0) struct Window * W)
 ULONG __asm __saveds
 MMSetMenuStrip (REG(a0) struct Window * W,
                 REG(a1) struct Menu * MI)
-
 {
   ULONG Res;
 
@@ -172,11 +163,9 @@ MMSetMenuStrip (REG(a0) struct Window * W,
   }
 }
 
-
 ULONG __asm __saveds
 MMResetMenuStrip (REG(a0) struct Window * W,
                   REG(a1) struct Menu * MI)
-
 {
   ULONG Res;
 
@@ -195,10 +184,8 @@ MMResetMenuStrip (REG(a0) struct Window * W,
   }
 }
 
-
 ULONG __asm __saveds
 MMCloseWindow (REG(a0) struct Window * W)
-
 {
   ULONG Res;
 
@@ -225,10 +212,8 @@ MMCloseWindow (REG(a0) struct Window * W)
   return (Res);
 }
 
-
 ULONG __asm __saveds
 MMActivateWindow (REG(a0) struct Window * W)
-
 {
   ULONG Result;
 
@@ -244,10 +229,8 @@ MMActivateWindow (REG(a0) struct Window * W)
     return (FALSE);
 }
 
-
 ULONG __asm __saveds
 MMWindowToFront (REG(a0) struct Window * W)
-
 {
   ULONG Result;
 
@@ -263,10 +246,8 @@ MMWindowToFront (REG(a0) struct Window * W)
     return (FALSE);
 }
 
-
 ULONG __asm __saveds
 MMWindowToBack (REG(a0) struct Window * W)
-
 {
   ULONG Result;
 
@@ -282,10 +263,8 @@ MMWindowToBack (REG(a0) struct Window * W)
     return (FALSE);
 }
 
-
 ULONG __asm __saveds
 MMMoveWindowInFrontOf (REG(a0) struct Window * Window,REG(a1) struct Window *Behind)
-
 {
   ULONG Result;
 
@@ -301,11 +280,9 @@ MMMoveWindowInFrontOf (REG(a0) struct Window * Window,REG(a1) struct Window *Beh
     return (FALSE);
 }
 
-
 BOOL __asm __saveds
 MMModifyIDCMP (REG(a0) struct Window * window,
                REG(d0) ULONG flags)
-
 {
   BOOL Result;
 
@@ -496,7 +473,6 @@ RecolourBitMap (struct BitMap *Src, struct BitMap *Dst, UBYTE * Mapping, LONG De
 BOOL
 MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
                    UWORD Depth, UBYTE * RemapArray)
-
 {
   if (Depth > 8)
     Depth = 8;
@@ -529,8 +505,6 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
           if (TempRPort.BitMap = allocBitMap (Depth, SrcImage->Width, SrcImage->Height, NULL, TRUE))
           {
-            BOOL Result;
-
             DrawImage (&TempRPort, SrcImage, -SrcImage->LeftEdge, -SrcImage->TopEdge);
 
             RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
@@ -566,7 +540,6 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
   return (FALSE);
 }
 
-
 VOID
 FreeRemappedImage (struct Image * Image)
 {
@@ -578,144 +551,48 @@ FreeRemappedImage (struct Image * Image)
   }
 }
 
-
-struct timerequest *
-SendTimeRequest (struct timerequest *OrigIOReq,
-                 ULONG Seconds,
-                 ULONG Micros,
-                 struct MsgPort *ReplyPort)
-
+VOID
+StartTimeRequest(struct timerequest *TimeRequest,ULONG Seconds,ULONG Micros)
 {
-  struct timerequest *NewIOReq;
+	TimeRequest->tr_node.io_Command	= TR_ADDREQUEST;
+	TimeRequest->tr_time.tv_secs	= Seconds;
+	TimeRequest->tr_time.tv_micro	= Micros;
 
-  if (!OrigIOReq)
-    return (NULL);
-
-  if (!(NewIOReq = AllocVecPooled (sizeof (struct timerequest), MEMF_PUBLIC)))
-      return (NULL);
-
-  memcpy (NewIOReq, OrigIOReq, sizeof (struct timerequest));
-
-  NewIOReq->tr_node.io_Message.mn_ReplyPort = ReplyPort;
-  NewIOReq->tr_node.io_Command = TR_ADDREQUEST;
-  NewIOReq->tr_time.tv_secs = Seconds;
-  NewIOReq->tr_time.tv_micro = Micros;
-
-  SetSignal (0, 1L << ReplyPort->mp_SigBit);
-  SendIO (NewIOReq);
-
-  return (NewIOReq);
+	SetSignal(0,PORTMASK(TimeRequest->tr_node.io_Message.mn_ReplyPort));
+	SendIO(TimeRequest);
 }
 
-
-long __stdargs
-SimpleRequest (struct Window *RefWindow,
-               const char *RequestTitle,
-               const char *RequestText,
-               const char *RequestGadgets,
-               ULONG * IDCMPFlags,
-               ULONG Seconds,
-               APTR Arg1,
-               ...)
+VOID
+StopTimeRequest(struct timerequest *TimeRequest)
 {
-  struct EasyStruct ReqStruct;
-  struct Window *ReqWindow;
-  struct MsgPort *MyPort;
-  struct timerequest *TimeReq;
-  struct Message *Message;
-  BOOL DoWait, Ende;
-  long Answer;
-  ULONG IDCMP, MyIDCMP, *IDCMPPtr;
-  ULONG SignalMask;
+	if(!CheckIO(TimeRequest))
+		AbortIO(TimeRequest);
 
-  MyIDCMP = NULL;
-
-  if (IDCMPFlags)
-    IDCMPPtr = IDCMPFlags;
-  else
-    IDCMPPtr = &MyIDCMP;
-
-  ReqStruct.es_StructSize = sizeof (struct EasyStruct);
-
-  ReqStruct.es_Flags = 0;
-  ReqStruct.es_Title = (char *) RequestTitle;
-  ReqStruct.es_TextFormat = (char *) RequestText;
-  ReqStruct.es_GadgetFormat = (char *) RequestGadgets;
-
-  if (!Seconds)
-    return (EasyRequest (RefWindow, &ReqStruct, IDCMPPtr, Arg1));
-  else
-  {
-
-    ReqWindow = BuildEasyRequestArgs (RefWindow, &ReqStruct, *IDCMPPtr, Arg1);
-
-    if (ReqWindow == NULL || ReqWindow == (struct Window *) 1)
-      return ((long) ReqWindow);
-
-    if (!(MyPort = CreateMsgPort ()))
-      return (FALSE);
-    else
-    {
-      if (TimeReq = SendTimeRequest (TimerIO, Seconds, 0, MyPort))
-      {
-        SignalMask = 1 << ReqWindow->UserPort->mp_SigBit |
-          1 << MyPort->mp_SigBit;
-
-        do
-        {
-          DoWait = TRUE;
-          Ende = FALSE;
-
-          if (Message = GetMsg (MyPort))
-          {
-            if (Message == (struct Message *) TimeReq)
-            {
-              Ende = TRUE;
-              DoWait = FALSE;
-              Answer = -2;
-            }
-          }
-
-          if (!Ende)
-          {
-            IDCMP = *IDCMPPtr;
-            Answer = SysReqHandler (ReqWindow, &IDCMP, FALSE);
-            if (Answer > -1)
-            {
-              *IDCMPPtr = IDCMP;
-              Ende = TRUE;
-              DoWait = FALSE;
-            }
-          }
-
-          if (DoWait)
-            Wait (SignalMask);
-
-        }
-        while (!Ende);
-
-        if (!CheckIO (TimeReq))
-        {
-          AbortIO (TimeReq);
-          WaitIO (TimeReq);
-        }
-        FreeVecPooled (TimeReq);
-
-      }
-      DeleteMsgPort (MyPort);
-    }
-
-    FreeSysRequest (ReqWindow);
-
-    return (Answer);
-  }
+	WaitIO(TimeRequest);
 }
 
+LONG
+ShowRequest(STRPTR Gadgets,STRPTR Text,...)
+{
+	struct EasyStruct Easy;
+	va_list VarArgs;
+	LONG Result;
 
+	Easy.es_StructSize	= sizeof(struct EasyStruct);
+	Easy.es_Flags		= NULL;
+	Easy.es_Title		= "MagicMenu";
+	Easy.es_TextFormat	= Text;
+	Easy.es_GadgetFormat	= Gadgets;
+
+	va_start(VarArgs,Text);
+	Result = EasyRequestArgs(NULL,&Easy,NULL,(APTR)VarArgs);
+	va_end(VarArgs);
+
+	return(Result);
+}
 
 BOOL
 CheckReply (struct Message * Msg)
-
 {
   if (Msg->mn_Node.ln_Type == NT_REPLYMSG)
   {
@@ -731,7 +608,7 @@ CheckEnde (void)
 {
   if (IMsgReplyCount > 0)
   {
-    SimpleRequest (NULL, "MagicMenu", GetString(MSG_CANNOT_UNINSTALL_TXT), "Ok", NULL, 0, 0);
+    ShowRequest ("Ok", GetString(MSG_CANNOT_UNINSTALL_TXT));
 
     return (FALSE);
   }
@@ -765,7 +642,6 @@ disposeBitMap (struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem)
     FreeVecPooled (BitMap);
   }
 }
-
 
 struct BitMap *
 allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem)
@@ -803,13 +679,11 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
   return (NULL);
 }
 
-
 void
 FreeRPort (struct BitMap *BitMap,
            struct Layer_Info *LayerInfo,
            struct Layer *Layer,
            LONG Width, LONG Height)
-
 {
   if (Layer)
     DeleteLayer (NULL, Layer);
@@ -820,7 +694,6 @@ FreeRPort (struct BitMap *BitMap,
   if (BitMap)
     disposeBitMap (BitMap, Width, Height, FALSE);
 }
-
 
 STATIC ULONG
 Dummy (VOID)
@@ -849,7 +722,6 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
               struct Layer_Info ** LayerInfoPtr,
               struct Layer ** LayerPtr,
               struct BitMap * Friend)
-
 {
   struct BitMap *BitMap;
   struct Layer_Info *LayerInfo;
@@ -911,7 +783,6 @@ SwapRPortClipRect(struct RastPort *RPort,struct ClipRect *ClipRect)
 struct ClipRect *
 GetClipRect (struct BitMap *BitMap,
              LONG x1, LONG y1, LONG x2, LONG y2)
-
 {
   struct ClipRect *CRect;
 
@@ -926,10 +797,8 @@ GetClipRect (struct BitMap *BitMap,
   return (CRect);
 }
 
-
 void
 CheckDispClipVisible (WORD MinX, WORD MinY, WORD MaxX, WORD MaxY)
-
 {
   WORD x1, y1, x2, y2;
 
@@ -953,11 +822,9 @@ CheckDispClipVisible (WORD MinX, WORD MinY, WORD MaxX, WORD MaxY)
   }
 }
 
-
 void
 Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
             BOOL Upward, BOOL HiRes, BOOL DoubleBorder)
-
 {
   if (Width <= 0 || Height <= 0)
     return;
@@ -1114,10 +981,8 @@ Draw3DRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height,
   }
 }
 
-
 void
 DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
-
 {
   if (Width <= 0 || Height <= 0)
     return;
@@ -1138,10 +1003,8 @@ DrawNormRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
                  x, y);
 }
 
-
 void
 GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
-
 {
   if (Width <= 0 || Height <= 0)
     return;
@@ -1164,10 +1027,8 @@ GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 
 }
 
-
 void
 CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
-
 {
   if (Width > 0 && Height > 0)
   {
@@ -1183,10 +1044,8 @@ CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   }
 }
 
-
 void
 HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlited)
-
 {
   if (Width > 0 && Height > 0)
   {
@@ -1196,10 +1055,8 @@ HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highl
   }
 }
 
-
 BOOL
 MoveMouse (LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr)
-
 {
   struct InputEvent *MyNewEvent;
   struct IEPointerPixel *MyNewPPixel;
@@ -1321,7 +1178,6 @@ GetBitMapDepth (struct BitMap *BitMap)
 
 LONG
 findchar (char *Text, char Zeichen)
-
 {
   LONG z1;
 

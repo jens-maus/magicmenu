@@ -90,9 +90,6 @@ Double borders
 MSG_NON_BLOCKING_GAD (//)
 Non blocking
 ;
-MSG_MENU_TIMEOUT_GAD (//)
-Menu timeout (seconds)
-;
 MSG_BRIGHT_EDGES_TXT (//)
 Bright edges
 ;

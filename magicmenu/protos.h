@@ -1,5 +1,8 @@
 
 /* main.c */
+VOID DisarmMenu(VOID);
+VOID ArmMenu(VOID);
+BPTR ClonePath(BPTR StartPath);
 VOID AttachCLI(struct WBStartup *Startup);
 STRPTR GetString(ULONG ID);
 VOID Activate(VOID);
@@ -14,7 +17,7 @@ VOID SetRemember(struct Window *Win);
 VOID ResetMenu(struct Menu *Menu, BOOL MenNull);
 VOID CleanUpMenu(VOID);
 BOOL MenuSelected(BOOL LastSelect);
-BOOL CheckCxMsgAct(CxMsg *Msg, struct timerequest **TimeReq, BOOL *Cancel);
+BOOL CheckCxMsgAct(CxMsg *Msg, BOOL *Cancel);
 VOID ProcessIntuiMenu(VOID);
 VOID EndIntuiMenu(BOOL ReleaseMenuAct);
 BOOL CheckCxMsg(CxMsg *Msg);
@@ -34,7 +37,7 @@ BOOL SetupMenuActiveData(VOID);
 VOID CloseAll(VOID);
 VOID ExitTrap(VOID);
 VOID ErrorPrc(const char *ErrTxt);
-VOID main(int argc, char **argv);
+int main(int argc, char **argv);
 
 /* misc.c */
 BOOL MMCheckScreen(void);
@@ -54,11 +57,12 @@ struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInf
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 VOID CreateBitMapFromImage(const struct Image *Image, struct BitMap *BitMap);
-BOOL RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
+VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
 BOOL MakeRemappedImage(struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
 VOID FreeRemappedImage(struct Image *Image);
-struct timerequest *SendTimeRequest(struct timerequest *OrigIOReq, ULONG Seconds, ULONG Micros, struct MsgPort *ReplyPort);
-long __stdargs SimpleRequest(struct Window *RefWindow, const char *RequestTitle, const char *RequestText, const char *RequestGadgets, ULONG *IDCMPFlags, ULONG Seconds, APTR Arg1, ...);
+VOID StartTimeRequest(struct timerequest *TimeRequest, ULONG Seconds, ULONG Micros);
+VOID StopTimeRequest(struct timerequest *TimeRequest);
+LONG ShowRequest(STRPTR Gadgets, STRPTR Text, ...);
 BOOL CheckReply(struct Message *Msg);
 BOOL CheckEnde(void);
 void disposeBitMap(struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem);
@@ -107,42 +111,43 @@ VOID MemoryExit(VOID);
 BOOL MemoryInit(VOID);
 
 /* menuboxes.c */
-void DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted);
+VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
-void CleanUpMenuSubBox(void);
+VOID CleanUpMenuSubBox(VOID);
 BOOL DrawHiSubItem(struct MenuItem *Item);
 BOOL DrawNormSubItem(struct MenuItem *Item);
-void DrawMenuSubBoxContents(struct MenuItem *Item, struct RastPort *RPort, UWORD Left, UWORD Top);
+VOID DrawMenuSubBoxContents(struct MenuItem *Item, struct RastPort *RPort, UWORD Left, UWORD Top);
 BOOL DrawMenuSubBox(struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem);
 BOOL GetItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
-void CleanUpMenuBox(void);
+VOID CleanUpMenuBox(VOID);
 BOOL DrawHiItem(struct MenuItem *Item);
 BOOL DrawNormItem(struct MenuItem *Item);
-void DrawMenuBoxContents(struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD Top);
+VOID DrawMenuBoxContents(struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD Top);
 BOOL DrawMenuBox(struct Menu *Menu, BOOL ActivateItem);
 BOOL GetMenuContCoor(struct Menu *Menu, LONG *t, LONG *l, LONG *w, LONG *h);
 BOOL DrawHiMenu(struct Menu *Menu);
 BOOL GhostMenu(struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWORD Top);
-void DrawNormMenu(struct Menu *Menu);
-void CleanUpMenuStrip(void);
-void GetSubItemCoors(struct MenuItem *Item, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
-void GetItemCoors(struct MenuItem *Item, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
-void GetMenuCoors(struct Menu *Menu, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
-void ChangeAktSubItem(struct MenuItem *NewItem, UWORD NewSubItemNum);
+VOID DrawNormMenu(struct Menu *Menu);
+VOID CleanUpMenuStrip(VOID);
+VOID GetSubItemCoors(struct MenuItem *Item, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
+VOID GetItemCoors(struct MenuItem *Item, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
+VOID GetMenuCoors(struct Menu *Menu, UWORD *x1, UWORD *y1, UWORD *x2, UWORD *y2);
+VOID ChangeAktSubItem(struct MenuItem *NewItem, UWORD NewSubItemNum);
 BOOL FindSubItemChar(char Search, BOOL *Single);
 UWORD SelectNextSubItem(WORD NeuItemNum);
 UWORD SelectPrevSubItem(WORD NeuItemNum);
-void ChangeAktItem(struct MenuItem *NewItem, UWORD NewItemNum);
+VOID ChangeAktItem(struct MenuItem *NewItem, UWORD NewItemNum);
 BOOL FindItemChar(char Search, BOOL *Single);
 UWORD SelectNextItem(WORD NeuItemNum);
 UWORD SelectPrevItem(WORD NeuItemNum);
-void ChangeAktMenu(struct Menu *NewMenu, UWORD NewMenuNum);
+VOID ChangeAktMenu(struct Menu *NewMenu, UWORD NewMenuNum);
 BOOL FindMenuChar(char Search, BOOL *Single);
 UWORD SelectNextMenu(WORD NeuMenuNum);
 UWORD SelectPrevMenu(WORD NeuMenuNum);
 BOOL LookMouse(UWORD MouseX, UWORD MouseY, BOOL NewSelect);
-void CopyImageDimensions(struct Image *Dest, struct Image *Source);
-void DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top);
+VOID CopyImageDimensions(struct Image *Dest, struct Image *Source);
+VOID DrawMenuStripContents(struct RastPort *RPort, UWORD Left, UWORD Top);
+VOID SetMCPens(BOOL Vanilla);
 BOOL DrawMenuStrip(BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu);
 
 /* dointuimenu.c */

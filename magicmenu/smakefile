@@ -17,7 +17,7 @@
 VERSION =	2
 
 GSTFILE =	system_headers.gst
-#OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
+OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
 CPU =		030
 #CPU =		any
 DEBUG =		line
@@ -42,9 +42,9 @@ MAIN_OBJS =	main.o stubs.o misc.o \
 
 ###############################################################################
 
-PREFS_SOURCE =	edit.c DemoMenu-8.c DemoMenu-11.c remap.a
+PREFS_SOURCE =	edit.c DemoImageData.c remap.a
 
-PREFS_OBJS =	edit.o DemoMenu-8.o DemoMenu-11.o remap.o
+PREFS_OBJS =	edit.o DemoImageData.o remap.o
 
 ###############################################################################
 
