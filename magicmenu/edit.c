@@ -142,7 +142,7 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_FillCol.G,		SIT_ULONG,	"Fill.G"),
 	DECLARE_ITEM(MMPrefs,mmp_FillCol.B,		SIT_ULONG,	"Fill.B"),
 
-	DECLARE_ITEM(MMPrefs,mmp_Transparency,		SIT_BOOLEAN,	"Transparency"),
+	DECLARE_ITEM(MMPrefs,mmp_Transparency,		SIT_BOOLEAN,	"Transparency"),	/* == item #37 */
 	DECLARE_ITEM(MMPrefs,mmp_HighlightDisabled,	SIT_BOOLEAN,	"HighlightDisabled"),
 	DECLARE_ITEM(MMPrefs,mmp_SeparatorBarStyle,	SIT_UBYTE,	"SeparatorBarStyle"),
 	DECLARE_ITEM(MMPrefs,mmp_VerifyPatches,		SIT_BOOLEAN,	"VerifyPatches"),
@@ -1073,12 +1073,23 @@ LONG
 ReadPrefs(STRPTR Name,struct MMPrefs *HerePlease)
 {
 	struct MMPrefs LocalPrefs;
+	LONG NumItemsFound;
 	LONG Error;
 
 	memset(&LocalPrefs,0,sizeof(LocalPrefs));
 
-	if(!(Error = RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs)))
+	if(!(Error = RestoreData(Name,"MagicMenu",MMPREFS_VERSION,PrefsStorage,ITEM_TABLE_SIZE(PrefsStorage),&LocalPrefs,&NumItemsFound)))
+	{
 		CopyMem(&LocalPrefs,HerePlease,sizeof(struct MMPrefs));
+	}
+	else
+	{
+		if(NumItemsFound == 37 && Error == ERROR_REQUIRED_ARG_MISSING)
+		{
+			CopyMem(&LocalPrefs,HerePlease,sizeof(struct MMPrefs));
+			Error = 0;
+		}
+	}
 
 	return(Error);
 
