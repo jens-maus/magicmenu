@@ -1898,6 +1898,10 @@ OpenAll(struct WBStartup *StartupMsg)
 							LACY_LabelTable,TypeLabelTable,
 						TAG_DONE);
 
+						LT_New(Handle,
+							LA_Type,BLANK_KIND,
+						TAG_DONE);
+
 						LT_EndGroup(Handle);
 					}
 
@@ -1928,6 +1932,17 @@ OpenAll(struct WBStartup *StartupMsg)
 								LA_ID,		GAD_NonBlocking,
 								LA_LabelID,	MSG_NON_BLOCKING_GAD,
 								LA_BYTE,	&CurrentPrefs.mmp_NonBlocking,
+							TAG_DONE);
+
+							LT_EndGroup(Handle);
+						}
+
+						LT_New(Handle,
+							LA_Type,VERTICAL_KIND,
+						TAG_DONE);
+						{
+							LT_New(Handle,
+								LA_Type,BLANK_KIND,
 							TAG_DONE);
 
 							LT_EndGroup(Handle);

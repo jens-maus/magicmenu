@@ -2350,6 +2350,7 @@ ErrorPrc (char *ErrTxt)
 int
 main (int argc, char **argv)
 {
+  UBYTE dummy[4];
   BOOL Ok;
   LONG error;
   LONG z1;
@@ -2359,6 +2360,20 @@ main (int argc, char **argv)
   {
     ((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
     return(RETURN_FAIL);
+  }
+
+  if(GetVar("922",dummy,sizeof(dummy),NULL) > 0)
+  {
+    extern BOOL LinesAndShadows;
+
+    LinesAndShadows = TRUE;
+  }
+
+  if(GetVar("909",dummy,sizeof(dummy),NULL) > 0)
+  {
+    extern BOOL HardSeparation;
+
+    HardSeparation = TRUE;
   }
 
   if (argc == 0)

@@ -21,6 +21,12 @@ STATIC BOOL SubNotDrawn;
 
 /******************************************************************************/
 
+BOOL HardSeparation = FALSE;
+BOOL LinesAndShadows = FALSE;
+/*STATIC BOOL HardSeparation = FALSE;*/
+
+/******************************************************************************/
+
 //#define DEMO_MENU
 
 /******************************************************************************/
@@ -39,7 +45,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level,BOOL DontC
 	else
 		Flag = 0;
 
-	if(V39 && Look3D && AktPrefs.mmp_CastShadows && StripPopUp)
+	if(V39 && Look3D && AktPrefs.mmp_CastShadows && (StripPopUp || LinesAndShadows))
 	{
 		ShadowSize = SHADOW_SIZE + Level * 2;
 
@@ -354,20 +360,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
         {
           if(LookMC)
           {
-          #if 0
-            if(AktPrefs.mmp_DblBorder)
-            {
-              SetFgPen (rp, MenSeparatorGrey0);
-              DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
-                        StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
-              WritePixel(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1);
-
-              SetFgPen (rp, MenSeparatorGrey2);
-              DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
-                          StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
-              WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
-            }
-            else
+            if(!AktPrefs.mmp_DblBorder && HardSeparation)
             {
               LONG Top;
 
@@ -383,7 +376,8 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
               WritePixel (rp,Left,Top);
               WritePixel (rp,Left + Width - 1,Top + 1);
             }
-          #else
+            else
+            {
               SetFgPen (rp, MenSeparatorGrey0);
               DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
                         StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
@@ -393,7 +387,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
               DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
                           StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
               WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
-          #endif
+            }
           }
           else
           {
@@ -519,6 +513,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
   {
     struct Image *WhichImage;
     LONG TopEdge;
+    LONG BaseOffset;
 
     CommText[0] = Item->Command;
 
@@ -563,7 +558,16 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
     /* Das Amiga-Zeichen wird an der Grundlinie des Zeichensatzes
      * ausgerichtet.
      */
-    if((TopEdge = CommandText.TopEdge + rp->TxBaseline - (WhichImage->Height - 1)) < 0)
+
+    BaseOffset = rp->TxBaseline - (WhichImage->Height - 1);
+
+    if(!LookMC)
+    {
+      if(BaseOffset < 0)
+        BaseOffset = 0;
+    }
+
+    if((TopEdge = CommandText.TopEdge + BaseOffset) < 0)
       TopEdge = 0;
 
     /* Unter den Eintrag sollte das Zeichen aber auch nicht rutschen. */
@@ -701,7 +705,7 @@ DrawHiSubItem (struct MenuItem *Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
-      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return(TRUE);
@@ -727,7 +731,7 @@ DrawHiSubItem (struct MenuItem *Item)
 
         if (!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted)
         {
-          if (!LookMC || MenuMode == MODE_KEYBOARD)
+          if (!LookMC || MenuMode == MODE_KEYBOARD || LinesAndShadows)
           {
             if(AktPrefs.mmp_DrawFrames)
               Draw3DRect (SubBoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
@@ -744,7 +748,7 @@ DrawHiSubItem (struct MenuItem *Item)
       }
       else
       {
-        if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
+        if (MenuMode == MODE_KEYBOARD || LinesAndShadows || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
             DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE, SubBoxDrawLeft, w);
@@ -781,7 +785,7 @@ DrawNormSubItem (struct MenuItem * Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
-      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      if((!(Item->Flags & ITEMENABLED) || SubBoxGhosted || BoxGhosted) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return(TRUE);
@@ -804,7 +808,7 @@ DrawNormSubItem (struct MenuItem * Item)
       {
         if (HiFlags != HIGHIMAGE)
         {
-          if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
+          if (MenuMode == MODE_KEYBOARD || LinesAndShadows || ((Item->Flags & ITEMENABLED) && (!SubBoxGhosted) && (!BoxGhosted)))
           {
             if (HiFlags == HIGHBOX)
               CompRect (SubBoxDrawRPort, l - 4, t - 2, w + 8, h + 4);
@@ -1086,7 +1090,7 @@ DrawHiItem (struct MenuItem *Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
-      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return(TRUE);
@@ -1112,7 +1116,7 @@ DrawHiItem (struct MenuItem *Item)
 
         if (!(Item->Flags & ITEMENABLED) || BoxGhosted)
         {
-          if (!LookMC || MenuMode == MODE_KEYBOARD)
+          if (!LookMC || MenuMode == MODE_KEYBOARD || LinesAndShadows)
           {
             if(AktPrefs.mmp_DrawFrames)
               Draw3DRect (BoxDrawRPort, l, t, w, h, DblBorder, FALSE, FALSE);
@@ -1128,7 +1132,7 @@ DrawHiItem (struct MenuItem *Item)
       }
       else
       {
-        if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
+        if (MenuMode == MODE_KEYBOARD || LinesAndShadows || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
         {
           if (HiFlags == HIGHIMAGE)
             DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE, BoxDrawLeft, w);
@@ -1166,7 +1170,7 @@ DrawNormItem (struct MenuItem * Item)
       if (HiFlags != HIGHCOMP && HiFlags != HIGHBOX && HiFlags != HIGHIMAGE)
         return (TRUE);
 
-      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD)
+      if((!(Item->Flags & ITEMENABLED) || BoxGhosted) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return(TRUE);
@@ -1188,7 +1192,7 @@ DrawNormItem (struct MenuItem * Item)
       {
         if (HiFlags != HIGHIMAGE)
         {
-          if (MenuMode == MODE_KEYBOARD || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
+          if (MenuMode == MODE_KEYBOARD || LinesAndShadows || ((Item->Flags & ITEMENABLED) && (!BoxGhosted)))
           {
             if (HiFlags == HIGHBOX)
               CompRect (BoxDrawRPort, l - 4, t - 2, w + 8, h + 4);
@@ -1477,7 +1481,7 @@ DrawHiMenu (struct Menu * Menu)
       if (MenuMode == MODE_KEYBOARD)
         CheckDispClipVisible (l + (StripLeft - StripDrawLeft), t + (StripTop - StripDrawTop), l + w - 1, t + h - 1);
 
-      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD)
+      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return(TRUE);
@@ -1510,7 +1514,7 @@ DrawHiMenu (struct Menu * Menu)
 
         if (StripPopUp)
         {
-          if ((Menu->Flags & MENUENABLED) || MenuMode == MODE_KEYBOARD)
+          if ((Menu->Flags & MENUENABLED) || MenuMode == MODE_KEYBOARD || LinesAndShadows)
           {
             if(AktPrefs.mmp_DrawFrames)
               Draw3DRect (StripDrawRPort, l, t, w, h + 1, AktPrefs.mmp_DblBorder, FALSE, FALSE);
@@ -1578,7 +1582,7 @@ DrawNormMenu (struct Menu *Menu)
       t += StripDrawTop;
       l += StripDrawLeft;
 
-      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD)
+      if(!(Menu->Flags & MENUENABLED) && MenuMode != MODE_KEYBOARD && !LinesAndShadows)
       {
         DB(kprintf("->abort\n"));
         return;
@@ -3399,10 +3403,12 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   if (ActivateMenu)
   {
     if (MenuMode == MODE_KEYBOARD)
+    {
       if (AktMenuRemember->AktMenu != NULL)
         ChangeAktMenu (AktMenuRemember->AktMenu, AktMenuRemember->AktMenuNum);
       else
         SelectNextMenu (-1);
+    }
 
     if (MenuMode != MODE_KEYBOARD && (MenuMode != MODE_SELECT || SelectSpecial))
       LookMouse (MenScr->MouseX, MenScr->MouseY, TRUE);
