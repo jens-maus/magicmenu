@@ -33,6 +33,7 @@ Call\1:
 	PATCH	CloseWindow
 	PATCH	ActivateWindow
 	PATCH	WindowToFront
+	PATCH	ModifyIDCMP
 
 *--------------------------------------------------------------------------
 

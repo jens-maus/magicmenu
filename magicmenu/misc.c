@@ -19,6 +19,7 @@ ULONG __asm CallCloseWindow (register __a0 struct Window *W);
 ULONG __asm CallCloseWindow (register __a0 struct Window *W);
 ULONG __asm CallActivateWindow (register __a0 struct Window *W);
 ULONG __asm CallWindowToFront (register __a0 struct Window *W);
+BOOL __asm CallModifyIDCMP (register __a0 struct Window *window, register __d0 ULONG flags);
 
 /*****************************************************************************************/
 
@@ -27,7 +28,7 @@ MMCheckScreen (void)
 {
   BOOL Wait;
 
-  ObtainSemaphore (GetPointerSemaphore);
+  SafeObtainSemaphoreShared (GetPointerSemaphore);
 
   Wait = (MenScr != NULL);
 
@@ -47,7 +48,7 @@ MMCheckWindow (register __a0 struct Window * Win)
 {
   BOOL Wait;
 
-  ObtainSemaphore (GetPointerSemaphore);
+  SafeObtainSemaphoreShared (GetPointerSemaphore);
 
   Wait = (MenWin == Win);
 
@@ -78,8 +79,8 @@ MMOpenWindow (register __a0 struct NewWindow * NW)
 
   /*****************************************************************************************/
 
-        if(Win)
-                RegisterGlyphs((struct Window *)Win,NW,NULL);
+  if(Win)
+      RegisterGlyphs((struct Window *)Win,NW,NULL);
 
   /*****************************************************************************************/
 
@@ -104,8 +105,8 @@ MMOpenWindowTagList (register __a0 struct NewWindow * NW,
 
   /*****************************************************************************************/
 
-        if(Win)
-                RegisterGlyphs((struct Window *)Win,NW,TI);
+  if(Win)
+      RegisterGlyphs((struct Window *)Win,NW,TI);
 
   /*****************************************************************************************/
 
@@ -237,6 +238,25 @@ MMWindowToFront (register __a0 struct Window * W)
     return (FALSE);
 }
 
+
+BOOL __asm __saveds
+MMModifyIDCMP (register __a0 struct Window * window,
+               register __d0 ULONG flags)
+
+{
+  BOOL Result;
+
+  if (MMCheckWindow (window))
+  {
+    Result = CallModifyIDCMP(window,flags);
+
+    ReleaseSemaphore (MenuActSemaphore);
+  }
+  else
+    Result = CallModifyIDCMP(window,flags);
+
+  return (Result);
+}
 
 
 /* ************************************************************************ */
@@ -540,27 +560,20 @@ CheckReply (struct Message * Msg)
   if (Msg->mn_Node.ln_Type == NT_REPLYMSG)
   {
     FreeVecPooled (Msg);
-    IntuiMessagePending--;
     return (TRUE);
   }
-  return (FALSE);
+  else
+    return (FALSE);
 }
 
 BOOL
 CheckEnde (void)
 
 {
-        UWORD Antw;
-
-        if (IntuiMessagePending > 0)
+        if (IMsgReplyCount > 0)
         {
-                Antw = SimpleRequest (NULL, "Magic Menu Message", "Sorry, Magic Menu cannot uninstall itself\nbecause there are unreplied messages pending!", "Ok|Force uninstall", NULL, 0, 0);
-
-                if (Antw == 1)
+                if(SimpleRequest (NULL, "Magic Menu Message", "Sorry, Magic Menu cannot uninstall itself\nbecause there are unreplied messages pending!", "Ok|Force uninstall", NULL, 0, 0))
                         return (FALSE);
-
-                CxMsgPort = CreateMsgPort ();
-                IntuiMessagePending = 0;
         }
 
         if(LibPatches)
@@ -570,29 +583,6 @@ CheckEnde (void)
         }
 
         return(TRUE);
-}
-
-
-UWORD
-CheckSendIntui (UWORD Error, const char *Typ)
-
-{
-  char ZwStr[200];
-
-  switch (Error)
-  {
-  case SENDINTUI_OK:
-  case SENDINTUI_NOUSERPORT:
-    return (Error);
-  case SENDINTUI_TIMEOUT:
-    SPrintf (ZwStr, "Timeout occured:\nProgram doesn't respond to message!\nMessage Class: %s", Typ);
-    SimpleRequest (NULL, "Magic Menu Message", ZwStr, "Ok", NULL, 0, 0);
-    break;
-  case SENDINTUI_NOPORT:
-    DisplayBeep (NULL);
-    break;
-  }
-  return (Error);
 }
 
 void
@@ -629,7 +619,7 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend)
   Error = FALSE;
 
   if (GfxVersion >= 39)
-    return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes) ? NULL : BMF_MINPLANES, Friend));
+    return (AllocBitMap (Width, Height, Depth, (AktPrefs.mmp_ChunkyPlanes || Depth > 8) ? BMF_MINPLANES : NULL, Friend));
   else
   {
     if (BitMap = AllocVecPooled (sizeof (struct BitMap), NULL))
@@ -703,7 +693,6 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
               struct BitMap *Friend)
 
 {
-/*    Depth = (Depth > 2) ? 2 : Depth; */
   *BitMap = NULL;
   *RastPort = NULL;
   *Layer = NULL;
@@ -723,8 +712,6 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
 
         if (*Layer = CreateUpfrontHookLayer (*LayerInfo, *BitMap, 0, 0, Width, Height, LAYERSIMPLE, Hook, NULL))        // Olsen
         {
-//              SetRast((*Layer)->rp,0);        // Olsen
-
           *RastPort = (*Layer)->rp;
           return (TRUE);
         }
@@ -739,7 +726,6 @@ InstallRPort (LONG Depth, LONG Width, LONG Height,
         (*RastPort)->BitMap = *BitMap;
         return (TRUE);
       }
-
     }
     disposeBitMap (*BitMap, Depth, Width + 10, Height + 10);
   }
@@ -998,14 +984,32 @@ SPrintf(STRPTR buffer, STRPTR formatString,...)
         va_end(varArgs);
 }
 
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Prefs Funktionen                                             */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
+VOID
+SetPens(struct RastPort *RPort,ULONG FgPen,ULONG BgPen,ULONG DrawMode)
+{
+	if (GfxVersion >= 39)
+		SetABPenDrMd(RPort,FgPen,BgPen,DrawMode);
+	else
+	{
+		if(FgPen != RPort->FgPen)
+			SetAPen(RPort,FgPen);
 
+		if(BgPen != RPort->BgPen)
+			SetAPen(RPort,BgPen);
+
+		if(DrawMode != RPort->DrawMode)
+			SetDrMd(RPort,DrawMode);
+	}
+}
+
+ULONG
+GetBitMapDepth(struct BitMap *BitMap)
+{
+	if (GfxVersion >= 39)
+		return(GetBitMapAttr(BitMap,BMA_DEPTH));
+	else
+		return(BitMap->Depth);
+}
 
 LONG
 findchar (char *Text, char Zeichen)
@@ -1020,4 +1024,19 @@ findchar (char *Text, char Zeichen)
     return (z1);
   else
     return (-1);
+}
+
+VOID
+SafeObtainSemaphoreShared(struct SignalSemaphore *Semaphore)
+{
+    if(SysBase->LibNode.lib_Version >= 39)
+        ObtainSemaphoreShared(Semaphore);
+    else
+    {
+        if(!AttemptSemaphoreShared(Semaphore))
+        {
+            if(!AttemptSemaphore(Semaphore))
+                ObtainSemaphoreShared(Semaphore);
+        }
+    }
 }

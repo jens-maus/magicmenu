@@ -66,6 +66,9 @@ extern LONG __far LVOResetMenuStrip;
 extern LONG __far LVOCloseWindow;
 extern LONG __far LVOActivateWindow;
 extern LONG __far LVOWindowToFront;
+extern LONG __far LVOModifyIDCMP;
 
 #define     CHECKIMGWIDTH           (CHECKWIDTH - 4)
 #define     LOWCHECKIMGWIDTH        (LOWCHECKWIDTH - 4)
+
+#define PORTMASK(p)	(1L<<((p)->mp_SigBit))

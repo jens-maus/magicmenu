@@ -1364,243 +1364,6 @@ EndIntuiMenu (void)
   ReleaseSemaphore (MenuActSemaphore);
 }
 
-/* ZZZ: Probleme wenn global optimizer angeschaltet wird. */
-
-#if 0
-BOOL
-DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
-{
-  struct Message *msg;
-  struct Window *ZwWin;
-  UWORD Code, Err;
-  struct Screen *FrontScreen;
-  struct InputEvent *NewEvent;
-
-  ObtainSemaphore (GetPointerSemaphore);
-
-  IBaseLock = LockIBase (0l);
-
-  if (!(MenWin = IntuitionBase->ActiveWindow))
-  {
-    UnlockIBase (IBaseLock);
-    ReleaseSemaphore (GetPointerSemaphore);
-    return (TRUE);
-  }
-  MenScr = MenWin->WScreen;
-  MenStrip = MenWin->MenuStrip;
-
-  UnlockIBase (IBaseLock);
-
-  ObtainSemaphore (MenuActSemaphore);
-
-  ReleaseSemaphore (GetPointerSemaphore);
-
-  IBaseLock = LockIBase (0l);
-
-  MenuMode = NewMenuMode;
-
-  DoGlobalQuit = FALSE;
-  FirstSelectedMenu = NULL;
-  LastSelectedMenu = NULL;
-  FirstMenuNum = MENUNULL;
-  MenuNum = NOMENU;
-  ItemNum = NOITEM;
-  SubItemNum = NOSUB;
-
-  if ((!MenStrip) || (MenWin->Flags & WFLG_RMBTRAP) || (MenWin->ReqCount != 0))
-  {
-    UnlockIBase (IBaseLock);
-    EndIntuiMenu ();
-    return (FALSE);
-  }
-
-  if (MenWin->IDCMPFlags & IDCMP_MENUVERIFY)
-  {
-    UnlockIBase (IBaseLock);
-    ReleaseSemaphore(MenuActSemaphore);
-    Code = MENUHOT;
-    Err = CheckSendIntui (SendIntuiMessage (IDCMP_MENUVERIFY,
-					    &Code, PeekQualifier (), NULL, MenWin, IntuiTimeOut, NULL), "MENUVERIFY / MENUHOT");
-
-    ObtainSemaphore (MenuActSemaphore);
-
-    if (Err != SENDINTUI_OK || Code == MENUCANCEL)
-    {
-      EndIntuiMenu ();
-      return (TRUE);
-    }
-
-    IBaseLock = LockIBase (0l);
-  }
-
-  ZwWin = MenScr->FirstWindow;
-
-  UnlockIBase (IBaseLock);
-
-  while (ZwWin)
-  {
-    if (ZwWin != MenWin && ZwWin->IDCMPFlags & IDCMP_MENUVERIFY)
-    {
-      Code = MENUWAITING;
-      ReleaseSemaphore(MenuActSemaphore);
-      Err = CheckSendIntui (SendIntuiMessage (IDCMP_MENUVERIFY,
-					      &Code, PeekQualifier (), NULL, ZwWin, IntuiTimeOut, NULL), "MENUVERIFY / MENUWAITING");
-      ObtainSemaphore (MenuActSemaphore);
-      if (Err != SENDINTUI_OK)
-      {
-	EndIntuiMenu ();
-	return (TRUE);
-      }
-    }
-
-    ZwWin = ZwWin->NextWindow;
-  }
-
-  IBaseLock = LockIBase (0l);
-
-  FrontScreen = IntuitionBase->FirstScreen;
-
-  UnlockIBase (IBaseLock);
-
-  if (FrontScreen != MenScr)
-    ScreenToFront (MenScr);
-
-  MenWin->Flags |= WFLG_MENUSTATE;
-
-  GlobalLastWinDMREnable = (MenWin->DMRequest != NULL);
-
-  HelpPressed = FALSE;
-
-  if(! AktPrefs.mmp_NonBlocking)
-  {
-      LockLayerInfo (&MenScr->LayerInfo);
-      LockLayers (&MenScr->LayerInfo);
-      LayersLocked = TRUE;
-  }
-
-  ResetMenu (MenStrip, TRUE);
-
-  ActivateCxObj (Broker, FALSE);
-
-  SetFilterIX (MouseFilter, &ActiveMouseIX);
-
-  if (!(ActKbdFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  SetFilterIX (ActKbdFilter, &ActiveKbdIX);
-  AttachCxObj (Broker, ActKbdFilter);
-
-  if (!(ActKbdSender = CxSender (CxMsgPort, EVT_KEYBOARD)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  AttachCxObj (ActKbdFilter, ActKbdSender);
-
-  if (!(ActKbdTransl = CxTranslate (NULL)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (ActKbdFilter, ActKbdTransl);
-
-  if (!(MouseMoveFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
-  AttachCxObj (Broker, MouseMoveFilter);
-
-  if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (MouseMoveFilter, MouseMoveSender);
-
-  if (!(TickFilter = CxFilter (MouseKey)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  SetFilterIX (TickFilter, &TickIX);
-  AttachCxObj (Broker, TickFilter);
-
-  if((TickSigNum = AllocSignal(-1)) == -1)
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-
-  TickSigMask = 1l << TickSigNum;
-
-  if (!(TickSignal = CxSignal (FindTask(NULL), TickSigNum)))
-  {
-    CleanUpMenu ();
-    EndIntuiMenu ();
-    return (TRUE);
-  }
-  AttachCxObj (TickFilter, TickSignal);
-
-  while (msg = GetMsg (CxMsgPort))
-  {
-    if (!CheckReply (msg))
-      ReplyMsg (msg);
-  }
-
-  ActivateCxObj (Broker, TRUE);
-  CxChanged = TRUE;
-
-  if (DrawMenuStrip (PopUp, ((PopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook), TRUE))
-  {
-    SelectSpecial = (MenuMode == MODE_SELECT);
-    ProcessIntuiMenu ();
-  }
-  else
-    DisplayBeep (NULL);
-
-  CleanUpMenu ();
-
-  ResetMenu (MenStrip, FALSE);
-
-  if (NewEvent = AllocVecPooled (sizeof (struct InputEvent), MEMF_PUBLIC | MEMF_CLEAR))
-  {
-    NewEvent->ie_Class = (HelpPressed) ? IECLASS_MENUHELP : IECLASS_MENULIST;
-
-    NewEvent->ie_Code = FirstMenuNum;
-    NewEvent->ie_EventAddress = MenWin;
-    NewEvent->ie_NextEvent = NULL;
-    NewEvent->ie_Qualifier = PeekQualifier ();
-
-    InputIO->io_Data = (APTR) NewEvent;
-    InputIO->io_Length = sizeof (struct InputEvent);
-
-    InputIO->io_Command = IND_WRITEEVENT;
-    DoIO ((struct IORequest *) InputIO);
-
-    FreeVecPooled (NewEvent);
-  }
-
-  if (FrontScreen != MenScr)
-    ScreenToFront (FrontScreen);
-
-  EndIntuiMenu ();
-
-  return (TRUE);
-}
-#endif
 /* ************************************************************************ */
 /* ************************************************************************ */
 /* */
@@ -1902,18 +1665,19 @@ BOOL CheckMMMsgPort(struct MMMessage *MMMsg)
 void
 ProcessCommodity (void)
 {
-  ULONG SigMask, SigRec, MMMsgPortMask;
+  ULONG SigMask, SigRec, MMMsgPortMask, IMsgReplyMask;
   BOOL Ende, DoWait;
   struct Message *Msg;
   struct MMMessage *MMMsg;
 
   MMMsgPortMask = 1l << MMMsgPort->mp_SigBit;
+  IMsgReplyMask = 1L<<IMsgReplyPort->mp_SigBit;
 
   Ende = FALSE;
 
   while (!Ende)
   {
-    SigMask = CxSignalMask | MMMsgPortMask | SIGBREAKF_CTRL_C;
+    SigMask = CxSignalMask | MMMsgPortMask | SIGBREAKF_CTRL_C | IMsgReplyMask;
 
     DoWait = TRUE;
 
@@ -1927,6 +1691,12 @@ ProcessCommodity (void)
     {
 	DoWait = FALSE;
 	Ende = CheckMMMsgPort(MMMsg);
+    }
+
+    while(Msg = GetMsg(IMsgReplyPort))
+    {
+        FreeVecPooled(Msg);
+        IMsgReplyCount--;
     }
 
     if (DoWait)
@@ -2096,7 +1866,7 @@ CloseAll (void)
 
   /*****************************************************************************************/
 
-	WindowGlyphExit();
+  WindowGlyphExit();
 
   /*****************************************************************************************/
 
@@ -2175,6 +1945,31 @@ CloseAll (void)
 
     DeletePort (TimerPort);
     TimerPort = NULL;
+  }
+
+  if(IMsgReplyPort)
+  {
+      struct Message *Message;
+
+      while(Message = GetMsg(IMsgReplyPort));
+
+      DeleteMsgPort(IMsgReplyPort);
+      IMsgReplyPort = NULL;
+  }
+
+  if(TimeoutRequest)
+  {
+      if(TimeoutRequest->tr_node.io_Device)
+          CloseDevice((struct IORequest *)TimeoutRequest);
+
+      DeleteIORequest(TimeoutRequest);
+      TimeoutRequest = NULL;
+  }
+
+  if(TimeoutPort)
+  {
+      DeleteMsgPort(TimeoutPort);
+      TimeoutPort = NULL;
   }
 
   if (RememberSemaphore)
@@ -2298,7 +2093,6 @@ main (int argc, char **argv)
   LONG error;
   LONG z1;
   char *SPtr;
-  char ZwStr[200];
 
   if (argc == 0)
   {
@@ -2362,6 +2156,18 @@ main (int argc, char **argv)
   if (!(RememberSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
       ErrorPrc ("Can't allocate semaphore 3!");
 
+  if(!(IMsgReplyPort = CreateMsgPort()))
+      ErrorPrc ("Cannot create IMsg reply port!");
+
+  if(!(TimeoutPort = CreateMsgPort()))
+      ErrorPrc ("Cannot create timeout reply port!");
+
+  if(!(TimeoutRequest = (struct timerequest *)CreateIORequest(TimeoutPort,sizeof(struct timerequest))))
+      ErrorPrc ("Cannot create timeout request!");
+
+  if(OpenDevice(TIMERNAME,UNIT_VBLANK,(struct IORequest *)TimeoutRequest,NULL))
+      ErrorPrc ("Cannot open timer.device!");
+
   InitSemaphore (RememberSemaphore);
 
 
@@ -2422,7 +2228,6 @@ main (int argc, char **argv)
   CxSignalMask = 1l << CxMsgPort->mp_SigBit;
 
 
-  IntuiMessagePending = 0;
   StripRPort = NULL;
   MenuStripSwapped = FALSE;
   BoxRPort = NULL;
@@ -2501,14 +2306,7 @@ main (int argc, char **argv)
   if (!(PrefsFilter = HotKey (Cx_Popkey, CxMsgPort, EVT_POPPREFS)))
     ErrorPrc ("Popup hotkey sequence invalid");
   AttachCxObj (Broker, PrefsFilter);
-/*
-  SPrintf(ZwStr,"MagicMenu " MAJORVERS " BETA Rev. %ld.%ld (%s)\n\n"
-		"© 1992-1995 Martin Korndörfer\n\n"
-		"This is an internal BETA-RELEASE!\n\n"
-		"Do not distribute!\nUse at your own risk!",VERSION,REVISION,DATE);
 
-  SimpleRequest(NULL,"MagicMenu",ZwStr,"Ok",NULL,5,0);
-*/
   Activate ();
 
   if (Cx_Popup)

@@ -68,6 +68,12 @@ extern char MouseKey[];
 extern LONG TickSigNum;
 extern ULONG TickSigMask;
 
+extern struct MsgPort *IMsgReplyPort;
+extern ULONG IMsgReplyCount;
+
+extern struct MsgPort *TimeoutPort;
+extern struct timerequest *TimeoutRequest;
+
 extern struct SignalSemaphore *GetPointerSemaphore;
 extern struct SignalSemaphore *MenuActSemaphore;
 extern struct SignalSemaphore *RememberSemaphore;
@@ -115,9 +121,6 @@ extern BOOL LookMC;
 extern BOOL ScrHiRes;
 extern BOOL HelpPressed;
 extern BOOL DblBorder;
-
-extern UWORD IntuiTimeOut;
-
 
 extern struct MenuRemember *GlobalRemember;
 extern struct MenuRemember *AktMenuRemember;
@@ -233,87 +236,87 @@ extern struct InputXpression ActiveKbdIX;
 
 extern UWORD DitherPattern[];
 
-extern UWORD chip MXImage1PlPattern[];
+extern UWORD __chip MXImage1PlPattern[];
 extern struct Image MXImage1Pl;
 
 
-extern UWORD chip NoMXImage1PlPattern[];
+extern UWORD __chip NoMXImage1PlPattern[];
 extern struct Image NoMXImage1Pl;
 
 
-extern UWORD chip MXImageLow1PlPattern[];
+extern UWORD __chip MXImageLow1PlPattern[];
 extern struct Image MXImageLow1Pl;
 
 
-extern UWORD chip NoMXImageLow1PlPattern[];
+extern UWORD __chip NoMXImageLow1PlPattern[];
 extern struct Image NoMXImageLow1Pl;
 
 
-extern UWORD chip MXImage2PlPattern[];
+extern UWORD __chip MXImage2PlPattern[];
 extern struct Image MXImage2Pl;
 
 
-extern UWORD chip NoMXImage2PlPattern[];
+extern UWORD __chip NoMXImage2PlPattern[];
 extern struct Image NoMXImage2Pl;
 
 
-extern UWORD chip MXImageLow2PlPattern[];
+extern UWORD __chip MXImageLow2PlPattern[];
 extern struct Image MXImageLow2Pl;
 
-extern UWORD chip NoMXImageLow2PlPattern[];
+extern UWORD __chip NoMXImageLow2PlPattern[];
 extern struct Image NoMXImageLow2Pl;
 
 
-extern UWORD chip CheckImage2PlPattern[];
+extern UWORD __chip CheckImage2PlPattern[];
 extern struct Image CheckImage2Pl;
 
-extern UWORD chip CheckImage4PlPattern[];
+extern UWORD __chip CheckImage4PlPattern[];
 extern struct Image CheckImage4Pl;
 
-extern UWORD chip CheckImage4PlGhostedPattern[];
+extern UWORD __chip CheckImage4PlGhostedPattern[];
 extern struct Image CheckImage4PlGhosted;
 
 
-extern UWORD chip CheckImageLow2PlPattern[];
+extern UWORD __chip CheckImageLow2PlPattern[];
 extern struct Image CheckImageLow2Pl;
 
 extern struct Image NoCheckImage2Pl;
 extern struct Image NoCheckImageLow2Pl;
 
-extern UWORD chip AmigaImage1PlPattern[];
+extern UWORD __chip AmigaImage1PlPattern[];
 extern struct Image AmigaImage1Pl;
 
-extern UWORD chip AmigaImageLow1PlPattern[];
+extern UWORD __chip AmigaImageLow1PlPattern[];
 extern struct Image AmigaImageLow1Pl;
 
-extern UWORD chip AmigaImage2PlPattern[];
+extern UWORD __chip AmigaImage2PlPattern[];
 extern struct Image AmigaImage2Pl;
 
-extern UWORD chip AmigaImageLow2PlPattern[];
+extern UWORD __chip AmigaImageLow2PlPattern[];
 extern struct Image AmigaImageLow2Pl;
 
-extern UWORD chip AmigaImage4PlGhostedPattern[];
+extern UWORD __chip AmigaImage4PlGhostedPattern[];
 extern struct Image AmigaImage4PlGhosted;
 
-extern UWORD chip AmigaImage4PlPattern[];
+extern UWORD __chip AmigaImage4PlPattern[];
 extern struct Image AmigaImage4Pl;
 
-extern UWORD chip SubArrowImage2PlPattern[];
+extern UWORD __chip SubArrowImage2PlPattern[];
 extern struct Image SubArrowImage2Pl;
 
-extern UWORD chip SubArrowImage1PlPattern[];
+extern UWORD __chip SubArrowImage1PlPattern[];
 extern struct Image SubArrowImage1Pl;
 
-extern UWORD chip SubArrowImageLow2PlPattern[];
+extern UWORD __chip SubArrowImageLow2PlPattern[];
 extern struct Image SubArrowImageLow2Pl;
 
-extern UWORD chip SubArrowImageLow1PlPattern[];
+extern UWORD __chip SubArrowImageLow1PlPattern[];
 extern struct Image SubArrowImageLow1Pl;
 
-extern UWORD chip SubArrowImage4PlPattern[];
+extern UWORD __chip SubArrowImage4PlPattern[];
 extern struct Image SubArrowImage4Pl;
 
-extern UWORD chip SubArrowImage4PlGhostedPattern[];
+extern UWORD __chip SubArrowImage4PlGhostedPattern[];
 extern struct Image SubArrowImage4PlGhosted;
 
 /* ************************************************************************ */
@@ -332,8 +335,7 @@ extern ULONG OldResetMenuStrip;
 extern ULONG OldCloseWindow;
 extern ULONG OldActivateWindow;
 extern ULONG OldWindowToFront;
-
-extern ULONG IntuiMessagePending;
+extern ULONG OldModifyIDCMP;
 
 extern LONG Cx_Pri;
 extern BOOL Cx_Popup;

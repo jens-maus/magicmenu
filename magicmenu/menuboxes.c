@@ -492,7 +492,7 @@ DrawMenuSubBox (struct Menu * Menu, struct MenuItem * Item, BOOL ActivateItem)
   SubBoxTopBorder = AktItemRmb->TopBorder;
   SubBoxLeftBorder = AktItemRmb->LeftBorder;
 
-  SubBoxDepth = MenScr->BitMap.Depth;
+  SubBoxDepth = GetBitMapDepth(MenScr->RastPort.BitMap);
 
   if (!Look3D)
   {
@@ -635,7 +635,7 @@ DrawMenuSubBox (struct Menu * Menu, struct MenuItem * Item, BOOL ActivateItem)
   }
 
   SetFont(SubBoxDrawRPort,MenFont);
-  SetABPenDrMd(SubBoxDrawRPort,MenTextCol,MenBackGround,JAM1);
+  SetPens(SubBoxDrawRPort,MenTextCol,MenBackGround,JAM1);
 
   MenuSubBoxSwapped = TRUE;
 
@@ -924,7 +924,7 @@ DrawMenuBox (struct Menu * Menu, BOOL ActivateItem)
   BoxTopOffs = AktMenRmb->TopOffs;
   BoxLeftOffs = AktMenRmb->LeftOffs;
 
-  BoxDepth = MenScr->BitMap.Depth;
+  BoxDepth = GetBitMapDepth(MenScr->RastPort.BitMap);
 
   if (!Look3D)
   {
@@ -1089,7 +1089,7 @@ DrawMenuBox (struct Menu * Menu, BOOL ActivateItem)
   }
 
   SetFont(BoxDrawRPort,MenFont);
-  SetABPenDrMd(BoxDrawRPort,MenTextCol,MenBackGround,JAM1);
+  SetPens(BoxDrawRPort,MenTextCol,MenBackGround,JAM1);
 
   MenuBoxSwapped = TRUE;
 
@@ -2098,7 +2098,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     SetAfPt (&ScrRPort, NULL, 0);
     SetDrPt (&ScrRPort, 0xffff);
 
-    StripDepth = MenScr->BitMap.Depth;
+    StripDepth = GetBitMapDepth(MenScr->RastPort.BitMap);
     ScrHiRes = (MenScr->Flags & SCREENHIRES) != NULL;
 
     DrawInfo = GetScreenDrawInfo (MenScr);
@@ -2738,7 +2738,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     }
 
     SetFont(StripDrawRPort,MenFont);
-    SetABPenDrMd(StripDrawRPort,MenTextCol,MenBackGround,JAM1);
+    SetPens(StripDrawRPort,MenTextCol,MenBackGround,JAM1);
 
     AktMenu = NULL;
     MenuStripSwapped = TRUE;

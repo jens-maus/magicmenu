@@ -9,110 +9,115 @@
 #endif	/* _GLOBAL_H */
 
 UWORD
-SendIntuiMessage (ULONG Class, UWORD * Code, UWORD Qualifier,
-		  APTR IAddress, struct Window * RecWin, UWORD TimeOutSec,
-		  struct MsgPort * DestPort)
-
+SendIntuiMessage(
+	ULONG Class,
+	UWORD *Code,
+	UWORD Qualifier,
+	APTR IAddress,
+	struct Window * ReceivingWindow,
+	ULONG IntuiLock,
+	BOOL WaitForReply)
 {
-  struct IntuiMessage *Msg;
-  struct timerequest *TimeReq;
-  struct MsgPort *MyPort;
-  BOOL Ende;
+  struct IntuiMessage *Sent;
+  ULONG TimeMask;
+  ULONG ReplyMask;
   UWORD Result;
   struct Message *Message;
-  ULONG SignalMask;
+  ULONG Signals;
+  BOOL Done;
 
-
-  if (!DestPort)
+  if (!(Sent = AllocVecPooled (sizeof (struct IntuiMessage), MEMF_PUBLIC | MEMF_CLEAR)))
   {
-    if (!(MyPort = CreateMsgPort ()))
+      if(WaitForReply)
+          UnlockIBase (IntuiLock);
+
       return (SENDINTUI_NOPORT);
   }
-  else
-    MyPort = DestPort;
 
-  if (!(Msg = AllocVecPooled (sizeof (struct IntuiMessage), MEMF_PUBLIC)))
-      return (SENDINTUI_NOPORT);
+  Sent->ExecMessage.mn_Node.ln_Type = NT_MESSAGE;
+  Sent->ExecMessage.mn_Length = sizeof (struct IntuiMessage);
+  Sent->ExecMessage.mn_ReplyPort = IMsgReplyPort;
 
-  Msg->ExecMessage.mn_Node.ln_Type = NT_MESSAGE;
-  Msg->ExecMessage.mn_Length = sizeof (struct IntuiMessage);
+  Sent->Class = Class;
+  Sent->Code = *Code;
+  Sent->Qualifier = Qualifier;
+  Sent->IAddress = IAddress;
 
-  Msg->ExecMessage.mn_ReplyPort = MyPort;
-
-  Msg->Class = Class;
-  Msg->Code = *Code;
-  Msg->Qualifier = Qualifier;
-  Msg->IAddress = IAddress;
-  if (RecWin->IDCMPFlags & IDCMP_DELTAMOVE)
+  if (!(ReceivingWindow->IDCMPFlags & IDCMP_DELTAMOVE))
   {
-    Msg->MouseX = 0;		/* Wir kennen die Mausdifferenz leider nicht... */
-    Msg->MouseY = 0;
+    Sent->MouseX = ReceivingWindow->MouseX;
+    Sent->MouseY = ReceivingWindow->MouseY;
+  }
+
+  Sent->IDCMPWindow = ReceivingWindow;
+
+  Result = SENDINTUI_OK;
+
+  Forbid();
+
+  if(ReceivingWindow->UserPort)
+  {
+    PutMsg (ReceivingWindow->UserPort, Sent);
+    IMsgReplyCount++;
   }
   else
+    FreeVecPooled(Sent);
+
+  Permit();
+
+  if(WaitForReply)
   {
-    Msg->MouseX = RecWin->MouseX;
-    Msg->MouseY = RecWin->MouseY;
-  }
-  Msg->Seconds = 0;
-  Msg->Micros = 0;
-  Msg->IDCMPWindow = RecWin;
-  Msg->SpecialLink = NULL;
+    UnlockIBase (IntuiLock);
 
-  TimeReq = NULL;
+    TimeMask = PORTMASK(TimeoutPort);
+    ReplyMask = PORTMASK(IMsgReplyPort);
 
-  if (RecWin->UserPort)
-  {
-    if (TimeOutSec > 0)
-      TimeReq = SendTimeRequest (TimerIO, TimeOutSec, 0, MyPort);
+    TimeoutRequest->tr_node.io_Command = TR_ADDREQUEST;
+    TimeoutRequest->tr_time.tv_secs    = 3;
+    TimeoutRequest->tr_time.tv_micro   = 0;
 
-    PutMsg (RecWin->UserPort, Msg);
-    SignalMask = 1 << MyPort->mp_SigBit;
+    SetSignal(0,TimeMask);
+    SendIO((struct IORequest *)TimeoutRequest);
 
-    if (DestPort)
+    Done = FALSE;
+
+    do
     {
-      IntuiMessagePending++;
-      return (SENDINTUI_OK);
+        Signals = Wait(ReplyMask | TimeMask);
+
+        if(Signals & ReplyMask)
+        {
+            while(Message = (struct IntuiMessage *)GetMsg(IMsgReplyPort))
+            {
+                if(Message == Sent)
+                {
+                    Done = TRUE;
+
+                    *Code = Sent->Code;
+                }
+
+                FreeVecPooled(Message);
+                IMsgReplyCount--;
+            }
+
+            if(Done)
+                break;
+        }
+
+        if(Signals & TimeMask)
+        {
+            Done = TRUE;
+
+            Result = SENDINTUI_TIMEOUT;
+        }
     }
+    while(!Done);
 
-    Ende = FALSE;
+    if(!CheckIO((struct IORequest *)TimeoutRequest))
+        AbortIO((struct IORequest *)TimeoutRequest);
 
-    while (!Ende)
-    {
-      while (!(Message = GetMsg (MyPort)))
-	Wait (SignalMask);
-
-      if (TimeReq && (Message == (struct Message *) TimeReq))
-      {
-	Ende = TRUE;
-	Result = SENDINTUI_TIMEOUT;
-	FreeVecPooled (TimeReq);
-	/* Der Port wird NICHT gelöscht, es könnte ja noch Antwort
-	   kommen */
-      }
-
-      if (Message == Msg)
-      {
-	Ende = TRUE;
-	Result = SENDINTUI_OK;
-	*Code = Msg->Code;
-	FreeVecPooled (Msg);
-
-	if (TimeReq)
-	{
-	  if (!CheckIO (TimeReq))
-	  {
-	    AbortIO (TimeReq);
-	    WaitIO (TimeReq);
-	  }
-	  FreeVecPooled (TimeReq);
-	}
-
-	DeleteMsgPort (MyPort);
-      }
-    }
+    WaitIO((struct IORequest *)TimeoutRequest);
   }
-  else
-    Result = SENDINTUI_OK;
 
   return (Result);
 }
