@@ -217,15 +217,10 @@ WORD GlobalDMRCount;
 
 struct MMPrefs DefaultPrefs =
 {
-	MMP_MAGIC, sizeof(struct MMPrefs),
-
 	MT_AUTO,				/* MenuType */
 	TRUE,					/* Enabled */
 	TRUE,					/* MarkSub */
 	FALSE,					/* DblBorder */
-	FALSE,					/* UseLayer */
-	TRUE,					/* DirectDraw */
-	TRUE,					/* ChunkyPlanes */
 	TRUE,					/* NonBlocking */
 	TRUE,					/* KCEnabled */
 	TRUE,					/* KCGoTop */
@@ -242,7 +237,6 @@ struct MMPrefs DefaultPrefs =
 
 	"ramiga space",				/* KCKeyStr */
 
-	10,					/* TimeOut */
 	PRECISION_GUI,				/* Precision */
 
 	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	/* LightEdge */
@@ -1005,6 +999,76 @@ struct Image ArrowNormal4 =
 {	0,0,
 	6,6,2,
 	ArrowNormalBitMap4,
+	0x03,0x00,
+	NULL
+};
+static UWORD __chip AmigaNormalBitMap8_4[16] =
+{
+	0x7FE0,0x8070,0x8870,0x9870,0x8070,0x8070,0xBFF0,0x7FE0,
+
+	0x7FE0,0xD560,0x87D0,0xD500,0x9A90,0xC000,0xA010,0x2AA0
+};
+
+struct Image AmigaNormal8_4 =
+{	0,0,
+	12,8,2,
+	AmigaNormalBitMap8_4,
+	0x03,0x00,
+	NULL
+};
+static UWORD __chip CheckNormalBitMap8_4[16] =
+{
+	0x0000,0x00E0,0x01C0,0x0380,0x7700,0x3E00,0x1C00,0x0800,
+
+	0x00C0,0x0100,0x0280,0xC500,0x0200,0x1400,0x0800,0x0000
+};
+
+struct Image CheckNormal8_4 =
+{	0,0,
+	11,8,2,
+	CheckNormalBitMap8_4,
+	0x03,0x00,
+	NULL
+};
+static UWORD __chip MXDownNormalBitMap8_4[16] =
+{
+	0x3FC0,0x7FE0,0x7EC0,0x65C0,0x7BC0,0x7FC0,0x7F80,0x2000,
+
+	0x0040,0x1FE0,0x3FE0,0x34E0,0x31E0,0x3BE0,0x7FE0,0x3FC0
+};
+
+struct Image MXDownNormal8_4 =
+{	0,0,
+	11,8,2,
+	MXDownNormalBitMap8_4,
+	0x03,0x00,
+	NULL
+};
+static UWORD __chip MXUpNormalBitMap8_4[16] =
+{
+	0x0040,0x0020,0x0020,0x0020,0x0020,0x0020,0x4060,0x3FC0,
+
+	0x3FC0,0x6020,0x4000,0x4000,0x4000,0x4000,0x4000,0x2000
+};
+
+struct Image MXUpNormal8_4 =
+{	0,0,
+	11,8,2,
+	MXUpNormalBitMap8_4,
+	0x03,0x00,
+	NULL
+};
+static UWORD __chip ArrowNormalBitMap8_4[8] =
+{
+	0x0000,0x4000,0x7000,0xC000,
+
+	0xC000,0xF000,0xC000,0x8000
+};
+
+struct Image ArrowNormal8_4 =
+{	0,0,
+	4,4,2,
+	ArrowNormalBitMap8_4,
 	0x03,0x00,
 	NULL
 };

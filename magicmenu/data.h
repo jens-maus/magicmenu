@@ -329,6 +329,11 @@ extern struct Image CheckNormal4;
 extern struct Image MXDownNormal4;
 extern struct Image MXUpNormal4;
 extern struct Image ArrowNormal4;
+extern struct Image AmigaNormal8_4;
+extern struct Image CheckNormal8_4;
+extern struct Image MXDownNormal8_4;
+extern struct Image MXUpNormal8_4;
+extern struct Image ArrowNormal8_4;
 
 /******************************************************************************/
 

@@ -40,15 +40,10 @@ long __stack = 16000;
 
 struct MMPrefs DefaultPrefs =
 {
-	MMP_MAGIC, sizeof(struct MMPrefs),
-
 	MT_AUTO,				/* MenuType */
 	TRUE,					/* Enabled */
 	TRUE,					/* MarkSub */
 	FALSE,					/* DblBorder */
-	FALSE,					/* UseLayer */
-	TRUE,					/* DirectDraw */
-	TRUE,					/* ChunkyPlanes */
 	TRUE,					/* NonBlocking */
 	TRUE,					/* KCEnabled */
 	TRUE,					/* KCGoTop */
@@ -65,7 +60,6 @@ struct MMPrefs DefaultPrefs =
 
 	"ramiga space",				/* KCKeyStr */
 
-	10,					/* TimeOut */
 	PRECISION_GUI,				/* Precision */
 
 	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	/* LightEdge */
@@ -100,7 +94,7 @@ UBYTE MagicColours[8][3] =
 
 struct StorageItem PrefsStorage[] =
 {
-	DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UWORD,	"MenuType"),
+	DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UBYTE,	"MenuType"),
 	DECLARE_ITEM(MMPrefs,mmp_Enabled,		SIT_BOOLEAN,	"Enabled"),
 	DECLARE_ITEM(MMPrefs,mmp_MarkSub,		SIT_BOOLEAN,	"MarkSub"),
 	DECLARE_ITEM(MMPrefs,mmp_DblBorder,		SIT_BOOLEAN,	"DblBorder"),
@@ -112,10 +106,10 @@ struct StorageItem PrefsStorage[] =
 	DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
 	DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
 	DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
-	DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UWORD,	"PDMode"),
-	DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UWORD,	"PDLook"),
-	DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UWORD,	"PUMode"),
-	DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UWORD,	"PULook"),
+	DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UBYTE,	"PDMode"),
+	DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UBYTE,	"PDLook"),
+	DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UBYTE,	"PUMode"),
+	DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UBYTE,	"PULook"),
 	DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,		SIT_TEXT,	"KCKeyStr"),
 	DECLARE_ITEM(MMPrefs,mmp_Precision,		SIT_WORD,	"Precision"),
 
@@ -1822,7 +1816,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Type,	CYCLE_KIND,
 							LA_ID,		GAD_PDMode,
 							LA_LabelID,	MSG_USAGE_GAD,
-							LA_WORD,	&CurrentPrefs.mmp_PDMode,
+							LA_BYTE,	&CurrentPrefs.mmp_PDMode,
 							LACY_LabelTable,UsageLabelTable,
 						TAG_DONE);
 
@@ -1830,7 +1824,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Type,	CYCLE_KIND,
 							LA_ID,		GAD_PDLook,
 							LA_LabelID,	MSG_LOOK_GAD,
-							LA_WORD,	&CurrentPrefs.mmp_PDLook,
+							LA_BYTE,	&CurrentPrefs.mmp_PDLook,
 							LACY_LabelTable,LookLabelTable,
 						TAG_DONE);
 
@@ -1846,7 +1840,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Type,	CYCLE_KIND,
 							LA_ID,		GAD_PUMode,
 							LA_LabelID,	MSG_USAGE_GAD,
-							LA_WORD,	&CurrentPrefs.mmp_PUMode,
+							LA_BYTE,	&CurrentPrefs.mmp_PUMode,
 							LACY_LabelTable,UsageLabelTable,
 						TAG_DONE);
 
@@ -1854,7 +1848,7 @@ OpenAll(struct WBStartup *StartupMsg)
 							LA_Type,	CYCLE_KIND,
 							LA_ID,		GAD_PULook,
 							LA_LabelID,	MSG_LOOK_GAD,
-							LA_WORD,	&CurrentPrefs.mmp_PULook,
+							LA_BYTE,	&CurrentPrefs.mmp_PULook,
 							LACY_LabelTable,LookLabelTable,
 						TAG_DONE);
 
@@ -1888,7 +1882,7 @@ OpenAll(struct WBStartup *StartupMsg)
 						LA_Type,	CYCLE_KIND,
 						LA_ID,		GAD_MenuType,
 						LA_LabelID,	MSG_TYPE_GAD,
-						LA_WORD,	&CurrentPrefs.mmp_MenuType,
+						LA_BYTE,	&CurrentPrefs.mmp_MenuType,
 						LACY_LabelTable,TypeLabelTable,
 					TAG_DONE);
 

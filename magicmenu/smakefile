@@ -21,8 +21,8 @@ VERSION =	2
 GSTFILE =	system_headers.gst
 #OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
 #CPU =		040
-CPU =		030
-#CPU =		any
+#CPU =		030
+CPU =		any
 DEBUG =		line
 CFLAGS =	nminc idlen=64 mccons streq nowvret strmerge nostkchk params=r \
 		gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
@@ -101,6 +101,12 @@ bumpPrefs:
 		bumprev $(VERSION) MagicMenuPrefs
 
 bumprev:	bumpMM bumpPrefs
+
+###############################################################################
+
+install:	MagicMenu MagicMenuPrefs
+		copy MagicMenu SYS:WBStartup
+		copy MagicMenuPrefs SYS:Prefs
 
 ###############################################################################
 

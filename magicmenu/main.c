@@ -1352,8 +1352,18 @@ ProcessIntuiMenu (VOID)
         LastX = NewX;
         LastY = NewY;
 
-        if(DeltaX < 3 && DeltaY < 3)
-          Shoot();
+/*      if(DeltaX < 3 && DeltaY < 3)*/
+
+        if(StripPopUp)
+        {
+          if(DeltaY < 3)
+            Shoot();
+        }
+        else
+        {
+          if(DeltaX < 3 && DeltaY < 3)
+            Shoot();
+        }
       }
     }
 
@@ -1947,7 +1957,7 @@ LoadPrefs (char *Name, BOOL Report)
 {
 	STATIC struct StorageItem PrefsStorage[] =
 	{
-		DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UWORD,	"MenuType"),
+		DECLARE_ITEM(MMPrefs,mmp_MenuType,		SIT_UBYTE,	"MenuType"),
 		DECLARE_ITEM(MMPrefs,mmp_Enabled,		SIT_BOOLEAN,	"Enabled"),
 		DECLARE_ITEM(MMPrefs,mmp_MarkSub,		SIT_BOOLEAN,	"MarkSub"),
 		DECLARE_ITEM(MMPrefs,mmp_DblBorder,		SIT_BOOLEAN,	"DblBorder"),
@@ -1959,10 +1969,10 @@ LoadPrefs (char *Name, BOOL Report)
 		DECLARE_ITEM(MMPrefs,mmp_PreferScreenColours,	SIT_BOOLEAN,	"PreferScreenColours"),
 		DECLARE_ITEM(MMPrefs,mmp_Delayed,		SIT_BOOLEAN,	"Delayed"),
 		DECLARE_ITEM(MMPrefs,mmp_DrawFrames,		SIT_BOOLEAN,	"DrawFrames"),
-		DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UWORD,	"PDMode"),
-		DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UWORD,	"PDLook"),
-		DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UWORD,	"PUMode"),
-		DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UWORD,	"PULook"),
+		DECLARE_ITEM(MMPrefs,mmp_PDMode,		SIT_UBYTE,	"PDMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PDLook,		SIT_UBYTE,	"PDLook"),
+		DECLARE_ITEM(MMPrefs,mmp_PUMode,		SIT_UBYTE,	"PUMode"),
+		DECLARE_ITEM(MMPrefs,mmp_PULook,		SIT_UBYTE,	"PULook"),
 		DECLARE_ITEM(MMPrefs,mmp_KCKeyStr,		SIT_TEXT,	"KCKeyStr"),
 		DECLARE_ITEM(MMPrefs,mmp_Precision,		SIT_WORD,	"Precision"),
 

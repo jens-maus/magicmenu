@@ -297,31 +297,66 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
 
       if (Look3D)
       {
-        if (LookMC && ThatImage->PlanePick == 0 && ThatImage->Height <= 2)
+        if (ThatImage->PlanePick == 0 && ThatImage->Height <= 2)
         {
-          LONG Top;
-/*
-          SetFgPen (rp, MenSeparatorGrey0);
-          DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
-                    StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
-          WritePixel(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1);
+          if(LookMC)
+          {
+#if 0
+            if(AktPrefs.mmp_DblBorder)
+            {
+              SetFgPen (rp, MenSeparatorGrey0);
+              DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
+                        StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
+              WritePixel(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1);
 
-          SetFgPen (rp, MenSeparatorGrey2);
-          DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
-                        StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
-          WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
-*/
-          Top = StartY + ThatImage->TopEdge;
+              SetFgPen (rp, MenSeparatorGrey2);
+              DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
+                          StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
+              WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
+            }
+            else
+            {
+              LONG Top;
 
-          SetFgPen (rp, MenDarkEdge);
-          DrawLine(rp,Left + 1,Top,Left + Width - 1,Top);
+              Top = StartY + ThatImage->TopEdge;
 
-          SetFgPen (rp, MenLightEdge);
-          DrawLine(rp,Left,Top + 1,Left + Width - 2,Top + 1);
+              SetFgPen (rp, MenDarkEdge);
+              DrawLine(rp,Left + 1,Top,Left + Width - 1,Top);
 
-          SetFgPen (rp, MenSectGrey);
-          WritePixel (rp,Left,Top);
-          WritePixel (rp,Left + Width - 1,Top + 1);
+              SetFgPen (rp, MenLightEdge);
+              DrawLine(rp,Left,Top + 1,Left + Width - 2,Top + 1);
+
+              SetFgPen (rp, MenSectGrey);
+              WritePixel (rp,Left,Top);
+              WritePixel (rp,Left + Width - 1,Top + 1);
+            }
+#else
+              SetFgPen (rp, MenSeparatorGrey0);
+              DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
+                        StartX + ThatImage->LeftEdge + ThatImage->Width - 2, StartY + ThatImage->TopEdge);
+              WritePixel(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1);
+
+              SetFgPen (rp, MenSeparatorGrey2);
+              DrawLine (rp, StartX + ThatImage->LeftEdge + 1, StartY + ThatImage->TopEdge + 1,
+                          StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
+              WritePixel(rp,StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
+#endif
+          }
+          else
+          {
+            if(ThatImage->PlaneOnOff == MenBackGround)
+            {
+              struct Image OtherImage;
+
+              OtherImage = *ThatImage;
+
+              OtherImage.PlaneOnOff = MenTextCol;
+
+              DrawImage (rp, &OtherImage, StartX, StartY);
+            }
+            else
+              DrawImage (rp, ThatImage, StartX, StartY);
+          }
         }
         else
          DrawImage (rp, ThatImage, StartX, StartY);
@@ -443,7 +478,7 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       DrawImage (rp, CommandImage, z1 - CommandImage->Width - CmdOffs - 2, StartY + ImageYOffs - (CommandImage->Height / 2));
     }
 
-    PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
+    PrintIText (rp, &CommandText, z1 - CmdOffs, StartY + ImageYOffs - (MenTextAttr.ta_YSize / 2));
   }
   else if ((Item->SubItem) && (AktPrefs.mmp_MarkSub == 1))
   {
@@ -2978,24 +3013,24 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         {
           if (!CheckImage)
           {
-            CheckImage = (UseLow) ? &CheckImageLow2Pl : &CheckImage2Pl;
+            CheckImage = &CheckNormal8_4;
             DoFlipCheck = TRUE;
           }
 
           if (!MXImage)
           {
-            MXImage = (UseLow) ? &MXImageLow2Pl : &MXImage2Pl;
-            NoMXImage = (UseLow) ? &NoMXImageLow2Pl : &NoMXImage2Pl;
+            MXImage = &MXDownNormal8_4;
+            NoMXImage = &MXUpNormal8_4;
             DoFlipMX = TRUE;
           }
 
           if (!CommandImage)
           {
-            CommandImage = &AmigaImage2Pl;
+            CommandImage = &AmigaNormal8_4;
             DoFlipCommand = TRUE;
           }
 
-          SubArrowImage = &SubArrowImage2Pl;
+          SubArrowImage = &ArrowNormal8_4;
         }
       }
       else

@@ -45,20 +45,26 @@ LPrintf(LONG Error,BPTR FileHandle,STRPTR FormatString,...)
 STATIC LONG
 GetLine(BPTR FileHandle,STRPTR Buffer)
 {
-	if(FGets(FileHandle,Buffer,1023) == NULL)
-		return(IoErr());
-	else
+	while(TRUE)
 	{
-		LONG Len;
+		if(FGets(FileHandle,Buffer,1023) == NULL)
+			return(IoErr());
+		else
+		{
+			LONG Len;
 
-		Len = strlen(Buffer);
+			Len = strlen(Buffer);
 
-		while(Len > 0 && Buffer[Len - 1] == '\n')
-			Len--;
+			while(Len > 0 && Buffer[Len - 1] == '\n')
+				Len--;
 
-		Buffer[Len] = 0;
+			if(Len > 0)
+			{
+				Buffer[Len] = 0;
 
-		return(0);
+				return(0);
+			}
+		}
 	}
 }
 

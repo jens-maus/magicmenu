@@ -112,13 +112,13 @@ MSG_SELECTED_BACKGROUND_TXT (//)
 Selected background
 ;
 MSG_RED_TXT (//)
-Red:
+_Red:
 ;
 MSG_GREEN_TXT (//)
-Green:
+_Green:
 ;
 MSG_BLUE_TXT (//)
-Blue:
+_Blue:
 ;
 MSG_HUE_TXT (//)
 Hue:
