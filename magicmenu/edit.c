@@ -225,7 +225,7 @@ UBYTE			 FileName[MAX_FILENAME_LENGTH];
 
 /******************************************************************************/
 
-extern struct Image	 Demo_9_Image;
+extern struct Image	 Demo_8_Image;
 extern struct Image	 Demo_11_Image;
 
 /******************************************************************************/
@@ -506,7 +506,7 @@ AddIcon(STRPTR Name)
 		{
 			struct DiskObject *Icon;
 
-			if(Icon = GetDiskObjectNew("sys/def_pref"))
+			if(Icon = GetDiskObjectNew("ENV:sys/def_pref"))
 			{
 				PutDiskObject(Name,Icon);
 
@@ -1586,7 +1586,7 @@ OpenAll(struct WBStartup *StartupMsg)
 			if(PubScreen->Font->ta_YSize >= 11)
 				WhichImage = &Demo_11_Image;
 			else
-				WhichImage = &Demo_9_Image;
+				WhichImage = &Demo_8_Image;
 
 			if(SampleMenu = CreateBitMap(MaxDepth,SampleMenuWidth = WhichImage->Width,SampleMenuHeight = WhichImage->Height))
 			{

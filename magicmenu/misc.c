@@ -549,9 +549,16 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
       if ((*DestImage)->ImageData = (UWORD *) AllocVec (Dst.BytesPerRow * Dst.Rows * Dst.Depth, MEMF_CHIP))
       {
+        UBYTE Mask;
+
         CreateBitMapFromImage (*DestImage, &Dst);
 
-        if (SrcImage->Depth == -1 || (((SrcImage->PlanePick ^ (*DestImage)->PlanePick)) & (*DestImage)->PlanePick))
+        if(SrcImage->Depth == -1)
+          Mask = 0xFF;
+        else
+          Mask = (1L<<SrcImage->Depth)-1;
+
+        if (SrcImage->Depth == -1 || ((SrcImage->PlanePick & Mask) != Mask))
         {
           struct RastPort TempRPort;
 

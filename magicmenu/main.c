@@ -2101,10 +2101,7 @@ CloseAll (VOID)
   if (LocaleBase)
   {
     CloseCatalog (Catalog);
-    Catalog = NULL;
-
     CloseLibrary (LocaleBase);
-    LocaleBase = NULL;
   }
 
   if (RememberSemaphore)
@@ -2131,28 +2128,18 @@ CloseAll (VOID)
       ReplyMsg (MMMsg);
     }
     DeleteMsgPort (MMMsgPort);
-    MMMsgPort = NULL;
   }
 
   CleanupMenuActiveData ();
 
   if (Broker)
-  {
     DeleteCxObjAll (Broker);
-    Broker = NULL;
-  }
 
   if (LibPatches)
-  {
     RemovePatches ();
-    LibPatches = FALSE;
-  }
 
   if (GlobalRemember)
-  {
     FreeGlobalRemember ();
-    GlobalRemember = NULL;
-  }
 
   if (CxMsgPort)
   {
@@ -2162,7 +2149,6 @@ CloseAll (VOID)
         ReplyMsg (msg);
     }
     DeleteMsgPort (CxMsgPort);
-    CxMsgPort = NULL;
   }
 
   if (InputIO)
@@ -2174,13 +2160,10 @@ CloseAll (VOID)
     }
 
     CloseDevice ((struct IORequest *) InputIO);
-    InputBase = NULL;
 
     DeleteIORequest ((struct IORequest *) InputIO);
-    InputIO = NULL;
 
     DeleteMsgPort (InputPort);
-    InputPort = NULL;
   }
 
   if (TimerIO)
@@ -2192,13 +2175,10 @@ CloseAll (VOID)
     }
 
     CloseDevice ((struct IORequest *) TimerIO);
-    TimerBase = NULL;
 
     DeleteIORequest ((struct IORequest *) TimerIO);
-    TimerIO = NULL;
 
     DeleteMsgPort (TimerPort);
-    TimerPort = NULL;
   }
 
   if (IMsgReplyPort)
@@ -2208,7 +2188,6 @@ CloseAll (VOID)
     while (Message = GetMsg (IMsgReplyPort));
 
     DeleteMsgPort (IMsgReplyPort);
-    IMsgReplyPort = NULL;
   }
 
   if (TimeoutRequest)
@@ -2217,60 +2196,31 @@ CloseAll (VOID)
       CloseDevice ((struct IORequest *) TimeoutRequest);
 
     DeleteIORequest (TimeoutRequest);
-    TimeoutRequest = NULL;
   }
 
   if (TimeoutPort)
-  {
     DeleteMsgPort (TimeoutPort);
-    TimeoutPort = NULL;
-  }
-
-  RememberSemaphore = NULL;
-  GetPointerSemaphore = NULL;
-  MenuActSemaphore = NULL;
 
   if (KeymapBase)
-  {
     CloseLibrary (KeymapBase);
-    KeymapBase = NULL;
-  }
 
   if (GadToolsBase)
-  {
     CloseLibrary (GadToolsBase);
-    GadToolsBase = NULL;
-  }
 
   if (CxBase)
-  {
     CloseLibrary (CxBase);
-    CxBase = NULL;
-  }
 
   if (UtilityBase)
-  {
     CloseLibrary (UtilityBase);
-    UtilityBase = NULL;
-  }
 
   if (LayersBase)
-  {
     CloseLibrary ((struct Library *) LayersBase);
-    LayersBase = NULL;
-  }
 
   if (GfxBase)
-  {
     CloseLibrary ((struct Library *) GfxBase);
-    GfxBase = NULL;
-  }
 
   if (IntuitionBase)
-  {
     CloseLibrary ((struct Library *) IntuitionBase);
-    IntuitionBase = NULL;
-  }
 
   /*****************************************************************************************/
 
@@ -2280,17 +2230,12 @@ CloseAll (VOID)
 }
 
 VOID
-ExitTrap (VOID)
-{
-  CloseAll ();
-  Delay (TICKS_PER_SECOND);
-}
-
-VOID
 ErrorPrc (char *ErrTxt)
 {
   if (IntuitionBase && ErrTxt[0])
     ShowRequest ("Ok", GetString (MSG_SETUP_FAILURE_TXT), ErrTxt);
+
+  CloseAll ();
 
   exit (RETURN_FAIL);
 }
@@ -2344,8 +2289,6 @@ main (int argc, char **argv)
   WindowGlyphInit ();
 
   /*****************************************************************************************/
-
-  onexit (ExitTrap);
 
   if (LocaleBase = OpenLibrary ("locale.library", 38))
   {

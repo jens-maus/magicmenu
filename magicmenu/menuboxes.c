@@ -2447,7 +2447,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     CommandImage = NULL;
   }
 
-  if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes && MenFont->tf_YSize >= 9)
+  if (NewLook == LOOK_MC && StripDepth >= 2 && V39 && ScrHiRes)
   {
     LONG red, green, blue;
 
