@@ -13,7 +13,7 @@
 /****************************************************************************/
 
 STATIC APTR ASM __saveds LocalSetFunction(REG(a1) struct Library * library,
-                                 REG(a0) LONG funcOffset,
+                                 REG(a0) WORD funcOffset,
                                  REG(d0) APTR newFunction,
                                  REG(a6) struct Library * SysBase);
 
@@ -87,6 +87,8 @@ extern LONG __far LVOCreateUpfrontHookLayer;
 extern LONG __far LVOCreateUpfrontLayer;
 
 extern LONG __far LVOSetFunction;
+extern LONG __far LVOForbid;
+extern LONG __far LVOPermit;
 
 STATIC PatchEntry PatchTable[] =
 {
@@ -139,22 +141,32 @@ APTR ASM CallSetFunction(REG(a1) struct Library * library,REG(a0) LONG funcOffse
 STATIC APTR ASM __saveds
 LocalSetFunction(
 	REG(a1) struct Library * library,
-	REG(a0) LONG funcOffset,
+	REG(a0) WORD funcOffset,
 	REG(d0) APTR newFunction,
 	REG(a6) struct Library * SysBase)
 {
 	LibraryVector * lv = (LibraryVector *)(((ULONG)library) + funcOffset);
 	Wedge * w = (Wedge *)lv->Location;
+	BOOL useEnable;
 	APTR result;
 
-	Forbid();
+	if(library == SysBase && (funcOffset == (LONG)&LVOForbid || funcOffset == (LONG)&LVOPermit))
+	{
+		useEnable = TRUE;
+		Disable();
+	}
+	else
+	{
+		useEnable = FALSE;
+		Forbid();
+	}
 
 	D(("library |%s| offset %ld",library->lib_Node.ln_Name,funcOffset));
 	SHOWVALUE(w);
 	SHOWVALUE(w->Magic);
 	SHOWVALUE(w->PointBack);
 
-	if(AktPrefs.mmp_FixPatches && w->Magic == WEDGE_MAGIC && w->PointBack == w)
+	if(AktPrefs.mmp_FixPatches && lv->Command == JMP_ABS && w->Magic == WEDGE_MAGIC && w->PointBack == w)
 	{
 		SHOWMSG("one of our patches");
 
@@ -170,7 +182,10 @@ LocalSetFunction(
 		result = CallSetFunction(library,funcOffset,newFunction,SysBase);
 	}
 
-	Permit();
+	if(useEnable)
+		Enable();
+	else
+		Permit();
 
 	return(result);
 }
