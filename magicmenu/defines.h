@@ -4,17 +4,7 @@
 **   :ts=8
 */
 
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Defines                                                      */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
 #define     MAGIC_MENU_NAME   "Magic Menu"
-#define     MAGIC_MENU_KENN   "=MAKO="
-#define     MAGIC_MENU_AUTHOR "Martin Korndörfer"
 #define     MAGIC_MENU_DESCR  "Improves the Intuition menus"
 
 #define     INPUTNAME         "input.device"
@@ -54,7 +44,7 @@
 #define     SENDINTUI_NOUSERPORT    2
 #define     SENDINTUI_TIMEOUT       3
 
-#define     PREF_IDCMPFLAGS        IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_GADGETDOWN | IDCMP_GADGETUP | IDCMP_MENUPICK | IDCMP_VANILLAKEY
+#define     PREF_IDCMPFLAGS        (IDCMP_CLOSEWINDOW | IDCMP_REFRESHWINDOW | IDCMP_GADGETDOWN | IDCMP_GADGETUP | IDCMP_MENUPICK | IDCMP_VANILLAKEY)
 
 extern LONG __far LVOOpenWindow;
 extern LONG __far LVOOpenWindowTagList;
@@ -75,4 +65,4 @@ extern LONG __far LVOObtainGIRPort;
 #define MAX_FILENAME_LENGTH	256
 
 #define DB(x)	;
-/*#define DB(x)	x*/
+/*#define DB(x) x */

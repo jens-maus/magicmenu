@@ -1,143 +1,141 @@
 /*
-**	$Id$
+**   $Id$
 **
-**	:ts=4
+**   :ts=8
 */
 
 #ifndef _GLOBAL_H
 #include "Global.h"
-#endif	/* _GLOBAL_H */
+#endif /* _GLOBAL_H */
 
 typedef struct WindowGlyphNode
 {
-	struct MinNode	 Link;
+  struct MinNode Link;
 
-	struct Window	*Window;
-	struct Image	*AmigaGlyph;
-} WindowGlyphNode;
+  struct Window *Window;
+  struct Image *AmigaGlyph;
+}
+WindowGlyphNode;
 
-STATIC struct SignalSemaphore	WindowGlyphSemaphore;
-STATIC struct MinList			WindowGlyphList;
-STATIC BOOL 					Inited = FALSE;
+STATIC struct SignalSemaphore WindowGlyphSemaphore;
+STATIC struct MinList WindowGlyphList;
+STATIC BOOL Inited;
 
 VOID
-WindowGlyphExit()
+WindowGlyphExit ()
 {
-	if(Inited)
-	{
-		struct Node *Node;
+  if (Inited)
+  {
+    struct Node *Node;
 
-		ObtainSemaphore(&WindowGlyphSemaphore);
+    ObtainSemaphore (&WindowGlyphSemaphore);
 
-		while(Node = RemHead((struct List *)&WindowGlyphList))
-			FreeVecPooled(Node);
+    while (Node = RemHead ((struct List *) &WindowGlyphList))
+      FreeVecPooled (Node);
 
-		ReleaseSemaphore(&WindowGlyphSemaphore);
-	}
+    ReleaseSemaphore (&WindowGlyphSemaphore);
+  }
 }
 
 VOID
-WindowGlyphInit()
+WindowGlyphInit ()
 {
-	InitSemaphore(&WindowGlyphSemaphore);
+  InitSemaphore (&WindowGlyphSemaphore);
 
-	NewList((struct List *)&WindowGlyphList);
+  NewList ((struct List *) &WindowGlyphList);
 
-	Inited = TRUE;
+  Inited = TRUE;
 }
 
 VOID
-DiscardWindowGlyphs(struct Window *Window)
+DiscardWindowGlyphs (struct Window *Window)
 {
-	if(Inited)
-	{
-		WindowGlyphNode *Node;
+  if (Inited)
+  {
+    WindowGlyphNode *Node;
 
-		ObtainSemaphore(&WindowGlyphSemaphore);
+    ObtainSemaphore (&WindowGlyphSemaphore);
 
-		for(Node = (WindowGlyphNode *)WindowGlyphList.mlh_Head ; Node->Link.mln_Succ ; Node = (WindowGlyphNode *)Node->Link.mln_Succ)
-		{
-			if(Node->Window == Window)
-			{
-				Remove((struct Node *)Node);
+    for (Node = (WindowGlyphNode *) WindowGlyphList.mlh_Head; Node->Link.mln_Succ; Node = (WindowGlyphNode *) Node->Link.mln_Succ)
+    {
+      if (Node->Window == Window)
+      {
+	Remove ((struct Node *) Node);
 
-				FreeVecPooled(Node);
+	FreeVecPooled (Node);
 
-				break;
-			}
-		}
+	break;
+      }
+    }
 
-		ReleaseSemaphore(&WindowGlyphSemaphore);
-	}
+    ReleaseSemaphore (&WindowGlyphSemaphore);
+  }
 }
 
 VOID
-ObtainGlyphs(struct Window *Window,struct Image **TickGlyph,struct Image **AmigaGlyph)
+ObtainGlyphs (struct Window *Window, struct Image **TickGlyph, struct Image **AmigaGlyph)
 {
-	*TickGlyph = *AmigaGlyph = NULL;
+  *TickGlyph = *AmigaGlyph = NULL;
 
-	if(Inited)
-	{
-		WindowGlyphNode *Node;
+  if (Inited)
+  {
+    WindowGlyphNode *Node;
 
-		if(SysBase->LibNode.lib_Version >= 39)
-			ObtainSemaphoreShared(&WindowGlyphSemaphore);
-		else
-			ObtainSemaphore(&WindowGlyphSemaphore);
+    SafeObtainSemaphoreShared (&WindowGlyphSemaphore);
 
-		for(Node = (WindowGlyphNode *)WindowGlyphList.mlh_Head ; Node->Link.mln_Succ ; Node = (WindowGlyphNode *)Node->Link.mln_Succ)
-		{
-			if(Node->Window == Window)
-			{
-				*AmigaGlyph = Node->AmigaGlyph;
+    for (Node = (WindowGlyphNode *) WindowGlyphList.mlh_Head; Node->Link.mln_Succ; Node = (WindowGlyphNode *) Node->Link.mln_Succ)
+    {
+      if (Node->Window == Window)
+      {
+	*AmigaGlyph = Node->AmigaGlyph;
 
-				if(Window->CheckMark)
-					*TickGlyph = Window->CheckMark;
+	if (Window->CheckMark)
+	  *TickGlyph = Window->CheckMark;
 
-				break;
-			}
-		}
+	break;
+      }
+    }
 
-		ReleaseSemaphore(&WindowGlyphSemaphore);
-	}
+    ReleaseSemaphore (&WindowGlyphSemaphore);
+  }
 }
 
 VOID
-RegisterGlyphs(struct Window *Window,struct NewWindow *NewWindow,struct TagItem *Tags)
+RegisterGlyphs (struct Window *Window, struct NewWindow *NewWindow, struct TagItem *Tags)
 {
-	if(Inited)
+  if (Inited)
+  {
+    if (NewWindow && !Tags)
+    {
+      if (NewWindow->Flags & WFLG_NW_EXTENDED)
+      {
+	struct ExtNewWindow *ExtNewWindow = (struct ExtNewWindow *) NewWindow;
+
+	if (TypeOfMem (ExtNewWindow->Extension))
+	  Tags = ExtNewWindow->Extension;
+      }
+    }
+
+    if (Tags)
+    {
+      struct Image *AmigaGlyph;
+
+      if (AmigaGlyph = (struct Image *) GetTagData (WA_AmigaKey, NULL, Tags))
+      {
+	WindowGlyphNode *Node;
+
+	if (Node = (WindowGlyphNode *) AllocVecPooled (sizeof (WindowGlyphNode), MEMF_ANY | MEMF_PUBLIC))
 	{
-		struct Image *AmigaGlyph = NULL;
+	  Node->Window = Window;
+	  Node->AmigaGlyph = AmigaGlyph;
 
-		if(NewWindow && !Tags)
-		{
-			if(NewWindow->Flags & WFLG_NW_EXTENDED)
-			{
-				struct ExtNewWindow *ExtNewWindow = (struct ExtNewWindow *)NewWindow;
+	  ObtainSemaphore (&WindowGlyphSemaphore);
 
-				if(TypeOfMem(ExtNewWindow->Extension))
-					Tags = ExtNewWindow->Extension;
-			}
-		}
+	  AddTail ((struct List *) &WindowGlyphList, (struct Node *) Node);
 
-		if(Tags)
-			AmigaGlyph = (struct Image *)GetTagData(WA_AmigaKey,NULL,Tags);
-
-		if(AmigaGlyph)
-		{
-			WindowGlyphNode *Node;
-
-			if(Node = (WindowGlyphNode *)AllocVecPooled(sizeof(WindowGlyphNode),MEMF_ANY | MEMF_PUBLIC))
-			{
-				Node->Window		= Window;
-				Node->AmigaGlyph	= AmigaGlyph;
-
-				ObtainSemaphore(&WindowGlyphSemaphore);
-
-				AddTail((struct List *)&WindowGlyphList,(struct Node *)Node);
-
-				ReleaseSemaphore(&WindowGlyphSemaphore);
-			}
-		}
+	  ReleaseSemaphore (&WindowGlyphSemaphore);
 	}
+      }
+    }
+  }
 }

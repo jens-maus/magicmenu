@@ -1,12 +1,12 @@
 /*
-**	$Id$
+**   $Id$
 **
-**	:ts=4
+**   :ts=8
 */
 
 #ifndef _GLOBAL_H
 #include "Global.h"
-#endif	/* _GLOBAL_H */
+#endif /* _GLOBAL_H */
 
 #define JMP_ABS 0x4EF9
 
@@ -15,149 +15,152 @@
 
 typedef struct Wedge
 {
-	UWORD		 Command;
-	APTR		 Location;
+  UWORD Command;
+  APTR Location;
 
-	APTR		 OldLocation;
-	UWORD		 Pad;
-} Wedge;
+  APTR OldLocation;
+  UWORD Pad;
+}
+Wedge;
 
 typedef struct PatchEntry
 {
-	Wedge		*WedgeCode;
-	LONG		 Offset;
-	APTR		 NewRoutine;
-	ULONG		*OldRoutine;
-} PatchEntry;
+  Wedge *WedgeCode;
+  LONG Offset;
+  APTR NewRoutine;
+  ULONG *OldRoutine;
+}
+PatchEntry;
 
 STATIC PatchEntry PatchTable[] =
 {
-	NULL,	(LONG)&LVOCloseWindow,			(APTR)MMCloseWindow,		&OldCloseWindow,
-	NULL,	(LONG)&LVOOpenWindow,			(APTR)MMOpenWindow,			&OldOpenWindow,
-	NULL,	(LONG)&LVOOpenWindowTagList,	(APTR)MMOpenWindowTagList,	&OldOpenWindowTagList,
-	NULL,	(LONG)&LVOClearMenuStrip,		(APTR)MMClearMenuStrip, 	&OldClearMenuStrip,
-	NULL,	(LONG)&LVOSetMenuStrip, 		(APTR)MMSetMenuStrip,		&OldSetMenuStrip,
-	NULL,	(LONG)&LVOResetMenuStrip,		(APTR)MMResetMenuStrip, 	&OldResetMenuStrip,
-	NULL,	(LONG)&LVOActivateWindow,		(APTR)MMActivateWindow, 	&OldActivateWindow,
-	NULL,	(LONG)&LVOWindowToFront,		(APTR)MMWindowToFront,		&OldWindowToFront,
-	NULL,	(LONG)&LVOModifyIDCMP,			(APTR)MMModifyIDCMP,		&OldModifyIDCMP,
-	NULL,	(LONG)&LVOObtainGIRPort,		(APTR)MMObtainGIRPort,		&OldObtainGIRPort,
+  NULL, (LONG) & LVOCloseWindow, (APTR) MMCloseWindow, &OldCloseWindow,
+  NULL, (LONG) & LVOOpenWindow, (APTR) MMOpenWindow, &OldOpenWindow,
+  NULL, (LONG) & LVOOpenWindowTagList, (APTR) MMOpenWindowTagList, &OldOpenWindowTagList,
+  NULL, (LONG) & LVOClearMenuStrip, (APTR) MMClearMenuStrip, &OldClearMenuStrip,
+  NULL, (LONG) & LVOSetMenuStrip, (APTR) MMSetMenuStrip, &OldSetMenuStrip,
+  NULL, (LONG) & LVOResetMenuStrip, (APTR) MMResetMenuStrip, &OldResetMenuStrip,
+  NULL, (LONG) & LVOActivateWindow, (APTR) MMActivateWindow, &OldActivateWindow,
+  NULL, (LONG) & LVOWindowToFront, (APTR) MMWindowToFront, &OldWindowToFront,
+  NULL, (LONG) & LVOModifyIDCMP, (APTR) MMModifyIDCMP, &OldModifyIDCMP,
+  NULL, (LONG) & LVOObtainGIRPort, (APTR) MMObtainGIRPort, &OldObtainGIRPort,
 };
 
 #define PATCHCOUNT (sizeof(PatchTable) / sizeof(PatchEntry))
 
 typedef struct PatchSemaphore
 {
-	struct SignalSemaphore	 Semaphore;
+  struct SignalSemaphore Semaphore;
 
-	struct Process			*Owner;
-	LONG					 Version;
+  struct Process *Owner;
+  LONG Version;
 
-	Wedge					 Table[PATCHCOUNT];
-	UBYTE					 Name[sizeof(SEMAPHORE_NAME)];
-} PatchSemaphore;
+  Wedge Table[PATCHCOUNT];
+  UBYTE Name[sizeof (SEMAPHORE_NAME)];
+}
+PatchSemaphore;
 
 STATIC PatchSemaphore *Patches;
 
 VOID
-RemovePatches()
+RemovePatches ()
 {
-	if(Patches)
-	{
-		LONG i;
+  if (Patches)
+  {
+    LONG i;
 
-		ObtainSemaphore(Patches);
+    ObtainSemaphore (Patches);
 
-		Forbid();
+    Forbid ();
 
-		for(i = 0 ; i < PATCHCOUNT ; i++)
-		{
-			if(PatchTable[i].WedgeCode)
-			{
-				PatchTable[i].WedgeCode->Location = PatchTable[i].WedgeCode->OldLocation;
+    for (i = 0; i < PATCHCOUNT; i++)
+    {
+      if (PatchTable[i].WedgeCode)
+      {
+	PatchTable[i].WedgeCode->Location = PatchTable[i].WedgeCode->OldLocation;
 
-				PatchTable[i].WedgeCode = NULL;
-			}
-		}
+	PatchTable[i].WedgeCode = NULL;
+      }
+    }
 
-		CacheClearU();
+    CacheClearU ();
 
-		Permit();
+    Permit ();
 
-		Patches->Owner = NULL;
+    Patches->Owner = NULL;
 
-		ReleaseSemaphore(Patches);
+    ReleaseSemaphore (Patches);
 
-		Patches = NULL;
-	}
+    Patches = NULL;
+  }
 }
 
 BOOL
-InstallPatches()
+InstallPatches ()
 {
-	Forbid();
+  Forbid ();
 
-	if(Patches = (PatchSemaphore *)FindSemaphore(SEMAPHORE_NAME))
-	{
-		ObtainSemaphore(Patches);
+  if (Patches = (PatchSemaphore *) FindSemaphore (SEMAPHORE_NAME))
+  {
+    ObtainSemaphore (Patches);
 
-		if(Patches->Version < SEMAPHORE_VERSION || Patches->Owner)
-		{
-			ReleaseSemaphore(Patches);
+    if (Patches->Version < SEMAPHORE_VERSION || Patches->Owner)
+    {
+      ReleaseSemaphore (Patches);
 
-			Patches = NULL;
+      Patches = NULL;
 
-			Permit();
+      Permit ();
 
-			return(TRUE);
-		}
-	}
-	else
-	{
-		if(Patches = (PatchSemaphore *)AllocMem(sizeof(PatchSemaphore),MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR))
-		{
-			strcpy(Patches->Name,SEMAPHORE_NAME);
+      return (TRUE);
+    }
+  }
+  else
+  {
+    if (Patches = (PatchSemaphore *) AllocMem (sizeof (PatchSemaphore), MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR))
+    {
+      strcpy (Patches->Name, SEMAPHORE_NAME);
 
-			Patches->Semaphore.ss_Link.ln_Name	= Patches->Name;
-			Patches->Semaphore.ss_Link.ln_Pri 	= 1;
+      Patches->Semaphore.ss_Link.ln_Name = Patches->Name;
+      Patches->Semaphore.ss_Link.ln_Pri = 1;
 
-			Patches->Version	= SEMAPHORE_VERSION;
-			Patches->Owner		= (struct Process *)FindTask(NULL);
+      Patches->Version = SEMAPHORE_VERSION;
+      Patches->Owner = (struct Process *) FindTask (NULL);
 
-			AddSemaphore(Patches);
+      AddSemaphore (Patches);
 
-			ObtainSemaphore(Patches);
-		}
-	}
+      ObtainSemaphore (Patches);
+    }
+  }
 
-	Permit();
+  Permit ();
 
-	if(Patches)
-	{
-		LONG i;
+  if (Patches)
+  {
+    LONG i;
 
-		Forbid();
+    Forbid ();
 
-		for(i = 0 ; i < PATCHCOUNT ; i++)
-		{
-			Patches->Table[i].Command	= JMP_ABS;
-			Patches->Table[i].Location	= PatchTable[i].NewRoutine;
+    for (i = 0; i < PATCHCOUNT; i++)
+    {
+      Patches->Table[i].Command = JMP_ABS;
+      Patches->Table[i].Location = PatchTable[i].NewRoutine;
 
-			if(!Patches->Table[i].OldLocation)
-				Patches->Table[i].OldLocation = SetFunction((struct Library *)IntuitionBase,PatchTable[i].Offset,(ULONG (*)())&Patches->Table[i]);
+      if (!Patches->Table[i].OldLocation)
+	Patches->Table[i].OldLocation = SetFunction ((struct Library *) IntuitionBase, PatchTable[i].Offset, (ULONG (*)()) & Patches->Table[i]);
 
-			*PatchTable[i].OldRoutine	= (ULONG)Patches->Table[i].OldLocation;
-			 PatchTable[i].WedgeCode	= &Patches->Table[i];
-		}
+      *PatchTable[i].OldRoutine = (ULONG) Patches->Table[i].OldLocation;
+      PatchTable[i].WedgeCode = &Patches->Table[i];
+    }
 
-		CacheClearU();
+    CacheClearU ();
 
-		Permit();
+    Permit ();
 
-		ReleaseSemaphore(Patches);
+    ReleaseSemaphore (Patches);
 
-		return(TRUE);
-	}
-	else
-		return(FALSE);
+    return (TRUE);
+  }
+  else
+    return (FALSE);
 }

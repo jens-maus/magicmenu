@@ -925,22 +925,6 @@ OpenSettingsGUI()
 					LAMN_ItemText,		NM_BARLABEL,
 					LAMN_ItemText,		"Remove",
 						LAMN_ID,	MEN_REMOVE,
-				LAMN_TitleText, 		"Demo",
-					LAMN_ItemText,		"Checkmark",
-						LAMN_CheckIt,	TRUE,
-						LAMN_Checked,	TRUE,
-					LAMN_ItemText,		"M\0Shortcut",
-					LAMN_ItemText,		NM_BARLABEL,
-					LAMN_ItemText,		"Submenu",
-						LAMN_SubText,		"Submenu Item",
-					LAMN_ItemText,		"G\0Ghosted",
-						LAMN_CheckIt,	TRUE,
-						LAMN_Checked,	TRUE,
-						LAMN_Disabled,	TRUE,
-					LAMN_ItemText,		"Ghosted Sub",
-						LAMN_Disabled,	TRUE,
-						LAMN_SubText,		"Submenu Item",
-
 			TAG_DONE))
 			{
 				SetMenuStrip(GUI_Handle -> Window,GUI_Menu);

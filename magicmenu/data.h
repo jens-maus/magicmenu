@@ -1,16 +1,8 @@
 /*
-**	$Id$
+**   $Id$
 **
-**	:ts=8
+**   :ts=8
 */
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             System Variablen                                             */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
 
 extern struct DosLibrary *DOSBase;
 extern struct ExecBase *SysBase;
@@ -32,14 +24,6 @@ extern struct timerequest *TimerIO;
 
 extern struct MsgPort *InputPort;
 extern struct IOStdReq *InputIO;
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Definierte Variablen                                         */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
 
 extern BOOL MagicActive;
 
@@ -112,9 +96,17 @@ extern UWORD MenXENBlack;
 extern UWORD MenXENWhite;
 extern UWORD MenXENBlue;
 extern UWORD MenXENGrey1;
+
 extern UWORD MenXENGrey2;
 extern UWORD MenXENBeige;
 extern UWORD MenXENPink;
+
+extern UWORD MenSectGrey;
+
+extern UWORD MenStdGrey0;
+extern UWORD MenStdGrey1;
+extern UWORD MenStdGrey2;
+
 extern UBYTE SelBoxOffs;
 extern BOOL Look3D;
 extern BOOL LookMC;
@@ -207,14 +199,6 @@ extern BOOL GlobalDMRequest;
 extern BOOL GlobalLastWinDMREnable;
 extern WORD GlobalDMRCount;
 
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Vorbesetzte Strukturen                                       */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
 extern struct MMPrefs DefaultPrefs;
 
 extern char CommText[5];
@@ -270,13 +254,6 @@ extern struct Image NoMXImageLow2Pl;
 extern UWORD __chip CheckImage2PlPattern[];
 extern struct Image CheckImage2Pl;
 
-extern UWORD __chip CheckImage4PlPattern[];
-extern struct Image CheckImage4Pl;
-
-extern UWORD __chip CheckImage4PlGhostedPattern[];
-extern struct Image CheckImage4PlGhosted;
-
-
 extern UWORD __chip CheckImageLow2PlPattern[];
 extern struct Image CheckImageLow2Pl;
 
@@ -295,12 +272,6 @@ extern struct Image AmigaImage2Pl;
 extern UWORD __chip AmigaImageLow2PlPattern[];
 extern struct Image AmigaImageLow2Pl;
 
-extern UWORD __chip AmigaImage4PlGhostedPattern[];
-extern struct Image AmigaImage4PlGhosted;
-
-extern UWORD __chip AmigaImage4PlPattern[];
-extern struct Image AmigaImage4Pl;
-
 extern UWORD __chip SubArrowImage2PlPattern[];
 extern struct Image SubArrowImage2Pl;
 
@@ -313,19 +284,29 @@ extern struct Image SubArrowImageLow2Pl;
 extern UWORD __chip SubArrowImageLow1PlPattern[];
 extern struct Image SubArrowImageLow1Pl;
 
-extern UWORD __chip SubArrowImage4PlPattern[];
-extern struct Image SubArrowImage4Pl;
+/******************************************************************************/
 
-extern UWORD __chip SubArrowImage4PlGhostedPattern[];
-extern struct Image SubArrowImage4PlGhosted;
+extern struct Image AmigaNormal;
+extern struct Image AmigaGhosted;
+extern struct Image ArrowNormal;
+extern struct Image ArrowGhosted;
+extern struct Image CheckNormal;
+extern struct Image CheckGhosted;
+extern struct Image MXDownNormal;
+extern struct Image MXDownGhosted;
+extern struct Image MXUpNormal;
+extern struct Image MXUpGhosted;
 
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* */
-/*             Undefinierte Variablen                                       */
-/* */
-/* ************************************************************************ */
-/* ************************************************************************ */
+extern struct Image Amiga8_Normal;
+extern struct Image Amiga8_Ghosted;
+extern struct Image Check8_Normal;
+extern struct Image Check8_Ghosted;
+extern struct Image MXDown8_Normal;
+extern struct Image MXDown8_Ghosted;
+extern struct Image MXUp8_Normal;
+extern struct Image MXUp8_Ghosted;
+
+/******************************************************************************/
 
 extern ULONG OldOpenWindow;
 extern ULONG OldOpenWindowTagList;
@@ -376,10 +357,16 @@ extern struct Image *SubArrowImageGhosted;
 extern struct Image *CheckImageActive, *NoCheckImageActive;
 extern struct Image *CommandImageActive, *SubArrowImageActive;
 extern struct Image *CheckImageRmp, *NoCheckImageRmp;
-extern struct Image *MXImageRmp, *NoMXImageRmp;
 extern struct Image *CommandImageRmp, *SubArrowImageRmp;
 extern struct Image *CommandImageGhostedRmp, *CheckImageGhostedRmp;
 extern struct Image *SubArrowImageGhostedRmp;
+
+extern struct Image *MXImageRmp;
+extern struct Image *NoMXImageRmp;
+extern struct Image *MXImageGhosted;
+extern struct Image *NoMXImageGhosted;
+extern struct Image *MXImageActive;
+extern struct Image *NoMXImageActive;
 
 extern ULONG IBaseLock;
 

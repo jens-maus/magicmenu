@@ -1,12 +1,12 @@
 /*
-**	$Id$
+**   $Id$
 **
-**	:ts=8
+**   :ts=8
 */
 
 #ifndef _GLOBAL_H
 #include "Global.h"
-#endif	/* _GLOBAL_H */
+#endif /* _GLOBAL_H */
 
 BOOL
 DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
@@ -62,19 +62,19 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   if (MenWin->IDCMPFlags & IDCMP_MENUVERIFY)
   {
-    DB(kprintf("has menuverify\n"));
+    DB (kprintf ("has menuverify\n"));
     /* Nachricht verschicken (beinhaltet UnlockIBase()) */
     Code = MENUHOT;
-    Err = SendIntuiMessage (IDCMP_MENUVERIFY,&Code, PeekQualifier (), NULL, MenWin, IBaseLock, TRUE);
+    Err = SendIntuiMessage (IDCMP_MENUVERIFY, &Code, PeekQualifier (), NULL, MenWin, IBaseLock, TRUE);
 
     if (Code == MENUCANCEL || Err != SENDINTUI_OK)
     {
-      DB(kprintf("code=%ld err=%ld\n",Code,Err));
+      DB (kprintf ("code=%ld err=%ld\n", Code, Err));
       EndIntuiMenu (FALSE);
       return (TRUE);
     }
 
-    DB(kprintf("get going again\n"));
+    DB (kprintf ("get going again\n"));
 
     /* Intuition wieder starten. */
     IBaseLock = LockIBase (NULL);
@@ -84,13 +84,13 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
    * benachrichtigt, die IDCMP_MENUVERIFY gesetzt haben.
    */
 
-  for(ZwWin = MenScr->FirstWindow ; ZwWin != NULL ; ZwWin = ZwWin->NextWindow)
+  for (ZwWin = MenScr->FirstWindow; ZwWin != NULL; ZwWin = ZwWin->NextWindow)
   {
     if (ZwWin != MenWin && (ZwWin->IDCMPFlags & IDCMP_MENUVERIFY))
     {
       /* Nachricht verschicken; fire and forget. */
       Code = MENUWAITING;
-      SendIntuiMessage (IDCMP_MENUVERIFY,&Code, PeekQualifier (), NULL, ZwWin, NULL, FALSE);
+      SendIntuiMessage (IDCMP_MENUVERIFY, &Code, PeekQualifier (), NULL, ZwWin, NULL, FALSE);
     }
   }
 
@@ -100,7 +100,7 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
   /* Das war die letzte Handlung, zu der Intuition
    * gesperrt werden mußte.
    */
-  UnlockIBase(IBaseLock);
+  UnlockIBase (IBaseLock);
 
   /* Das Menü wird jetzt endlich aktiv; Operationen in diesem
    * Bildschirm, in diesem Fenster, in diesem Menü werden
@@ -118,16 +118,16 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   HelpPressed = FALSE;
 
-  if(! AktPrefs.mmp_NonBlocking)
+  if (!AktPrefs.mmp_NonBlocking)
   {
-      LockLayerInfo (&MenScr->LayerInfo);
-      LockLayers (&MenScr->LayerInfo);
-      LayersLocked = TRUE;
+    LockLayerInfo (&MenScr->LayerInfo);
+    LockLayers (&MenScr->LayerInfo);
+    LayersLocked = TRUE;
   }
 
   ResetMenu (MenStrip, TRUE);
 
-  ChangeBrokerSetup();
+  ChangeBrokerSetup ();
 
   if (DrawMenuStrip (PopUp, ((PopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook), TRUE))
   {
@@ -177,17 +177,17 @@ DoIntuiMenu (UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown)
 
   IBaseLock = LockIBase (NULL);
 
-  for(ZwWin = MenScr->FirstWindow ; ZwWin != NULL ; ZwWin = ZwWin->NextWindow)
+  for (ZwWin = MenScr->FirstWindow; ZwWin != NULL; ZwWin = ZwWin->NextWindow)
   {
-    if (ZwWin != MenWin && (ZwWin->IDCMPFlags & (IDCMP_MENUVERIFY|IDCMP_MOUSEBUTTONS)) == (IDCMP_MENUVERIFY|IDCMP_MOUSEBUTTONS))
+    if (ZwWin != MenWin && (ZwWin->IDCMPFlags & (IDCMP_MENUVERIFY | IDCMP_MOUSEBUTTONS)) == (IDCMP_MENUVERIFY | IDCMP_MOUSEBUTTONS))
     {
       /* Nachricht verschicken; fire and forget. */
       Code = MENUUP;
-      SendIntuiMessage (IDCMP_MOUSEBUTTONS,&Code, PeekQualifier (), NULL, ZwWin, NULL, FALSE);
+      SendIntuiMessage (IDCMP_MOUSEBUTTONS, &Code, PeekQualifier (), NULL, ZwWin, NULL, FALSE);
     }
   }
 
-  UnlockIBase(IBaseLock);
+  UnlockIBase (IBaseLock);
 
   EndIntuiMenu (TRUE);
 

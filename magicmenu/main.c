@@ -1,12 +1,12 @@
 /*
-**	$Id$
+**   $Id$
 **
-**	:ts=8
+**   :ts=8
 */
 
 #ifndef _GLOBAL_H
 #include "Global.h"
-#endif	/* _GLOBAL_H */
+#endif /* _GLOBAL_H */
 
 #ifdef _M68030
 STRPTR VersTag = "\0$VER: " VERS " (" DATE ") 68030 version\r\n";
@@ -399,7 +399,7 @@ MakeGlobalRemember (VOID)
   struct MenuRemember *NewMenuRemember;
   long ILock;
 
-  ILock = LockIBase (0l);
+  ILock = LockIBase (NULL);
 
   ObtainSemaphore (RememberSemaphore);
 
@@ -436,7 +436,7 @@ MakeGlobalRemember (VOID)
 }
 
 VOID
-ClearRemember (struct Window *Win)
+ClearRemember (struct Window * Win)
 {
   struct MenuRemember *LookRemember;
   struct MenuRemember *LastRemember;
@@ -524,9 +524,9 @@ UpdateRemember (struct Window *Window)
 }
 
 VOID
-SetRemember (struct Window *Win)
+SetRemember (struct Window * Win)
 {
-  register struct MenuRemember *NewRemember;
+  struct MenuRemember *NewRemember;
 
   ObtainSemaphore (RememberSemaphore);
 
@@ -590,7 +590,7 @@ CleanUpMenu (VOID)
 
   MenWin->Flags &= ~WFLG_MENUSTATE;
 
-  ResetBrokerSetup();
+  ResetBrokerSetup ();
 }
 
 BOOL
@@ -730,15 +730,13 @@ CheckCxMsgAct (CxMsg * Msg, struct timerequest ** TimeReq, BOOL * Cancel)
   struct MenuItem *SavItem, *SavSubItem;
   struct Menu *SavMenu;
   UWORD SavMenuNum, SavItemNum, SavSubItemNum;
+  ULONG CurrSecs, CurrMics;
 
 #ifdef TESTTIME
   UWORD z1;
   struct timeval StartTime, StopTime;
   char ZwStr[100];
-
 #endif
-
-  ULONG CurrSecs, CurrMics;
 
 
   *Cancel = FALSE;
@@ -845,7 +843,7 @@ CheckCxMsgAct (CxMsg * Msg, struct timerequest ** TimeReq, BOOL * Cancel)
 	    CleanUpMenuBox ();
 	    CleanUpMenuStrip ();
 	    Ende = !DrawMenuStrip (StripPopUp, (Look3D == LOOK_3D) ? LOOK_2D :
-					       (StripPopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook, FALSE);
+	    (StripPopUp) ? AktPrefs.mmp_PULook : AktPrefs.mmp_PDLook, FALSE);
 	    if (SavMenu)
 	    {
 	      DrawHiMenu (AktMenu = SavMenu);
@@ -1192,7 +1190,7 @@ ProcessIntuiMenu (VOID)
   Cancel = FALSE;
 
   TimeReq = SendTimeRequest (TimerIO, AktPrefs.mmp_TimeOut, 0, CxMsgPort);
-  LLayerTimeReq = SendTimeRequest(TimerIO, 0, 500000, CxMsgPort);
+  LLayerTimeReq = SendTimeRequest (TimerIO, 0, 500000, CxMsgPort);
 
   while (!Ende)
   {
@@ -1204,68 +1202,68 @@ ProcessIntuiMenu (VOID)
     {
       DoWait = FALSE;
 
-      if((struct timerequest *)Msg == LLayerTimeReq)
+      if ((struct timerequest *) Msg == LLayerTimeReq)
       {
-	  FreeVecPooled(LLayerTimeReq);
-	  LLayerTimeReq = NULL;
-	  if(TickReceived)
+	FreeVecPooled (LLayerTimeReq);
+	LLayerTimeReq = NULL;
+	if (TickReceived)
+	{
+	  LLayerTimeReq = SendTimeRequest (TimerIO, 0, 500000, CxMsgPort);
+	  TickReceived = FALSE;
+	}
+	else
+	{
+	  SavSubItem = AktSubItem;
+	  SavSubItemNum = SubItemNum;
+	  SavItem = AktItem;
+	  SavItemNum = ItemNum;
+	  SavMenu = AktMenu;
+	  SavMenuNum = MenuNum;
+
+	  CleanUpMenuSubBox ();
+	  CleanUpMenuBox ();
+	  CleanUpMenuStrip ();
+
+	  if (LayersLocked)
 	  {
-	      LLayerTimeReq = SendTimeRequest(TimerIO, 0, 500000, CxMsgPort);
-	      TickReceived = FALSE;
+	    UnlockLayers (&MenScr->LayerInfo);
+	    UnlockLayerInfo (&MenScr->LayerInfo);
+	    LayersLocked = FALSE;
 	  }
-	  else
+
+	  Delay (1);
+	  LockLayerInfo (&MenScr->LayerInfo);
+	  LockLayers (&MenScr->LayerInfo);
+	  LayersLocked = TRUE;
+
+	  Ende = Cancel = !DrawMenuStrip (StripPopUp, Look3D, FALSE);
+	  if (SavMenu)
 	  {
-	      SavSubItem = AktSubItem;
-	      SavSubItemNum = SubItemNum;
-	      SavItem = AktItem;
-	      SavItemNum = ItemNum;
-	      SavMenu = AktMenu;
-	      SavMenuNum = MenuNum;
+	    DrawHiMenu (AktMenu = SavMenu);
+	    MenuNum = SavMenuNum;
+	    if (!DrawMenuBox (AktMenu, FALSE))
+	      DisplayBeep (MenScr);
 
-	      CleanUpMenuSubBox ();
-	      CleanUpMenuBox ();
-	      CleanUpMenuStrip ();
+	    if (SavItem)
+	    {
+	      DrawHiItem (AktItem = SavItem);
+	      ItemNum = SavItemNum;
+	      SavItem->Flags |= HIGHITEM;
+	      if (!DrawMenuSubBox (AktMenu, SavItem, FALSE))
+		DisplayBeep (MenScr);
 
-	      if (LayersLocked)
+	      if (SavSubItem)
 	      {
-		UnlockLayers (&MenScr->LayerInfo);
-		UnlockLayerInfo (&MenScr->LayerInfo);
-		LayersLocked = FALSE;
+		DrawHiSubItem (AktSubItem = SavSubItem);
+		AktSubItem->Flags |= HIGHITEM;
+		SubItemNum = SavSubItemNum;
 	      }
-
-	      Delay(1);
-	      LockLayerInfo (&MenScr->LayerInfo);
-	      LockLayers (&MenScr->LayerInfo);
-	      LayersLocked = TRUE;
-
-	      Ende = Cancel = !DrawMenuStrip (StripPopUp, Look3D, FALSE);
-	      if (SavMenu)
-	      {
-		DrawHiMenu (AktMenu = SavMenu);
-		MenuNum = SavMenuNum;
-		if (!DrawMenuBox (AktMenu, FALSE))
-		  DisplayBeep (MenScr);
-
-		if (SavItem)
-		{
-		  DrawHiItem (AktItem = SavItem);
-		  ItemNum = SavItemNum;
-		  SavItem->Flags |= HIGHITEM;
-		  if (!DrawMenuSubBox (AktMenu, SavItem, FALSE))
-		    DisplayBeep (MenScr);
-
-		  if (SavSubItem)
-		  {
-		    DrawHiSubItem (AktSubItem = SavSubItem);
-		    AktSubItem->Flags |= HIGHITEM;
-		    SubItemNum = SavSubItemNum;
-		  }
-		}
-	      }
+	    }
 	  }
+	}
       }
       else
-	  Ende = CheckCxMsgAct ((CxMsg *) Msg, &TimeReq, &Cancel);
+	Ende = CheckCxMsgAct ((CxMsg *) Msg, &TimeReq, &Cancel);
     }
 
     if (DoWait)
@@ -1275,8 +1273,8 @@ ProcessIntuiMenu (VOID)
     else
       Signals = NULL;
 
-    if((Signals & TickSigMask) != 0)
-	TickReceived = TRUE;
+    if ((Signals & TickSigMask) != 0)
+      TickReceived = TRUE;
   }
 
   if (TimeReq)
@@ -1308,18 +1306,18 @@ ProcessIntuiMenu (VOID)
 }
 
 VOID
-EndIntuiMenu(BOOL ReleaseMenuAct)
+EndIntuiMenu (BOOL ReleaseMenuAct)
 {
-	ObtainSemaphore (GetPointerSemaphore);
+  ObtainSemaphore (GetPointerSemaphore);
 
-	MenScr = NULL;
-	MenWin = NULL;
-	MenStrip = NULL;
+  MenScr = NULL;
+  MenWin = NULL;
+  MenStrip = NULL;
 
-	ReleaseSemaphore (GetPointerSemaphore);
+  ReleaseSemaphore (GetPointerSemaphore);
 
-	if(ReleaseMenuAct)
-		ReleaseSemaphore (MenuActSemaphore);
+  if (ReleaseMenuAct)
+    ReleaseSemaphore (MenuActSemaphore);
 }
 
 
@@ -1539,7 +1537,7 @@ CheckCxMsg (CxMsg * Msg)
       }
       break;
     case EVT_POPPREFS:
-      StartPrefs();
+      StartPrefs ();
       break;
     default:
       break;
@@ -1559,10 +1557,10 @@ CheckCxMsg (CxMsg * Msg)
       break;
     case CXCMD_UNIQUE:
     case CXCMD_APPEAR:
-	StartPrefs();
+      StartPrefs ();
       break;
     case CXCMD_DISAPPEAR:
-	StopPrefs();
+      StopPrefs ();
       break;
     default:
       break;
@@ -1580,64 +1578,64 @@ CheckCxMsg (CxMsg * Msg)
 
 
 BOOL
-CheckMMMsgPort(struct MMMessage *MMMsg)
+CheckMMMsgPort (struct MMMessage * MMMsg)
 {
-    BOOL Ende;
+  BOOL Ende;
 
-    Ende = FALSE;
+  Ende = FALSE;
 
-    switch(MMMsg->Class)
-    {
-	case MMC_REMOVE:
-	    ReplyMsg(MMMsg);
-	    Ende = CheckEnde();
-	    break;
-	case MMC_NEWCONFIG:
-	    AktPrefs = *(struct MMPrefs *)MMMsg->Ptr1;
-	    ReplyMsg(MMMsg);
-	    break;
-	case MMC_GETCONFIG:
-	    MMMsg->Ptr1 = &AktPrefs;
-	    MMMsg->Arg1 = MagicActive;
-	    MMMsg->Ptr2 = Cx_Popkey;
-	    ReplyMsg(MMMsg);
-	    break;
-	case MMC_ENABLE:
-	    if(MMMsg->Arg1)
-		Activate();
-	    else
-		Deactivate();
-	    ReplyMsg(MMMsg);
-	    break;
-    }
-    return(Ende);
+  switch (MMMsg->Class)
+  {
+  case MMC_REMOVE:
+    ReplyMsg (MMMsg);
+    Ende = CheckEnde ();
+    break;
+  case MMC_NEWCONFIG:
+    AktPrefs = *(struct MMPrefs *) MMMsg->Ptr1;
+    ReplyMsg (MMMsg);
+    break;
+  case MMC_GETCONFIG:
+    MMMsg->Ptr1 = &AktPrefs;
+    MMMsg->Arg1 = MagicActive;
+    MMMsg->Ptr2 = Cx_Popkey;
+    ReplyMsg (MMMsg);
+    break;
+  case MMC_ENABLE:
+    if (MMMsg->Arg1)
+      Activate ();
+    else
+      Deactivate ();
+    ReplyMsg (MMMsg);
+    break;
+  }
+  return (Ende);
 }
 
 BOOL
-RealWindow(struct Window *ThisWindow)
+RealWindow (struct Window * ThisWindow)
 {
-	if(TypeOfMem(ThisWindow))
+  if (TypeOfMem (ThisWindow))
+  {
+    struct Screen *Screen;
+
+    for (Screen = IntuitionBase->FirstScreen; Screen; Screen = Screen->NextScreen)
+    {
+      if (Screen == ThisWindow->WScreen)
+      {
+	struct Window *Window;
+
+	for (Window = Screen->FirstWindow; Window; Window = Window->NextWindow)
 	{
-		struct Screen *Screen;
-
-		for(Screen = IntuitionBase->FirstScreen ; Screen ; Screen = Screen->NextScreen)
-		{
-			if(Screen == ThisWindow->WScreen)
-			{
-				struct Window *Window;
-
-				for(Window = Screen->FirstWindow ; Window ; Window = Window->NextWindow)
-				{
-					if(Window == ThisWindow)
-						return(TRUE);
-				}
-
-				return(FALSE);
-			}
-		}
+	  if (Window == ThisWindow)
+	    return (TRUE);
 	}
 
-	return(FALSE);
+	return (FALSE);
+      }
+    }
+  }
+
+  return (FALSE);
 }
 
 VOID
@@ -1649,8 +1647,8 @@ ProcessCommodity (VOID)
   struct MMMessage *MMMsg;
   struct IntuiMessage *IMsg;
 
-  MMMsgPortMask = PORTMASK(MMMsgPort);
-  IMsgReplyMask = PORTMASK(IMsgReplyPort);
+  MMMsgPortMask = PORTMASK (MMMsgPort);
+  IMsgReplyMask = PORTMASK (IMsgReplyPort);
 
   Ende = FALSE;
 
@@ -1666,48 +1664,48 @@ ProcessCommodity (VOID)
       Ende = CheckCxMsg ((CxMsg *) Msg);
     }
 
-    if (MMMsg = (struct MMMessage *)GetMsg(MMMsgPort))
+    if (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
     {
-	DoWait = FALSE;
-	Ende = CheckMMMsgPort(MMMsg);
+      DoWait = FALSE;
+      Ende = CheckMMMsgPort (MMMsg);
     }
 
     /* Was hier zurückkommt, sollten Verify-Messages sein. */
-    while(IMsg = (struct IntuiMessage *)GetMsg(IMsgReplyPort))
+    while (IMsg = (struct IntuiMessage *) GetMsg (IMsgReplyPort))
     {
-        /* Wer zu spät kommt, den bestraft das Leben. Hier werden die
-         * zu spät beantworteten IDCMP_MENUVERIFY-Messages
-         * abgewickelt.
-         */
-        if(IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUCANCEL))
-        {
-            ULONG IntuiLock;
+      /* Wer zu spät kommt, den bestraft das Leben. Hier werden die
+       * zu spät beantworteten IDCMP_MENUVERIFY-Messages
+       * abgewickelt.
+       */
+      if (IMsg->Class == IDCMP_MENUVERIFY && (IMsg->Code == MENUHOT || IMsg->Code == MENUCANCEL))
+      {
+	ULONG IntuiLock;
 
-            /* Nötig für RealWindow() und damit das Fenster bis zum Schluß vorhanden bleibt. */
-            IntuiLock = LockIBase(NULL);
+	/* Nötig für RealWindow() und damit das Fenster bis zum Schluß vorhanden bleibt. */
+	IntuiLock = LockIBase (NULL);
 
-            /* Gibt es das Fenster noch? */
-            if(RealWindow(IMsg->IDCMPWindow))
-            {
-                UWORD Code;
+	/* Gibt es das Fenster noch? */
+	if (RealWindow (IMsg->IDCMPWindow))
+	{
+	  UWORD Code;
 
-                /* Falls das Menü abgebrochen wurde, kommt zuerst IDCMP_MOUSEBUTTONS. */
-                if(IMsg->Code == MENUCANCEL && (IMsg->IDCMPWindow->IDCMPFlags & IDCMP_MOUSEBUTTONS))
-                {
-                  Code = MENUUP;
-                  SendIntuiMessage(IDCMP_MOUSEBUTTONS,&Code,PeekQualifier(),NULL,IMsg->IDCMPWindow,NULL,FALSE);
-                }
+	  /* Falls das Menü abgebrochen wurde, kommt zuerst IDCMP_MOUSEBUTTONS. */
+	  if (IMsg->Code == MENUCANCEL && (IMsg->IDCMPWindow->IDCMPFlags & IDCMP_MOUSEBUTTONS))
+	  {
+	    Code = MENUUP;
+	    SendIntuiMessage (IDCMP_MOUSEBUTTONS, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
+	  }
 
-                /* Standardbehandlung... */
-                Code = MENUNULL;
-                SendIntuiMessage(IDCMP_MENUPICK,&Code,PeekQualifier(),NULL,IMsg->IDCMPWindow,NULL,FALSE);
-            }
+	  /* Standardbehandlung... */
+	  Code = MENUNULL;
+	  SendIntuiMessage (IDCMP_MENUPICK, &Code, PeekQualifier (), NULL, IMsg->IDCMPWindow, NULL, FALSE);
+	}
 
-            UnlockIBase(IntuiLock);
-        }
+	UnlockIBase (IntuiLock);
+      }
 
-        FreeVecPooled(IMsg);
-        IMsgReplyCount--;
+      FreeVecPooled (IMsg);
+      IMsgReplyCount--;
     }
 
     if (DoWait)
@@ -1724,257 +1722,258 @@ ProcessCommodity (VOID)
 
 
 VOID
-StopPrefs(VOID)
+StopPrefs (VOID)
 {
-	struct Task *Task;
+  struct Task *Task;
 
-	Forbid();
+  Forbid ();
 
-	if(Task = FindTask("MMPrefs"))
-		Signal(Task,SIGBREAKF_CTRL_C);
+  if (Task = FindTask ("MMPrefs"))
+    Signal (Task, SIGBREAKF_CTRL_C);
 
-	Permit();
+  Permit ();
 }
 
 VOID
-StartPrefs(VOID)
+StartPrefs (VOID)
 {
-	UBYTE PathName[MAX_FILENAME_LENGTH];
-	BPTR In,Out;
+  UBYTE PathName[MAX_FILENAME_LENGTH];
+  BPTR In, Out;
 
-	strcpy(PathName,ConfigPath);
-	AddPart(PathName,"MMPrefs",sizeof(PathName));
+  strcpy (PathName, ConfigPath);
+  AddPart (PathName, "MMPrefs", sizeof (PathName));
 
-	if(In = Open("NIL:",MODE_NEWFILE))
-	{
-		if(Out = Open("NIL:",MODE_NEWFILE))
-		{
-			SystemTags(PathName,
-				SYS_Input,	In,
-				SYS_Output,	Out,
-				SYS_Asynch,	TRUE,
-				NP_Name,	"MMPrefs",
-			TAG_DONE);
-		}
-		else
-			Close(In);
-	}
+  if (In = Open ("NIL:", MODE_NEWFILE))
+  {
+    if (Out = Open ("NIL:", MODE_NEWFILE))
+    {
+      SystemTags (PathName,
+		  SYS_Input, In,
+		  SYS_Output, Out,
+		  SYS_Asynch, TRUE,
+		  NP_Name, "MMPrefs",
+		  TAG_DONE);
+    }
+    else
+      Close (In);
+  }
 }
 
 VOID
 MyArgString (char *Result, struct DiskObject *DO, const char *TT, const char *Default, LONG Len, BOOL Upcase)
 {
-	char *Found;
+  char *Found;
 
-	Found = FindToolType(DO->do_ToolTypes, (char *) TT);
+  Found = FindToolType (DO->do_ToolTypes, (char *) TT);
 
-	if(Found)
-		strncpy (Result, Found, Len);
-	else
-		strncpy (Result, Default, Len);
+  if (Found)
+    strncpy (Result, Found, Len);
+  else
+    strncpy (Result, Default, Len);
 
-	if(Upcase)
-	{
-		UBYTE *c;
+  if (Upcase)
+  {
+    UBYTE *c;
 
-		c = (UBYTE *)Result;
+    c = (UBYTE *) Result;
 
-		while(*c)
-			*c++ = ToUpper(*c);
-	}
+    while (*c)
+      *c++ = ToUpper (*c);
+  }
 }
 
 LONG
-MyArgInt(struct DiskObject *DO, const char *TT, LONG Default)
+MyArgInt (struct DiskObject *DO, const char *TT, LONG Default)
 {
-	char Str[80];
-	LONG Result;
+  char Str[80];
+  LONG Result;
 
-	MyArgString (Str, DO, TT, "", 79, FALSE);
+  MyArgString (Str, DO, TT, "", 79, FALSE);
 
-	if(StrToLong(Str,&Result) <= 0)
-		Result = Default;
+  if (StrToLong (Str, &Result) <= 0)
+    Result = Default;
 
-	return (Result);
+  return (Result);
 }
 
 VOID
 CheckArguments (VOID)
 {
-	UBYTE FName[MAX_FILENAME_LENGTH];
-	struct DiskObject *DiskObj;
+  UBYTE FName[MAX_FILENAME_LENGTH];
+  struct DiskObject *DiskObj;
 
-	strcpy (FName, "progdir:");
-	strcat (FName, ProgName);
+  strcpy (FName, "progdir:");
+  strcat (FName, ProgName);
 
-	if(IconBase = OpenLibrary("icon.library",37))
-	{
-		if(DiskObj = GetDiskObjectNew(FName))
-		{
-			Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
+  if (IconBase = OpenLibrary ("icon.library", 37))
+  {
+    if (DiskObj = GetDiskObjectNew (FName))
+    {
+      Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
 
-			MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
-			MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
+      MyArgString (Cx_PopupStr, DiskObj, TT_CX_POPUP, DT_CX_POPUP, ANSWER_LEN, FALSE);
+      MyArgString (Cx_Popkey, DiskObj, TT_CX_POPKEY, DT_CX_POPKEY, LONGANSWER_LEN, FALSE);
 
-			if (!Stricmp (Cx_PopupStr, "YES"))
-				Cx_Popup = TRUE;
-			else
-				Cx_Popup = FALSE;
+      if (!Stricmp (Cx_PopupStr, "YES"))
+	Cx_Popup = TRUE;
+      else
+	Cx_Popup = FALSE;
 
-			FreeDiskObject (DiskObj);
-		}
+      FreeDiskObject (DiskObj);
+    }
 
-		CloseLibrary(IconBase);
-	}
+    CloseLibrary (IconBase);
+  }
 }
 
 
-BOOL LoadPrefs(char *ConfigFile, BOOL Report)
+BOOL 
+LoadPrefs (char *ConfigFile, BOOL Report)
 {
-    BPTR	    FH;
-    struct MMPrefs  ZwPrefs;
-    ULONG	    Len;
+  BPTR FH;
+  struct MMPrefs ZwPrefs;
+  ULONG Len;
 
-    if(! (FH = Open(ConfigFile,MODE_OLDFILE)))
-    {
-	if(Report)
-	    SimpleRequest(NULL,"MagicMenu Error", "Couldn't open configuration file!","Ok",NULL,0,0);
-	return(FALSE);
-    }
+  if (!(FH = Open (ConfigFile, MODE_OLDFILE)))
+  {
+    if (Report)
+      SimpleRequest (NULL, "MagicMenu Error", "Couldn't open configuration file!", "Ok", NULL, 0, 0);
+    return (FALSE);
+  }
 
-    Len = Read(FH,&ZwPrefs,sizeof(struct MMPrefs));
+  Len = Read (FH, &ZwPrefs, sizeof (struct MMPrefs));
 
-    Close(FH);
+  Close (FH);
 
-    if(Len == sizeof(struct MMPrefs) && ZwPrefs.mmp_Version == MMP_MAGIC)
-    {
-	CopyMem(&ZwPrefs,&AktPrefs,sizeof(struct MMPrefs));
-	return(TRUE);
-    }
-    else
-    {
-	if(Report)
-	    SimpleRequest(NULL,"MagicMenu Error", "Error in configuration file!","Ok",NULL,0,0);
-	return(FALSE);
-    }
+  if (Len == sizeof (struct MMPrefs) && ZwPrefs.mmp_Version == MMP_MAGIC)
+  {
+    CopyMem (&ZwPrefs, &AktPrefs, sizeof (struct MMPrefs));
+    return (TRUE);
+  }
+  else
+  {
+    if (Report)
+      SimpleRequest (NULL, "MagicMenu Error", "Error in configuration file!", "Ok", NULL, 0, 0);
+    return (FALSE);
+  }
 }
 
 VOID
-ResetBrokerSetup()
+ResetBrokerSetup ()
 {
-	if(CxChanged)
-	{
-		struct Message *msg;
+  if (CxChanged)
+  {
+    struct Message *msg;
 
-		ActivateCxObj (Broker, FALSE);
+    ActivateCxObj (Broker, FALSE);
 
-		SetFilterIX (MouseFilter, &MouseIX);
+    SetFilterIX (MouseFilter, &MouseIX);
 
-		RemoveCxObj (ActKbdFilter);
-		RemoveCxObj (MouseMoveFilter);
-		RemoveCxObj (TickFilter);
+    RemoveCxObj (ActKbdFilter);
+    RemoveCxObj (MouseMoveFilter);
+    RemoveCxObj (TickFilter);
 
-		while (msg = GetMsg (CxMsgPort))
-		{
-			if (!CheckReply (msg))
-				ReplyMsg (msg);
-		}
+    while (msg = GetMsg (CxMsgPort))
+    {
+      if (!CheckReply (msg))
+	ReplyMsg (msg);
+    }
 
-		ActivateCxObj (Broker, TRUE);
+    ActivateCxObj (Broker, TRUE);
 
-		CxChanged = FALSE;
-	}
+    CxChanged = FALSE;
+  }
 }
 
 VOID
-ChangeBrokerSetup()
+ChangeBrokerSetup ()
 {
-	if(!CxChanged)
-	{
-		struct Message *msg;
+  if (!CxChanged)
+  {
+    struct Message *msg;
 
-		ActivateCxObj (Broker, FALSE);
+    ActivateCxObj (Broker, FALSE);
 
-		SetFilterIX (MouseFilter, &ActiveMouseIX);
+    SetFilterIX (MouseFilter, &ActiveMouseIX);
 
-		AttachCxObj (Broker, ActKbdFilter);
-		AttachCxObj (Broker, MouseMoveFilter);
-		AttachCxObj (Broker, TickFilter);
+    AttachCxObj (Broker, ActKbdFilter);
+    AttachCxObj (Broker, MouseMoveFilter);
+    AttachCxObj (Broker, TickFilter);
 
-		while (msg = GetMsg (CxMsgPort))
-		{
-			if (!CheckReply (msg))
-				ReplyMsg (msg);
-		}
+    while (msg = GetMsg (CxMsgPort))
+    {
+      if (!CheckReply (msg))
+	ReplyMsg (msg);
+    }
 
-		ActivateCxObj (Broker, TRUE);
-		CxChanged = TRUE;
-	}
+    ActivateCxObj (Broker, TRUE);
+    CxChanged = TRUE;
+  }
 }
 
 VOID
-CleanupMenuActiveData()
+CleanupMenuActiveData ()
 {
-	if(CxBase)
-	{
-		DeleteCxObjAll(ActKbdFilter);
-		ActKbdFilter = NULL;
+  if (CxBase)
+  {
+    DeleteCxObjAll (ActKbdFilter);
+    ActKbdFilter = NULL;
 
-		DeleteCxObjAll(MouseMoveFilter);
-		MouseMoveFilter = NULL;
+    DeleteCxObjAll (MouseMoveFilter);
+    MouseMoveFilter = NULL;
 
-		DeleteCxObjAll(TickFilter);
-		TickFilter = NULL;
+    DeleteCxObjAll (TickFilter);
+    TickFilter = NULL;
 
-		FreeSignal(TickSigNum);
-		TickSigNum = -1;
-	}
+    FreeSignal (TickSigNum);
+    TickSigNum = -1;
+  }
 }
 
 BOOL
-SetupMenuActiveData()
+SetupMenuActiveData ()
 {
-	if(!(ActKbdFilter = CxFilter (MouseKey)))
-		return(FALSE);
+  if (!(ActKbdFilter = CxFilter (MouseKey)))
+    return (FALSE);
 
-	SetFilterIX(ActKbdFilter, &ActiveKbdIX);
+  SetFilterIX (ActKbdFilter, &ActiveKbdIX);
 
-	if (!(ActKbdSender = CxSender(CxMsgPort, EVT_KEYBOARD)))
-		return(FALSE);
+  if (!(ActKbdSender = CxSender (CxMsgPort, EVT_KEYBOARD)))
+    return (FALSE);
 
-	AttachCxObj(ActKbdFilter, ActKbdSender);
+  AttachCxObj (ActKbdFilter, ActKbdSender);
 
-	if (!(ActKbdTransl = CxTranslate (NULL)))
-		return(FALSE);
+  if (!(ActKbdTransl = CxTranslate (NULL)))
+    return (FALSE);
 
-	AttachCxObj(ActKbdFilter, ActKbdTransl);
+  AttachCxObj (ActKbdFilter, ActKbdTransl);
 
-	if (!(MouseMoveFilter = CxFilter (MouseKey)))
-		return(FALSE);
+  if (!(MouseMoveFilter = CxFilter (MouseKey)))
+    return (FALSE);
 
-	SetFilterIX(MouseMoveFilter, &ActiveMouseMoveIX);
+  SetFilterIX (MouseMoveFilter, &ActiveMouseMoveIX);
 
-	if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
-		return(FALSE);
+  if (!(MouseMoveSender = CxSender (CxMsgPort, EVT_MOUSEMOVE)))
+    return (FALSE);
 
-	AttachCxObj(MouseMoveFilter, MouseMoveSender);
+  AttachCxObj (MouseMoveFilter, MouseMoveSender);
 
-	if (!(TickFilter = CxFilter (MouseKey)))
-		return(FALSE);
+  if (!(TickFilter = CxFilter (MouseKey)))
+    return (FALSE);
 
-	SetFilterIX(TickFilter, &TickIX);
+  SetFilterIX (TickFilter, &TickIX);
 
-	if((TickSigNum = AllocSignal(-1)) == -1)
-		return(FALSE);
+  if ((TickSigNum = AllocSignal (-1)) == -1)
+    return (FALSE);
 
-	TickSigMask = 1L << TickSigNum;
+  TickSigMask = 1L << TickSigNum;
 
-	if (!(TickSignal = CxSignal(FindTask(NULL), TickSigNum)))
-		return(FALSE);
+  if (!(TickSignal = CxSignal (FindTask (NULL), TickSigNum)))
+    return (FALSE);
 
-	AttachCxObj(TickFilter, TickSignal);
+  AttachCxObj (TickFilter, TickSignal);
 
-	return(TRUE);
+  return (TRUE);
 }
 
 VOID
@@ -1994,23 +1993,23 @@ CloseAll (VOID)
 
   /*****************************************************************************************/
 
-  WindowGlyphExit();
+  WindowGlyphExit ();
 
   /*****************************************************************************************/
 
-  if(MMMsgPort)
+  if (MMMsgPort)
   {
-      RemPort(MMMsgPort);
-      while(MMMsg = (struct MMMessage *)GetMsg(MMMsgPort))
-      {
-	  MMMsg->Class = MMC_VOID;
-	  ReplyMsg(MMMsg);
-      }
-      DeleteMsgPort(MMMsgPort);
-      MMMsgPort = NULL;
+    RemPort (MMMsgPort);
+    while (MMMsg = (struct MMMessage *) GetMsg (MMMsgPort))
+    {
+      MMMsg->Class = MMC_VOID;
+      ReplyMsg (MMMsg);
+    }
+    DeleteMsgPort (MMMsgPort);
+    MMMsgPort = NULL;
   }
 
-  CleanupMenuActiveData();
+  CleanupMenuActiveData ();
 
   if (Broker)
   {
@@ -2020,7 +2019,7 @@ CloseAll (VOID)
 
   if (LibPatches)
   {
-    RemovePatches();
+    RemovePatches ();
     LibPatches = FALSE;
   }
 
@@ -2077,29 +2076,29 @@ CloseAll (VOID)
     TimerPort = NULL;
   }
 
-  if(IMsgReplyPort)
+  if (IMsgReplyPort)
   {
-      struct Message *Message;
+    struct Message *Message;
 
-      while(Message = GetMsg(IMsgReplyPort));
+    while (Message = GetMsg (IMsgReplyPort));
 
-      DeleteMsgPort(IMsgReplyPort);
-      IMsgReplyPort = NULL;
+    DeleteMsgPort (IMsgReplyPort);
+    IMsgReplyPort = NULL;
   }
 
-  if(TimeoutRequest)
+  if (TimeoutRequest)
   {
-      if(TimeoutRequest->tr_node.io_Device)
-          CloseDevice((struct IORequest *)TimeoutRequest);
+    if (TimeoutRequest->tr_node.io_Device)
+      CloseDevice ((struct IORequest *) TimeoutRequest);
 
-      DeleteIORequest(TimeoutRequest);
-      TimeoutRequest = NULL;
+    DeleteIORequest (TimeoutRequest);
+    TimeoutRequest = NULL;
   }
 
-  if(TimeoutPort)
+  if (TimeoutPort)
   {
-      DeleteMsgPort(TimeoutPort);
-      TimeoutPort = NULL;
+    DeleteMsgPort (TimeoutPort);
+    TimeoutPort = NULL;
   }
 
   if (RememberSemaphore)
@@ -2120,7 +2119,7 @@ CloseAll (VOID)
     MenuActSemaphore = NULL;
   }
 
-  StopHihoTask();
+  StopHihoTask ();
 
   if (KeymapBase)
   {
@@ -2166,7 +2165,7 @@ CloseAll (VOID)
 
   /*****************************************************************************************/
 
-  MemoryExit();
+  MemoryExit ();
 
   /*****************************************************************************************/
 }
@@ -2228,7 +2227,7 @@ main (int argc, char **argv)
 
   /*****************************************************************************************/
 
-  WindowGlyphInit();
+  WindowGlyphInit ();
 
   /*****************************************************************************************/
 
@@ -2238,13 +2237,13 @@ main (int argc, char **argv)
     ErrorPrc ("");
 
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ((char *) "graphics.library", 37)))
-      ErrorPrc ("Can't open graphics library!");
+    ErrorPrc ("Can't open graphics library!");
 
-  StartHihoTask();
+  StartHihoTask ();
 
   GfxVersion = GfxBase->LibNode.lib_Version;
 
-  if (!MemoryInit())
+  if (!MemoryInit ())
     ErrorPrc ("Cannot set up memory allocator");
 
   if (!(LayersBase = (struct Library *) OpenLibrary ((char *) "layers.library", 37)))
@@ -2272,17 +2271,17 @@ main (int argc, char **argv)
   if (!(RememberSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))
       ErrorPrc ("Can't allocate semaphore 3!");
 
-  if(!(IMsgReplyPort = CreateMsgPort()))
-      ErrorPrc ("Cannot create IMsg reply port!");
+  if (!(IMsgReplyPort = CreateMsgPort ()))
+    ErrorPrc ("Cannot create IMsg reply port!");
 
-  if(!(TimeoutPort = CreateMsgPort()))
-      ErrorPrc ("Cannot create timeout reply port!");
+  if (!(TimeoutPort = CreateMsgPort ()))
+    ErrorPrc ("Cannot create timeout reply port!");
 
-  if(!(TimeoutRequest = (struct timerequest *)CreateIORequest(TimeoutPort,sizeof(struct timerequest))))
+  if (!(TimeoutRequest = (struct timerequest *) CreateIORequest (TimeoutPort, sizeof (struct timerequest))))
       ErrorPrc ("Cannot create timeout request!");
 
-  if(OpenDevice(TIMERNAME,UNIT_VBLANK,(struct IORequest *)TimeoutRequest,NULL))
-      ErrorPrc ("Cannot open timer.device!");
+  if (OpenDevice (TIMERNAME, UNIT_VBLANK, (struct IORequest *) TimeoutRequest, NULL))
+    ErrorPrc ("Cannot open timer.device!");
 
   InitSemaphore (RememberSemaphore);
 
@@ -2317,26 +2316,24 @@ main (int argc, char **argv)
 
   AktPrefs = DefaultPrefs;
 
-  if(GetVar(PATHENV,ConfigPath,200,0) == -1)
+  if (GetVar (PATHENV, ConfigPath, 200, 0) == -1)
   {
-      Cx_Popup = TRUE;
-      strcpy(ConfigPath, "");
+    Cx_Popup = TRUE;
+    strcpy (ConfigPath, "");
   }
 
-  strcpy(ConfigFile,ConfigPath);
-  if(! AddPart(ConfigFile,"MagicMenu.config",231))
-      ErrorPrc("Can't create Config filename!");
+  strcpy (ConfigFile, ConfigPath);
+  if (!AddPart (ConfigFile, "MagicMenu.config", 231))
+    ErrorPrc ("Can't create Config filename!");
 
-  if(! LoadPrefs(ConfigFile,FALSE))
+  if (!LoadPrefs (ConfigFile, FALSE))
     Cx_Popup = TRUE;
 
-  if(! (MMMsgPort = CreateMsgPort()))
-    ErrorPrc("Can't open MagicMenu MessagePort!");
+  if (!(MMMsgPort = CreateMsgPort ()))
+    ErrorPrc ("Can't open MagicMenu MessagePort!");
 
   MMMsgPort->mp_Node.ln_Name = MMPORT_NAME;
-  MMMsgPort->mp_Node.ln_Pri = 0;
-
-  AddPort(MMMsgPort);
+  AddPort (MMMsgPort);
 
   if (!(CxMsgPort = CreateMsgPort ()))
     ErrorPrc ("Can't open CxMsgPort!");
@@ -2355,7 +2352,7 @@ main (int argc, char **argv)
 
   ObtainSemaphore (RememberSemaphore);
 
-  if(InstallPatches())
+  if (InstallPatches ())
     LibPatches = TRUE;
   else
   {
@@ -2371,7 +2368,7 @@ main (int argc, char **argv)
 
   ReleaseSemaphore (RememberSemaphore);
 
-  SPrintf (TitleText, "MagicMenu %ld.%ld (%s):",VERSION,REVISION,DATE);
+  SPrintf (TitleText, "MagicMenu %ld.%ld (%s):", VERSION, REVISION, DATE);
   NewBroker.nb_Title = TitleText;
 
   NewBroker.nb_Port = CxMsgPort;
@@ -2423,13 +2420,13 @@ main (int argc, char **argv)
     ErrorPrc ("Popup hotkey sequence invalid");
   AttachCxObj (Broker, PrefsFilter);
 
-  if(!(SetupMenuActiveData()))
+  if (!(SetupMenuActiveData ()))
     ErrorPrc ("Can't set up active menu data!");
 
   Activate ();
 
   if (Cx_Popup)
-    StartPrefs();
+    StartPrefs ();
 
   ProcessCommodity ();
 
