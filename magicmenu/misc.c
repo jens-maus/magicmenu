@@ -958,7 +958,7 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
       LayerInfo = NewLayerInfo ();
       if (LayerInfo != NULL)
       {
-        Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
+        Layer = CreateUpfrontHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
         if (Layer != NULL)
         {
           *BitMapPtr = BitMap;
@@ -1539,8 +1539,12 @@ PlaceText (struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len)
 LONG
 AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
 {
-	return(ObtainBestPen (ColorMap, Red, Green, Blue,
+	LONG colour;
+
+	colour = ObtainBestPen(ColorMap, Red, Green, Blue,
 		OBP_FailIfBad,	TRUE,
 		OBP_Precision,	AktPrefs.mmp_Precision,
-	TAG_DONE));
+	TAG_DONE);
+
+	return(colour);
 }

@@ -3,7 +3,7 @@
 @author "Olaf Barthel"
 @node main "MagicMenu"
 
-                               MagicMenu 2.21
+                               MagicMenu 2.22
                      A utility to enhance the Intuition
                             pull-down menu system
 
@@ -1083,6 +1083,13 @@ MagicMenu 2.21
 ==============
 
 - More fixes to keep WSpeed alive [Frank Mariak].
+
+
+MagicMenu 2.22
+==============
+
+- If launched from Workbench, MagicMenu is now quite a bit smarter
+  when trying to find its icon to read the tool types.
 @endnode
 
 @node Translations

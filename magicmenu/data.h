@@ -138,7 +138,7 @@ extern UWORD StripWidth;
 extern UWORD StripHeight;
 extern UWORD StripDepth;
 extern UWORD StripTopOffs;
-extern UWORD StripLeftOffs;
+extern WORD StripLeftOffs;	/* Ab 2.22 ohne Vorzeichen! */
 extern UWORD StripMinHeight;
 extern UWORD StripMinWidth;
 extern UWORD StripLeft;

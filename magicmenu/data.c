@@ -133,7 +133,7 @@ UWORD StripWidth;
 UWORD StripHeight;
 UWORD StripDepth;
 UWORD StripTopOffs;
-UWORD StripLeftOffs;
+WORD StripLeftOffs;	/* Ab 2.22 ohne Vorzeichen! */
 UWORD StripMinHeight;
 UWORD StripMinWidth;
 UWORD StripLeft;

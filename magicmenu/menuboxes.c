@@ -1550,7 +1550,7 @@ GetMenuContCoor (struct Menu * Menu, LONG * t, LONG * l, LONG * w, LONG * h)
 BOOL
 DrawHiMenu (struct Menu * Menu)
 {
-  LONG t, l, h, w;
+  LONG t, l, h, w, offset;
 
   DB(kprintf("%s\n",__FUNC__));
 
@@ -1560,6 +1560,12 @@ DrawHiMenu (struct Menu * Menu)
       return (FALSE);
     else
     {
+      /* Neu in 2.22: In LoRes werden die Menütitel korrekt positioniert. */
+      if (!ScrHiRes && !StripPopUp)
+        offset = 2;
+      else
+        offset = 4;
+
       t += StripDrawTop;
       l += StripDrawLeft;
       if (MenuMode == MODE_KEYBOARD)
@@ -1581,7 +1587,7 @@ DrawHiMenu (struct Menu * Menu)
           HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, TRUE);
           SetFgPen (StripDrawRPort, MenHiCol);
 
-          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
         else
         {
@@ -1589,11 +1595,11 @@ DrawHiMenu (struct Menu * Menu)
 
           SetFgPen (StripDrawRPort, MenStdGrey2);
 
-          PlaceText (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset+1, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
 
           SetFgPen (StripDrawRPort, MenStdGrey0);
 
-          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
 
         if (StripPopUp)
@@ -1654,7 +1660,7 @@ GhostMenu (struct Menu * Menu, struct RastPort * RPort, UWORD Left, UWORD Top)
 VOID
 DrawNormMenu (struct Menu *Menu)
 {
-  LONG t, l, h, w;
+  LONG t, l, h, w, offset;
 
   DB(kprintf("%s\n",__FUNC__));
 
@@ -1663,6 +1669,12 @@ DrawNormMenu (struct Menu *Menu)
     GetMenuContCoor (Menu, &t, &l, &w, &h);
     if (t >= 0 && t < StripHeight && l >= 0 && l < StripWidth)
     {
+      /* Neu in 2.22: In LoRes werden die Menütitel korrekt positioniert. */
+      if (!ScrHiRes && !StripPopUp)
+        offset = 2;
+      else
+        offset = 4;
+
       t += StripDrawTop;
       l += StripDrawLeft;
 
@@ -1682,17 +1694,17 @@ DrawNormMenu (struct Menu *Menu)
         {
           SetFgPen (StripDrawRPort, MenTextCol);
 
-          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
         else
         {
           SetFgPen (StripDrawRPort, MenStdGrey2);
 
-          PlaceText (StripDrawRPort, l + 5, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset+1, t + 1 + StripDrawRPort->TxBaseline + 1, Menu->MenuName, -1);
 
           SetFgPen (StripDrawRPort, MenStdGrey0);
 
-          PlaceText (StripDrawRPort, l + 4, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, l + offset, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
 
         if (!StripPopUp)
@@ -1717,7 +1729,7 @@ DrawNormMenu (struct Menu *Menu)
 
           SetFont (StripDrawRPort, MenFont);
 
-          PlaceText (StripDrawRPort, Menu->LeftEdge + StripLeftOffs + 4, Menu->TopEdge + StripTopOffs + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
+          PlaceText (StripDrawRPort, Menu->LeftEdge + StripLeftOffs + offset, Menu->TopEdge + StripTopOffs + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
 
           if (!Menu->Flags & MENUENABLED)
             GhostRect (StripDrawRPort, l, t, w, h);
@@ -2557,6 +2569,12 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
     {
       X = ZwMenu->LeftEdge + StripLeftOffs + 4;
       Y = Top + ZwMenu->TopEdge + StripTopOffs + 1 + RPort->TxBaseline;
+
+      /* Neu in 2.22: die Titel für LoRes-Menüs werden richtig
+       *              positioniert.
+       */
+      if (!ScrHiRes)
+        X -= 2;
     }
     else
     {

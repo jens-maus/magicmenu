@@ -1929,17 +1929,26 @@ MyArgInt (struct DiskObject *DO, char *TT, LONG Default)
 }
 
 VOID
-CheckArguments (VOID)
+CheckArguments (struct WBStartup * startupMsg)
 {
   UBYTE FName[MAX_FILENAME_LENGTH];
   struct DiskObject *DiskObj;
 
-  strcpy (FName, "PROGDIR:");
-  strcat (FName, ProgName);
-
-  if (IconBase = OpenLibrary ("icon.library", 37))
+  if(startupMsg != NULL)
   {
-    if (DiskObj = GetDiskObjectNew (FName))
+    strcpy (FName, startupMsg->sm_ArgList[0].wa_Name);
+  }
+  else
+  {
+    strcpy (FName, "PROGDIR:");
+    strcat (FName, ProgName);
+  }
+
+  IconBase = OpenLibrary ("icon.library", 0);
+  if (IconBase != NULL)
+  {
+    DiskObj = GetDiskObject (FName);
+    if (DiskObj != NULL)
     {
       Cx_Pri = MyArgInt (DiskObj, TT_CX_PRI, DT_CX_PRI);
 
@@ -2522,7 +2531,7 @@ main (int argc, char **argv)
 /*  if (!(PeekQualifier () & IEQUALIFIER_LALT))*/
 /*    StartHihoTask ();*/
 
-  CheckArguments ();
+  CheckArguments ((argc == 0) ? ((struct WBStartup *)argv) : NULL);
 
   AktPrefs = DefaultPrefs;
 

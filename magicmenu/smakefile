@@ -22,7 +22,7 @@
 #############################################################################
 
 VERSION =	2
-REVISION =	21
+REVISION =	22
 
 SYMBOLIC_NAME =	V$(VERSION)_$(REVISION)
 
@@ -30,7 +30,7 @@ SYMBOLIC_NAME =	V$(VERSION)_$(REVISION)
 
 GSTFILE =	system_headers.gst
 OPTIMIZE =	optimize opttime optinlocal optdepth=10 optrdepth=10
-#CPU =		040
+CPU =		040
 #CPU =		030
 CPU =		any
 DEBUG =		line
@@ -44,7 +44,7 @@ LIBS =		lib:sc.lib lib:amiga.lib
 
 MAIN_SOURCE =	main.c misc.c \
 		data.c wedge.c windowglyphs.c memory.c menuboxes.c \
-		dointuimenu.c sendintuimessage.c betatitle.c remap.a \
+		dointuimenu.c sendintuimessage.c remap.a \
 		storage.c scare.c
 
 MAIN_OBJS =	main.o stubs.o misc.o \
@@ -60,7 +60,7 @@ PREFS_OBJS =	edit.o demoimagedata.o remap.o storage.o
 
 ###############################################################################
 
-SOURCE =	betatitle.c data.c data.h defines.h \
+SOURCE =	data.c data.h defines.h \
 		dointuimenu.c edit.c global.h magicmenu.cd \
 		MagicMenuPrefs_rev.h MagicMenuPrefs_rev.i MagicMenuPrefs_rev.rev MagicMenu_rev.h \
 		MagicMenu_rev.i MagicMenu_rev.rev main.c memory.c \
@@ -138,6 +138,11 @@ mkid:
 
 update:
 	mkid -v -u
+
+xref:
+	cxref -xref \#?.c
+	cxref -xref -html \#?.c
+	cxref -xref -index -html
 
 ###############################################################################
 

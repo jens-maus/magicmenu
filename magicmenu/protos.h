@@ -26,7 +26,7 @@ VOID StopPrefs(VOID);
 VOID StartPrefs(VOID);
 VOID MyArgString(char *Result, struct DiskObject *DO, char *TT, char *Default, LONG Len, BOOL Upcase);
 LONG MyArgInt(struct DiskObject *DO, char *TT, LONG Default);
-VOID CheckArguments(VOID);
+VOID CheckArguments(struct WBStartup *startupMsg);
 BOOL LoadPrefs(char *Name, BOOL Report);
 VOID ResetBrokerSetup(VOID);
 VOID ChangeBrokerSetup(VOID);
@@ -168,10 +168,6 @@ BOOL DoIntuiMenu(UWORD NewMenuMode, BOOL PopUp, BOOL SendMenuDown);
 
 /* sendintuimessage.c */
 UWORD SendIntuiMessage(ULONG Class, UWORD *Code, UWORD Qualifier, APTR IAddress, struct Window *ReceivingWindow, ULONG IntuiLock, BOOL WaitForReply);
-
-/* betatitle.c */
-VOID StartHihoTask(VOID);
-VOID StopHihoTask(VOID);
 
 /* remap.a */
 
