@@ -57,6 +57,7 @@ struct MMPrefs DefaultPrefs =
 	"ramiga space",				/* KCKeyStr */
 
 	10,					/* TimeOut */
+	PRECISION_GUI,				/* Precision */
 
 	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,	/* LightEdge */
 	0x00000000, 0x00000000, 0x00000000,	/* DarkEdge */
@@ -75,6 +76,8 @@ BOOL TestPrefsValid;
 /******************************************************************************/
 
 #define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
+
+#define SPREAD(c)	(0x01010101UL * (c))
 
 enum
 {
@@ -123,6 +126,7 @@ enum
 	GAD_KCGoTop,
 	GAD_KCRAltRCommand,
 	GAD_KCKeyStr,
+	GAD_Precision
 };
 
 enum
@@ -424,6 +428,25 @@ GetString(ULONG ID)
 
 /******************************************************************************/
 
+LONG __saveds __stdargs
+PrecisionDispFunc(struct Gadget *DummyGadget,WORD Offset)
+{
+	LONG Which;
+
+	if(Offset == -1)
+		Which = MSG_PRECISION1_TXT;
+	else if (Offset >= PRECISION_IMAGE && Offset < PRECISION_ICON)
+		Which = MSG_PRECISION2_TXT;
+	else if (Offset >= PRECISION_ICON && Offset < PRECISION_GUI)
+		Which = MSG_PRECISION3_TXT;
+	else
+		Which = MSG_PRECISION4_TXT;
+
+	return((LONG)GetString(Which));
+}
+
+/******************************************************************************/
+
 VOID
 AddIcon(STRPTR Name)
 {
@@ -682,7 +705,7 @@ UpdateGradient(struct MMPrefs *Prefs,WORD WhichPen)
 
 	for(i = 0 ; i < GradientPensUsed ; i++)
 	{
-		ColorHSB.cw_Brightness = 0x01010101UL * (255 - (255 * i) / (GradientPensUsed - 1));
+		ColorHSB.cw_Brightness = SPREAD((255 - (255 * i) / (GradientPensUsed - 1)));
 		ConvertHSBToRGB(&ColorHSB,&ColorRGB);
 
 		SetRGB32(VPort,GradientPens[i],ColorRGB.cw_Red,ColorRGB.cw_Green,ColorRGB.cw_Blue);
@@ -707,9 +730,9 @@ ClampColour(ULONG *RGB,LONG Red,LONG Green,LONG Blue)
 	else if (Blue < 0)
 		Blue = 0;
 
-	*RGB++ = 0x01010101UL * Red;
-	*RGB++ = 0x01010101UL * Green;
-	*RGB   = 0x01010101UL * Blue;
+	*RGB++ = SPREAD(Red);
+	*RGB++ = SPREAD(Green);
+	*RGB   = SPREAD(Blue);
 }
 
 VOID
@@ -725,7 +748,7 @@ UpdateSample(struct MMPrefs *Prefs)
 		LoadTable[i].Which	= Pens[8+i];
 	}
 
-	LoadTable[i].One = 0;
+	LoadTable[13].One = 0;
 
 	Colours = (struct ColorWheelRGB *)&Prefs->mmp_LightEdge;
 
@@ -733,7 +756,7 @@ UpdateSample(struct MMPrefs *Prefs)
 	Green	= (Prefs->mmp_LightEdge.G >> 24) + (Prefs->mmp_DarkEdge.G >> 24);
 	Blue	= (Prefs->mmp_LightEdge.B >> 24) + (Prefs->mmp_DarkEdge.B >> 24);
 
-	ClampColour((ULONG *)&LoadTable[0].Red,(Red + 1) / 1,(Green + 1) / 1,(Blue + 1) / 1);
+	ClampColour((ULONG *)&LoadTable[0].Red,(Red + 1) / 2,(Green + 1) / 2,(Blue + 1) / 2);
 
 	Red	= Prefs->mmp_Background.R >> 24;
 	Green	= Prefs->mmp_Background.G >> 24;
@@ -884,7 +907,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 	{
 		case GAD_Red:
 
-			Colours[WhichPen].cw_Red = 0x01010101UL * MsgCode;
+			Colours[WhichPen].cw_Red = SPREAD(MsgCode);
 			ChangeWheelColour(Prefs,WhichPen);
 
 			UpdateHSB(Prefs,WhichPen);
@@ -894,7 +917,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 
 		case GAD_Green:
 
-			Colours[WhichPen].cw_Green = 0x01010101UL * MsgCode;
+			Colours[WhichPen].cw_Green = SPREAD(MsgCode);
 			ChangeWheelColour(Prefs,WhichPen);
 
 			UpdateHSB(Prefs,WhichPen);
@@ -904,7 +927,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 
 		case GAD_Blue:
 
-			Colours[WhichPen].cw_Blue = 0x01010101UL * MsgCode;
+			Colours[WhichPen].cw_Blue = SPREAD(MsgCode);
 			ChangeWheelColour(Prefs,WhichPen);
 
 			UpdateHSB(Prefs,WhichPen);
@@ -915,7 +938,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 		case GAD_Saturation:
 
 			ConvertRGBToHSB(&Colours[WhichPen],&ColorHSB);
-			ColorHSB.cw_Saturation = 0x01010101UL * MsgCode;
+			ColorHSB.cw_Saturation = SPREAD(MsgCode);
 			ConvertHSBToRGB(&ColorHSB,&Colours[WhichPen]);
 			ChangeWheelColour(Prefs,WhichPen);
 
@@ -927,7 +950,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 		case GAD_Hue:
 
 			ConvertRGBToHSB(&Colours[WhichPen],&ColorHSB);
-			ColorHSB.cw_Hue = 0x01010101UL * MsgCode;
+			ColorHSB.cw_Hue = SPREAD(MsgCode);
 			ConvertHSBToRGB(&ColorHSB,&Colours[WhichPen]);
 			ChangeWheelColour(Prefs,WhichPen);
 
@@ -939,7 +962,7 @@ UpdateSlidersAndStuff(struct MMPrefs *Prefs,UWORD WhichPen,UWORD GadgetID,UWORD 
 		case GAD_Brightness:
 
 			ConvertRGBToHSB(&Colours[WhichPen],&ColorHSB);
-			ColorHSB.cw_Brightness = 0x01010101UL * MsgCode;
+			ColorHSB.cw_Brightness = SPREAD(MsgCode);
 			ConvertHSBToRGB(&ColorHSB,&Colours[WhichPen]);
 			ChangeWheelColour(Prefs,WhichPen);
 
@@ -987,7 +1010,7 @@ ShowRequest(struct Window *Window,STRPTR Gadgets,STRPTR Text,...)
 	Easy.es_Flags		= NULL;
 	Easy.es_Title		= "MagicMenu";
 	Easy.es_TextFormat	= Text;
-	Easy.es_GadgetFormat	= Gadgets;
+	Easy.es_GadgetFormat	= Gadgets ? Gadgets : (STRPTR)"Ok";
 
 	if(GTLayoutBase)
 		LT_LockWindow(Window);
@@ -1011,7 +1034,7 @@ ShowError(LONG ID,LONG Error)
 
 	Fault(Error,NULL,FaultBuffer,sizeof(FaultBuffer));
 
-	ShowRequest(Window,"Ok","%s\n%s",GetString(ID),FaultBuffer);
+	ShowRequest(Window,NULL,"%s\n%s",GetString(ID),FaultBuffer);
 }
 
 /******************************************************************************/
@@ -1187,10 +1210,16 @@ CloseAll(VOID)
 		CMap = PubScreen->ViewPort.ColorMap;
 
 		for(i = 0 ; i < COLOUR_PENS ; i++)
-			ReleasePen(CMap,Pens[i]);
+		{
+			if(Pens[i] != -1)
+				ReleasePen(CMap,Pens[i]);
+		}
 
 		for(i = 0 ; i < GradientPensUsed ; i++)
-			ReleasePen(CMap,GradientPens[i]);
+		{
+			if(GradientPens[i] != -1)
+				ReleasePen(CMap,GradientPens[i]);
+		}
 	}
 
 	if(IntuitionBase)
@@ -1230,10 +1259,10 @@ OpenAll(struct WBStartup *StartupMsg)
 	BOOL NewFileName;
 	struct MsgPort *SomePort;
 
-	for(i = 0 ; i < COLOUR_PENS ; i++)
+	for(i = 0 ; i < NUM_ELEMENTS(Pens) ; i++)
 		Pens[i] = -1;
 
-	for(i = 0 ; i < GRADIENT_PENS+1 ; i++)
+	for(i = 0 ; i < NUM_ELEMENTS(GradientPens) ; i++)
 		GradientPens[i] = -1;
 
 	ProgramMode = MODE_Edit;
@@ -1439,7 +1468,7 @@ OpenAll(struct WBStartup *StartupMsg)
 		return("");
 	}
 
-	if(GlobalPort = (struct MsgPort *)AllocVec(sizeof(struct MsgPort),MEMF_ANY|MEMF_CLEAR))
+	if(GlobalPort = (struct MsgPort *)AllocVec(sizeof(struct MsgPort),MEMF_ANY|MEMF_PUBLIC|MEMF_CLEAR))
 	{
 		GlobalPort->mp_Node.ln_Name = "« MagicMenu Preferences »";
 		GlobalPort->mp_Node.ln_Pri = 1;
@@ -1523,7 +1552,7 @@ OpenAll(struct WBStartup *StartupMsg)
 		CMap = PubScreen->ViewPort.ColorMap;
 
 		for(i = 0 ; i < 8 ; i++)
-			Pens[i] = ObtainBestPenA(CMap,0x01010101UL * MagicColours[i][0],0x01010101UL * MagicColours[i][1],0x01010101UL * MagicColours[i][2],(struct TagItem *)Tags);
+			Pens[i] = ObtainBestPenA(CMap,SPREAD(MagicColours[i][0]),SPREAD(MagicColours[i][1]),SPREAD(MagicColours[i][2]),(struct TagItem *)Tags);
 
 		for(i = 8 ; i < COLOUR_PENS ; i++)
 			Pens[i] = ObtainPen(CMap,-1,0,0,0,PEN_EXCLUSIVE|PEN_NO_SETCOLOR);
@@ -1611,14 +1640,20 @@ OpenAll(struct WBStartup *StartupMsg)
 		{
 			for(i = 0 ; i < COLOUR_PENS ; i++)
 			{
-				ReleasePen(CMap,Pens[i]);
-				Pens[i] = -1;
+				if(Pens[i] != -1)
+				{
+					ReleasePen(CMap,Pens[i]);
+					Pens[i] = -1;
+				}
 			}
 
 			for(i = 0 ; i < GradientPensUsed ; i++)
 			{
-				ReleasePen(CMap,GradientPens[i]);
-				GradientPens[i] = -1;
+				if(GradientPens[i] != -1)
+				{
+					ReleasePen(CMap,GradientPens[i]);
+					GradientPens[i] = -1;
+				}
 			}
 
 			GradientPensUsed = 0;
@@ -1852,39 +1887,182 @@ OpenAll(struct WBStartup *StartupMsg)
 			if(GotPens)
 			{
 				LT_New(Handle,
-					LA_Type,HORIZONTAL_KIND,
+					LA_Type,VERTICAL_KIND,
 				TAG_DONE);
 				{
 					LT_New(Handle,
-						LA_Type,	VERTICAL_KIND,
-						LAGR_NoIndent,	TRUE,
+						LA_Type,HORIZONTAL_KIND,
 					TAG_DONE);
 					{
-						STATIC LONG PenNameLabels[] =
+						LT_New(Handle,
+							LA_Type,	VERTICAL_KIND,
+							LAGR_NoIndent,	TRUE,
+						TAG_DONE);
 						{
-							MSG_BRIGHT_EDGES_TXT,
-							MSG_DARK_EDGES_TXT,
-							MSG_BACKGROUND_TXT,
-							MSG_TEXT_TXT,
-							MSG_SELECTED_TEXT_TXT,
-							MSG_SELECTED_BACKGROUND_TXT,
-							-1
-						};
+							STATIC LONG PenNameLabels[] =
+							{
+								MSG_BRIGHT_EDGES_TXT,
+								MSG_DARK_EDGES_TXT,
+								MSG_BACKGROUND_TXT,
+								MSG_TEXT_TXT,
+								MSG_SELECTED_TEXT_TXT,
+								MSG_SELECTED_BACKGROUND_TXT,
+								-1
+							};
+
+							LT_New(Handle,
+								LA_Type,		FRAME_KIND,
+								LAFR_InnerWidth,	SampleMenuWidth,
+								LAFR_InnerHeight,	SampleMenuHeight,
+								LAFR_DrawBox,		TRUE,
+								LAFR_RefreshHook,	&SampleRefreshHook,
+							TAG_DONE);
+
+							LT_New(Handle,
+								LA_Type,		CYCLE_KIND,
+								LA_ID,			GAD_WhichPen,
+								LA_WORD,		&WhichPen,
+								LACY_LabelTable,	PenNameLabels,
+							TAG_DONE);
+
+							LT_EndGroup(Handle);
+						}
 
 						LT_New(Handle,
-							LA_Type,		FRAME_KIND,
-							LAFR_InnerWidth,	SampleMenuWidth,
-							LAFR_InnerHeight,	SampleMenuHeight,
-							LAFR_DrawBox,		TRUE,
-							LAFR_RefreshHook,	&SampleRefreshHook,
+							LA_Type,VERTICAL_KIND,
 						TAG_DONE);
+						{
+							LT_New(Handle,
+								LA_Type,HORIZONTAL_KIND,
+							TAG_DONE);
+							{
+								LT_New(Handle,
+									LA_Type,		BOOPSI_KIND,
+									LA_ID,			GAD_GradientSlider,
+									LA_Chars,		4,
+									LABO_ExactHeight,	SampleMenuHeight + 4,
+									LABO_ClassInstance,	NULL,
+									LABO_ClassName,		"gradientslider.gadget",
+									PGA_Freedom,		LORIENT_VERT,
+									GA_FollowMouse,		TRUE,
+									GRAD_PenArray,		GradientPens,
+									GRAD_KnobPixels,	8,
+									GA_FollowMouse,		TRUE,
+									GA_RelVerify,		TRUE,
+								TAG_DONE);
 
-						LT_New(Handle,
-							LA_Type,		CYCLE_KIND,
-							LA_ID,			GAD_WhichPen,
-							LA_WORD,		&WhichPen,
-							LACY_LabelTable,	PenNameLabels,
-						TAG_DONE);
+								LT_New(Handle,
+									LA_Type,		BOOPSI_KIND,
+									LA_ID,			GAD_ColorWheel,
+									LABO_ExactWidth,	SampleMenuHeight + 4,
+									LABO_ExactHeight,	SampleMenuHeight + 4,
+									LABO_ClassInstance,	NULL,
+									LABO_ClassName,		"colorwheel.gadget",
+									LABO_TagLink,		WHEEL_GradientSlider,
+									LABO_TagScreen,		WHEEL_Screen,
+									LABO_Link,		GAD_GradientSlider,
+									WHEEL_RGB,		&CurrentPrefs.mmp_LightEdge,
+									GA_FollowMouse,		TRUE,
+									GA_RelVerify,		TRUE,
+								TAG_DONE);
+
+								LT_EndGroup(Handle);
+							}
+
+							LT_New(Handle,
+								LA_ID,			GAD_ModelPager,
+								LA_Type,		VERTICAL_KIND,
+								LAGR_SameSize,		TRUE,
+								LAGR_ActivePage,	RGB_Mode,
+							TAG_DONE);
+							{
+								struct ColorWheelHSB ColorHSB;
+
+								ConvertRGBToHSB(&CurrentPrefs.mmp_LightEdge,&ColorHSB);
+
+								LT_New(Handle,
+									LA_Type,	VERTICAL_KIND,
+									LAGR_SameSize,	TRUE,
+								TAG_DONE);
+								{
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Hue,
+										LA_Chars,		10,
+										LA_LabelID,		MSG_HUE_TXT,
+										GTSL_Level,		ColorHSB.cw_Hue >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Saturation,
+										LA_LabelID,		MSG_SATURATION_TXT,
+										GTSL_Level,		ColorHSB.cw_Saturation >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Brightness,
+										LA_LabelID,		MSG_BRIGHTNESS_TXT,
+										GTSL_Level,		ColorHSB.cw_Brightness >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_EndGroup(Handle);
+								}
+
+								LT_New(Handle,
+									LA_Type,	VERTICAL_KIND,
+									LAGR_SameSize,	TRUE,
+								TAG_DONE);
+								{
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Red,
+										LA_Chars,		10,
+										LA_LabelID,		MSG_RED_TXT,
+										GTSL_Level,		CurrentPrefs.mmp_LightEdge.R >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Green,
+										LA_LabelID,		MSG_GREEN_TXT,
+										GTSL_Level,		CurrentPrefs.mmp_LightEdge.G >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_New(Handle,
+										LA_Type,		LEVEL_KIND,
+										LA_ID,			GAD_Blue,
+										LA_LabelID,		MSG_BLUE_TXT,
+										GTSL_Level,		CurrentPrefs.mmp_LightEdge.B >> 24,
+										GTSL_Min,		0,
+										GTSL_Max,		255,
+										GTSL_LevelFormat,	"%3ld",
+									TAG_DONE);
+
+									LT_EndGroup(Handle);
+								}
+
+								LT_EndGroup(Handle);
+							}
+
+							LT_EndGroup(Handle);
+						}
 
 						LT_EndGroup(Handle);
 					}
@@ -1894,133 +2072,21 @@ OpenAll(struct WBStartup *StartupMsg)
 					TAG_DONE);
 					{
 						LT_New(Handle,
-							LA_Type,HORIZONTAL_KIND,
+							LA_Type,XBAR_KIND,
 						TAG_DONE);
-						{
-							LT_New(Handle,
-								LA_Type,		BOOPSI_KIND,
-								LA_ID,			GAD_GradientSlider,
-								LA_Chars,		4,
-								LABO_ExactHeight,	SampleMenuHeight + 4,
-								LABO_ClassInstance,	NULL,
-								LABO_ClassName,		"gradientslider.gadget",
-								PGA_Freedom,		LORIENT_VERT,
-								GA_FollowMouse,		TRUE,
-								GRAD_PenArray,		GradientPens,
-								GRAD_KnobPixels,	8,
-								GA_FollowMouse,		TRUE,
-								GA_RelVerify,		TRUE,
-							TAG_DONE);
-
-							LT_New(Handle,
-								LA_Type,		BOOPSI_KIND,
-								LA_ID,			GAD_ColorWheel,
-								LABO_ExactWidth,	SampleMenuHeight + 4,
-								LABO_ExactHeight,	SampleMenuHeight + 4,
-								LABO_ClassInstance,	NULL,
-								LABO_ClassName,		"colorwheel.gadget",
-								LABO_TagLink,		WHEEL_GradientSlider,
-								LABO_TagScreen,		WHEEL_Screen,
-								LABO_Link,		GAD_GradientSlider,
-								WHEEL_RGB,		&CurrentPrefs.mmp_LightEdge,
-								GA_FollowMouse,		TRUE,
-								GA_RelVerify,		TRUE,
-							TAG_DONE);
-
-							LT_EndGroup(Handle);
-						}
 
 						LT_New(Handle,
-							LA_ID,			GAD_ModelPager,
-							LA_Type,		VERTICAL_KIND,
-							LAGR_SameSize,		TRUE,
-							LAGR_ActivePage,	RGB_Mode,
+							LA_Type,		LEVEL_KIND,
+							LA_ID,			GAD_Precision,
+							LA_WORD,		&CurrentPrefs.mmp_Precision,
+							LA_LabelID,		MSG_PRECISION_GAD,
+							LA_Chars,		10,
+							GTSL_Min,		PRECISION_EXACT,
+							GTSL_Max,		PRECISION_GUI,
+							GTSL_DispFunc,		PrecisionDispFunc,
+							GTSL_LevelFormat,	"%s",
+							LASL_FullCheck,		TRUE,
 						TAG_DONE);
-						{
-							struct ColorWheelHSB ColorHSB;
-
-							ConvertRGBToHSB(&CurrentPrefs.mmp_LightEdge,&ColorHSB);
-
-							LT_New(Handle,
-								LA_Type,	VERTICAL_KIND,
-								LAGR_SameSize,	TRUE,
-							TAG_DONE);
-							{
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Hue,
-									LA_Chars,		10,
-									LA_LabelID,		MSG_HUE_TXT,
-									GTSL_Level,		ColorHSB.cw_Hue >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Saturation,
-									LA_LabelID,		MSG_SATURATION_TXT,
-									GTSL_Level,		ColorHSB.cw_Saturation >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Brightness,
-									LA_LabelID,		MSG_BRIGHTNESS_TXT,
-									GTSL_Level,		ColorHSB.cw_Brightness >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_EndGroup(Handle);
-							}
-
-							LT_New(Handle,
-								LA_Type,	VERTICAL_KIND,
-								LAGR_SameSize,	TRUE,
-							TAG_DONE);
-							{
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Red,
-									LA_Chars,		10,
-									LA_LabelID,		MSG_RED_TXT,
-									GTSL_Level,		CurrentPrefs.mmp_LightEdge.R >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Green,
-									LA_LabelID,		MSG_GREEN_TXT,
-									GTSL_Level,		CurrentPrefs.mmp_LightEdge.G >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_New(Handle,
-									LA_Type,		LEVEL_KIND,
-									LA_ID,			GAD_Blue,
-									LA_LabelID,		MSG_BLUE_TXT,
-									GTSL_Level,		CurrentPrefs.mmp_LightEdge.B >> 24,
-									GTSL_Min,		0,
-									GTSL_Max,		255,
-									GTSL_LevelFormat,	"%3ld",
-								TAG_DONE);
-
-								LT_EndGroup(Handle);
-							}
-
-							LT_EndGroup(Handle);
-						}
 
 						LT_EndGroup(Handle);
 					}
@@ -2130,9 +2196,9 @@ OpenAll(struct WBStartup *StartupMsg)
 					LAMN_MutualExclude,	1,
 					LAMN_CheckIt,	TRUE,
 					LAMN_Checked,	!RGB_Mode,
-
-		LAMN_TitleID, 				MSG_CONTROL_TITLE_MEN,
 /*
+		LAMN_TitleID, 				MSG_CONTROL_TITLE_MEN,
+
 			LAMN_ItemID,			MSG_ENABLE_MEN,
 				LAMN_ID,		MEN_Enable,
 				LAMN_MutualExclude,	2,
@@ -2146,9 +2212,10 @@ OpenAll(struct WBStartup *StartupMsg)
 				LAMN_Checked,		!MMEnabled,
 
 			LAMN_ItemText,			NM_BARLABEL,
-*/
+
 			LAMN_ItemID,			MSG_REMOVE_MEN,
 				LAMN_ID,		MEN_Remove,
+*/
 #ifdef DEMO_MENU
 		LAMN_TitleText, 		"Demo",
 			LAMN_ItemText,		"Checkmark",
@@ -2250,10 +2317,14 @@ UpdateSettings(struct MMPrefs *Prefs)
 		GTST_String,	Prefs->mmp_KCKeyStr,
 	TAG_DONE);
 
-	CopyMem(&Prefs->mmp_LightEdge,&CurrentPrefs.mmp_LightEdge,8 * sizeof(CurrentPrefs.mmp_LightEdge));
+	CopyMem(&Prefs->mmp_LightEdge,&CurrentPrefs.mmp_LightEdge,6 * sizeof(CurrentPrefs.mmp_LightEdge));
 
 	if(GotPens)
 	{
+		LT_SetAttributes(Handle,GAD_Precision,
+			GTSL_Level,	Prefs->mmp_Precision,
+		TAG_DONE);
+
 		LT_SetAttributes(Handle,GAD_WhichPen,
 			GTCY_Active,WhichPen = 0,
 		TAG_DONE);
@@ -2382,7 +2453,9 @@ EventLoop(struct WBStartup *StartupMsg)
 
 							case GAD_WhichPen:
 
-								ChangePen(&CurrentPrefs,MsgCode);
+								if(GotPens)
+									ChangePen(&CurrentPrefs,MsgCode);
+
 								break;
 
 							default:
@@ -2437,7 +2510,7 @@ EventLoop(struct WBStartup *StartupMsg)
 								{
 									case MEN_About:
 
-										ShowRequest(Window,"Ok",GetString(MSG_ABOUT_TXT),VERSION,REVISION,DATE);
+										ShowRequest(Window,NULL,GetString(MSG_ABOUT_TXT),VERSION,REVISION,DATE);
 										break;
 
 									case MEN_Open:
@@ -2635,7 +2708,7 @@ main(int argc,char **argv)
 			else
 			{
 				if(IntuitionBase)
-					ShowRequest(NULL,"Ok",GetString(MSG_SETUP_FAILURE_TXT),Result);
+					ShowRequest(NULL,NULL,GetString(MSG_SETUP_FAILURE_TXT),Result);
 			}
 
 			ReturnCode = RETURN_FAIL;

@@ -62,6 +62,7 @@ ClampShadow (struct Screen *screen, LONG left, LONG top, LONG width, LONG height
 STATIC ULONG MenuColours[NUM_MENU_PENS * 3];
 STATIC ULONG *MenuColour;
 STATIC LONG MenuPens[NUM_MENU_PENS];
+STATIC BOOL MenuPensAllocated = FALSE;
 
 STATIC VOID
 ResetMenuColours (VOID)
@@ -108,15 +109,20 @@ AddMenuColour8 (LONG red, LONG green, LONG blue)
 STATIC VOID
 FreeMenuColours (struct ColorMap *cmap)
 {
-  if (V39)
+  if (V39 && MenuPensAllocated)
   {
     LONG i;
 
     for (i = 0; i < NUM_MENU_PENS; i++)
     {
-      ReleasePen (cmap, MenuPens[i]);
-      MenuPens[i] = -1;
+      if(MenuPens[i] != -1)
+      {
+        ReleasePen (cmap, MenuPens[i]);
+        MenuPens[i] = -1;
+      }
     }
+
+    MenuPensAllocated = FALSE;
   }
 }
 
@@ -127,6 +133,8 @@ AllocateMenuColours (struct ColorMap *cmap)
   LONG i;
 
   colour = MenuColours;
+
+  MenuPensAllocated = TRUE;
 
   for (i = 0; i < NUM_MENU_PENS; i++)
   {
@@ -280,13 +288,13 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       {
         if (LookMC && ThatImage->PlanePick == 0 && ThatImage->Height <= 2)
         {
-          SetFgPen (rp, MenStdGrey0);
-          RectFill (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
+          SetFgPen (rp, MenSeparatorGrey0);
+          DrawLine(rp,StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge,
                     StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge);
 
-          SetFgPen (rp, MenStdGrey2);
-          RectFill (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1,
-                    StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
+          SetFgPen (rp, MenSeparatorGrey2);
+          DrawLine (rp, StartX + ThatImage->LeftEdge, StartY + ThatImage->TopEdge + 1,
+                        StartX + ThatImage->LeftEdge + ThatImage->Width - 1, StartY + ThatImage->TopEdge + 1);
         }
         else
          DrawImage (rp, ThatImage, StartX, StartY);
@@ -2381,6 +2389,8 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   memset(StdRemapArray,0,sizeof(StdRemapArray));
 
+  ResetMenuColours();
+
   MenuStripSwapped = FALSE;
 
   ScrRPort = MenScr->RastPort;
@@ -2540,7 +2550,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenBackGround = *Pen++;
       MenTextCol = *Pen++;
       MenHiCol = *Pen++;
-      MenFillCol = *Pen++;
+      MenFillCol = *Pen;
 
 #ifdef DEMO_MENU
       MenXENGrey0 = 1;
@@ -2569,6 +2579,15 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
       MenHiCol = 20;
       MenFillCol = 21;
 #endif	/* DEMO_MENU */
+
+      MenSeparatorGrey0 = MenStdGrey0;
+      MenSeparatorGrey2 = MenStdGrey2;
+
+      if(MenSeparatorGrey0 == MenBackGround || MenSeparatorGrey2 == MenBackGround)
+      {
+        MenSeparatorGrey0 = MenDarkEdge;
+        MenSeparatorGrey2 = MenLightEdge;
+      }
 
       LookMC = (MenTextCol != MenBackGround && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
 

@@ -118,6 +118,9 @@ extern UWORD MenActiveGrey0;
 extern UWORD MenActiveGrey1;
 extern UWORD MenActiveGrey2;
 
+extern UWORD MenSeparatorGrey0;
+extern UWORD MenSeparatorGrey2;
+
 extern UBYTE SelBoxOffs;
 extern BOOL Look3D;
 extern BOOL LookMC;
@@ -339,6 +342,7 @@ extern ULONG OldObtainGIRPort;
 extern ULONG OldLendMenus;
 extern ULONG OldOffMenu;
 extern ULONG OldOnMenu;
+extern ULONG OldCreateMenusA;
 
 extern ULONG OldCreateUpfrontHookLayer;
 extern ULONG OldCreateUpfrontLayer;

@@ -1,4 +1,4 @@
-; $VER: magicmenu.cd 1.4 (3.11.96)
+; $VER: magicmenu.cd 1.5 (7.11.96)
 ;
 MSG_PREFSTITLE_TXT (//)
 MagicMenu Preferences %ld.%ld <%s>
@@ -228,4 +228,19 @@ MSG_CANNOT_UNINSTALL_TXT (//)
 MagicMenu cannot uninstall itself\n\
 because there are still unreplied\n\
 messages pending.
+;
+MSG_PRECISION_GAD (//)
+Colour matching
+;
+MSG_PRECISION1_TXT (//)
+Exact
+;
+MSG_PRECISION2_TXT (//)
+`Image'
+;
+MSG_PRECISION3_TXT (//)
+`Icon'
+;
+MSG_PRECISION4_TXT (//)
+`GUI'
 ;

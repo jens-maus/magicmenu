@@ -1297,7 +1297,7 @@ ProcessIntuiMenu (VOID)
 
   TickCounter = 0;
 
-  StartTimeRequest (TimerIO, 0, MILLION / 2);
+  StartTimeRequest (TimerIO, 0, MILLION / 4);
 
   Poll = FALSE;
 
@@ -1321,7 +1321,7 @@ ProcessIntuiMenu (VOID)
         break;
       }
       else
-        StartTimeRequest (TimerIO, 0, MILLION / 2);
+        StartTimeRequest (TimerIO, 0, MILLION / 4);
     }
 
     if (Signals & TickSigMask)
@@ -2302,10 +2302,10 @@ main (int argc, char **argv)
     Catalog = OpenCatalogA (NULL, "magicmenu.catalog", (struct TagItem *) LocaleTags);
   }
 
-  if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ((char *) "intuition.library", 37)))
+  if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ("intuition.library", 37)))
     ErrorPrc ("");
 
-  if (!(GfxBase = (struct GfxBase *) OpenLibrary ((char *) "graphics.library", 37)))
+  if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
     ErrorPrc ("graphics.library V37");
 
   V39 = (BOOL) (GfxBase->LibNode.lib_Version >= 39);
@@ -2313,16 +2313,19 @@ main (int argc, char **argv)
   if (!MemoryInit ())
     ErrorPrc ("memory allocator");
 
-  if (!(LayersBase = (struct Library *) OpenLibrary ((char *) "layers.library", 37)))
+  if (!(LayersBase = (struct Library *) OpenLibrary ("layers.library", 37)))
     ErrorPrc ("layers.library V37");
+
+  if (!(GadToolsBase = (struct Library *) OpenLibrary ("gadtools.library", 37)))
+    ErrorPrc ("gadtools.library V37");
 
   if (!(UtilityBase = OpenLibrary ("utility.library", 37)))
     ErrorPrc ("utility.library V37");
 
-  if (!(CxBase = OpenLibrary ((char *) "commodities.library", 37L)))
+  if (!(CxBase = OpenLibrary ("commodities.library", 37L)))
     ErrorPrc ("commodities.library V37");
 
-  if (!(KeymapBase = OpenLibrary ((char *) "keymap.library", 37L)))
+  if (!(KeymapBase = OpenLibrary ("keymap.library", 37L)))
     ErrorPrc ("keymap.library V37");
 
   if (!(GetPointerSemaphore = AllocVecPooled (sizeof (struct SignalSemaphore), MEMF_PUBLIC | MEMF_CLEAR)))

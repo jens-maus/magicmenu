@@ -31,6 +31,7 @@ ULONG __asm CallOnMenu (REG(a0) struct Window *window, REG(d0) ULONG number, REG
 LONG __asm CallLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow, REG(a6) struct IntuitionBase *IntuitionBase);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
 struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
+struct Menu *__asm CallCreateMenusA (REG(a0) struct NewMenu *newmenu, REG(a1) struct TagItem *tags, REG(a6) struct Library *GadToolsBase);
 
 /*****************************************************************************************/
 
@@ -480,6 +481,112 @@ MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 
   return (CallLendMenus (FromWindow, ToWindow, IntuitionBase));
 }
+
+#if 0
+struct Menu * __asm __saveds
+MMCreateMenusA (REG(a0) struct NewMenu *NewMenu, REG(a1) struct TagItem *Tags, REG(a6) struct Library *GadToolsBase)
+{
+	struct Menu *Result;
+
+	if(!NewMenu)
+		Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
+	else
+	{
+		struct NewMenu *Thing;
+		LONG Total;
+		BOOL GotOne;
+		BOOL GotSome;
+
+		GotSome = FALSE;
+		Total = 1;
+
+		for(Thing = NewMenu ; Thing->nm_Type != NM_END ; Thing++)
+		{
+			if((Thing->nm_Type == NM_ITEM || Thing->nm_Type == NM_SUB) && (Thing->nm_Label != NM_BARLABEL))
+			{
+				DB(kprintf("label |%s|\n",Thing->nm_Label));
+
+				if(Thing->nm_Label[0] == '~' || Thing->nm_Label[0] == '-' || Thing->nm_Label[0] == '_')
+				{
+					STRPTR Index;
+					UBYTE c;
+
+					c = Thing->nm_Label[0];
+
+					Index = &Thing->nm_Label[1];
+
+					GotOne = TRUE;
+
+					while(*Index)
+					{
+						if(*Index++ != c)
+						{
+							GotOne = FALSE;
+							break;
+						}
+					}
+
+					GotSome |= GotOne;
+				}
+			}
+
+			Total++;
+		}
+
+		DB(kprintf("gotsome %ld\n",GotSome));
+
+		if(GotSome)
+		{
+			struct NewMenu *Table;
+
+			if(Table = AllocVecPooled(sizeof(struct NewMenu) * Total,MEMF_ANY))
+			{
+				CopyMem(NewMenu,Table,sizeof(struct NewMenu) * Total);
+
+				for(Thing = Table ; Thing->nm_Type != NM_END ; Thing++)
+				{
+					if((Thing->nm_Type == NM_ITEM || Thing->nm_Type == NM_SUB) && (Thing->nm_Label != NM_BARLABEL))
+					{
+						if(Thing->nm_Label[0] == '~' || Thing->nm_Label[0] == '-' || Thing->nm_Label[0] == '_')
+						{
+							STRPTR Index;
+							UBYTE c;
+
+							c = Thing->nm_Label[0];
+
+							Index = &Thing->nm_Label[1];
+
+							GotOne = TRUE;
+
+							while(*Index)
+							{
+								if(*Index++ != c)
+								{
+									GotOne = FALSE;
+									break;
+								}
+							}
+
+							if(GotOne)
+								Thing->nm_Label = NM_BARLABEL;
+						}
+					}
+				}
+
+				Result = CallCreateMenusA(Table,Tags,GadToolsBase);
+
+				FreeVecPooled(Table);
+			}
+			else
+				Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
+		}
+		else
+			Result = CallCreateMenusA(NewMenu,Tags,GadToolsBase);
+	}
+
+	return(Result);
+}
+#endif
 
 /*****************************************************************************************/
 
@@ -1343,13 +1450,8 @@ PlaceText (struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len)
 LONG
 AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
 {
-	STATIC Tag Tags[] =
-	{
-		OBP_Precision, PRECISION_GUI,
-		OBP_FailIfBad, TRUE,
-
-		TAG_DONE
-	};
-
-	return(ObtainBestPenA (ColorMap, Red, Green, Blue, (struct TagItem *) Tags));
+	return(ObtainBestPen (ColorMap, Red, Green, Blue,
+		OBP_FailIfBad,	TRUE,
+		OBP_Precision,	AktPrefs.mmp_Precision,
+	TAG_DONE));
 }

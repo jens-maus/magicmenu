@@ -33,7 +33,6 @@ VOID ChangeBrokerSetup(VOID);
 VOID CleanupMenuActiveData(VOID);
 BOOL SetupMenuActiveData(VOID);
 VOID CloseAll(VOID);
-VOID ExitTrap(VOID);
 VOID ErrorPrc(char *ErrTxt);
 int main(int argc, char **argv);
 
@@ -57,6 +56,7 @@ struct RastPort *__asm __saveds MMObtainGIRPort(REG (a0 )struct GadgetInfo *GInf
 struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
+struct Menu *__asm __saveds MMCreateMenusA(REG (a0 )struct NewMenu *NewMenu, REG (a1 )struct TagItem *Tags, REG (a6 )struct Library *GadToolsBase);
 VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
 BOOL MakeRemappedImage(struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
