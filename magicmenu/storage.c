@@ -16,9 +16,9 @@
 
 /******************************************************************************/
 
-extern struct ExecBase		*SysBase;
-extern struct DosLibrary	*DOSBase;
-extern struct Library		*UtilityBase;
+extern struct Library	*SysBase;
+extern struct Library	*DOSBase;
+extern struct Library	*UtilityBase;
 
 /******************************************************************************/
 

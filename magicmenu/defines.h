@@ -21,8 +21,8 @@
 #define DT_CX_POPKEY      "control alt space"
 
 #define ESC         0x45
-#define RETURN      0x44
-#define ENTER       0x43
+#define KEYCODE_RETURN 0x44
+#define KEYCODE_ENTER 0x43
 #define CRSUP       0x4c
 #define CRSDOWN     0x4d
 #define CRSLEFT     0x4f
@@ -62,6 +62,7 @@
 
 #define MAX_FILENAME_LENGTH	256
 
+#define ASM	__asm
 #define REG(x)	register __##x
 
 #define DB(x)	;
@@ -70,6 +71,12 @@
 #define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
 #define MILLION 1000000
+
+/******************************************************************************/
+
+#define NOT !
+#define CANNOT !
+#define NO !
 
 /******************************************************************************/
 

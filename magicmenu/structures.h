@@ -47,3 +47,14 @@ struct ItemRmb
   WORD Width, Height, TopOffs, LeftOffs, ZwLeft, ZwTop;
   WORD LeftBorder, TopBorder, CmdOffs;
 };
+
+/******************************************************************************/
+
+struct BackgroundCover
+{
+	UWORD		bgc_Left;
+	UWORD		bgc_Top;
+	UWORD		bgc_Width;
+	UWORD		bgc_Height;
+	struct BitMap *	bgc_BitMap;
+};

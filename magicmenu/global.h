@@ -14,5 +14,6 @@
 #include "MagicMenu_rev.h"
 #include "protos.h"
 #include "structures.h"
+#include "assert.h"
 
 #endif	/* _GLOBAL_H */

@@ -6,8 +6,9 @@
 
 extern struct Task *ThisTask;
 
-extern struct DosLibrary *DOSBase;
-extern struct ExecBase *SysBase;
+extern struct Library *CyberGfxBase;
+extern struct Library *DOSBase;
+extern struct Library *SysBase;
 extern struct Library *CxBase;
 extern struct Library *IconBase;
 extern struct Library *LayersBase;
@@ -152,6 +153,7 @@ extern struct Layer_Info *StripLayerInfo;
 extern struct Layer *StripLayer;
 extern struct ClipRect *StripCRect;
 extern struct Window *StripWin;
+extern struct BackgroundCover *StripBackground;
 extern BOOL StripPopUp;
 extern BOOL MenuStripSwapped;
 
@@ -177,6 +179,7 @@ extern struct Layer *BoxLayer;
 extern struct ClipRect *BoxCRect;
 extern struct MenuItem *BoxItems;
 extern struct Window *BoxWin;
+extern struct BackgroundCover *BoxBackground;
 extern BOOL MenuBoxSwapped;
 
 extern UWORD SubBoxWidth;
@@ -201,6 +204,7 @@ extern struct Layer *SubBoxLayer;
 extern struct ClipRect *SubBoxCRect;
 extern struct MenuItem *SubBoxItems;
 extern struct Window *SubBoxWin;
+extern struct BackgroundCover *SubBoxBackground;
 extern BOOL MenuSubBoxSwapped;
 
 extern struct Menu *AktMenu;
@@ -364,6 +368,8 @@ extern ULONG OldScreenDepth;
 
 extern ULONG OldCreateUpfrontHookLayer;
 extern ULONG OldCreateUpfrontLayer;
+
+extern ULONG OldSetFunction;
 
 extern LONG Cx_Pri;
 extern BOOL Cx_Popup;

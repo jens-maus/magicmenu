@@ -73,7 +73,7 @@
 #include <pragmas/input_pragmas.h>
 #include <pragmas/timer_pragmas.h>
 #include <pragmas/icon_pragmas.h>
-#include <pragmas/exec_pragmas.h>
+#include <pragmas/exec_sysbase_pragmas.h>
 #include <pragmas/dos_pragmas.h>
 #include <pragmas/asl_pragmas.h>
 #include <pragmas/graphics_pragmas.h>
@@ -90,8 +90,12 @@
 
 /*#include <ctype.h>*/
 
-#include "gtlayout/gtlayout.h"
-#include "gtlayout/gtlayout_protos.h"
-#include "gtlayout/gtlayout_pragmas.h"
+#include "libraries/gtlayout.h"
+#include "clib/gtlayout_protos.h"
+#include "pragmas/gtlayout_pragmas.h"
+
+#include "cybergraphx/cybergraphics.h"
+#include "clib/cybergraphics_protos.h"
+#include "pragmas/cybergraphics_pragmas.h"
 
 #endif	/* _SYSTEM_HEADERS_H */

@@ -10,6 +10,7 @@
 
 struct Task *ThisTask;
 
+struct Library *CyberGfxBase;
 struct Library *CxBase;
 struct Library *IconBase;
 struct Library *LayersBase;
@@ -147,6 +148,7 @@ struct Layer_Info *StripLayerInfo;
 struct Layer *StripLayer;
 struct ClipRect *StripCRect;
 struct Window *StripWin;
+struct BackgroundCover *StripBackground;
 BOOL StripPopUp;
 BOOL MenuStripSwapped;
 
@@ -172,6 +174,7 @@ struct Layer *BoxLayer;
 struct ClipRect *BoxCRect;
 struct MenuItem *BoxItems;
 struct Window *BoxWin;
+struct BackgroundCover *BoxBackground;
 BOOL MenuBoxSwapped;
 
 UWORD SubBoxWidth;
@@ -196,6 +199,7 @@ struct Layer *SubBoxLayer;
 struct ClipRect *SubBoxCRect;
 struct MenuItem *SubBoxItems;
 struct Window *SubBoxWin;
+struct BackgroundCover *SubBoxBackground;
 BOOL MenuSubBoxSwapped;
 
 struct Menu *AktMenu;
@@ -1172,6 +1176,8 @@ ULONG OldScreenDepth;
 
 ULONG OldCreateUpfrontHookLayer;
 ULONG OldCreateUpfrontLayer;
+
+ULONG OldSetFunction;
 
 LONG Cx_Pri;
 BOOL Cx_Popup;

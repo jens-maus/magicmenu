@@ -195,8 +195,11 @@ Activate (VOID)
 {
   if (!CxChanged)
   {
-    ActivateCxObj (Broker, TRUE);
-    MagicActive = TRUE;
+    /*if(AllPatchesOnTop())*/
+    {
+      ActivateCxObj (Broker, TRUE);
+      MagicActive = TRUE;
+    }
   }
 }
 
@@ -982,8 +985,8 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
         {
           switch (Event.ie_Code)
           {
-          case RETURN:
-          case ENTER:
+          case KEYCODE_RETURN:
+          case KEYCODE_ENTER:
             Ende = (MenuSelected (!Shift) && (!Shift));
             break;
 
@@ -1057,8 +1060,8 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
         {
           switch (Event.ie_Code)
           {
-          case RETURN:
-          case ENTER:
+          case KEYCODE_RETURN:
+          case KEYCODE_ENTER:
             if (AktItem->SubItem)
               DrawMenuSubBox (AktMenu, AktItem, TRUE);
             else
@@ -1135,8 +1138,8 @@ CheckCxMsgAct (CxMsg * Msg, BOOL * Cancel)
         {
           switch (Event.ie_Code)
           {
-          case RETURN:
-          case ENTER:
+          case KEYCODE_RETURN:
+          case KEYCODE_ENTER:
           case CRSDOWN:
             DrawMenuBox (AktMenu, TRUE);
             break;
@@ -1792,6 +1795,13 @@ ProcessCommodity (VOID)
 
     DoWait = TRUE;
 
+    /*
+    if(MagicActive && NOT AllPatchesOnTop())
+    {
+      Deactivate();
+    }
+    */
+
     if (Msg = GetMsg (CxMsgPort))
     {
       DoWait = FALSE;
@@ -2317,6 +2327,9 @@ CloseAll (VOID)
   if (TimeoutPort)
     DeleteMsgPort (TimeoutPort);
 
+  if (CyberGfxBase != NULL)
+    CloseLibrary (CyberGfxBase);
+
   if (KeymapBase)
     CloseLibrary (KeymapBase);
 
@@ -2371,7 +2384,7 @@ main (int argc, char **argv)
   LONG z1;
   char *SPtr;
 
-  if(SysBase->LibNode.lib_Version < 37)
+  if(SysBase->lib_Version < 37)
   {
     ((struct Process *)FindTask(NULL))->pr_Result2 = ERROR_INVALID_RESIDENT_LIBRARY;
     return(RETURN_FAIL);
@@ -2389,6 +2402,13 @@ main (int argc, char **argv)
     extern BOOL HardSeparation;
 
     HardSeparation = TRUE;
+  }
+
+  if(GetVar("971",dummy,sizeof(dummy),NULL) > 0)
+  {
+    extern BOOL Transparency;
+
+    Transparency = TRUE;
   }
 
   if(GetVar("931",dummy,sizeof(dummy),NULL) > 0)
@@ -2450,6 +2470,8 @@ main (int argc, char **argv)
 
   if (!(IntuitionBase = (struct IntuitionBase *) OpenLibrary ("intuition.library", 37)))
     ErrorPrc ("");
+
+  CyberGfxBase = OpenLibrary("cybergraphics.library",0);
 
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ("graphics.library", 37)))
     ErrorPrc ("graphics.library V37");

@@ -80,30 +80,50 @@ CopyBackWindow(struct Window * win)
 }
 
 STATIC VOID
-CloseCommonWindow(struct Window * win)
+CloseCommonWindow(
+	struct Window ** windowPtr,
+	struct BackgroundCover ** backgroundCoverPtr)
 {
-	if(win != NULL)
+	struct Window * window = (*windowPtr);
+	struct BackgroundCover * backgroundCover = (*backgroundCoverPtr);
+
+	if(window != NULL)
 	{
 		struct FatHook * hook;
 
-		hook = (struct FatHook *)win->UserData;
-
-		CloseWindow(win);
+		hook = (struct FatHook *)window->UserData;
+		CloseWindow(window);
 
 		disposeBitMap(hook->BitMap, FALSE);
-
 		FreeVec(hook);
+
+		(*windowPtr) = NULL;
+	}
+
+	if(backgroundCover != NULL)
+	{
+		DeleteBackgroundCover(backgroundCover);
+		(*backgroundCoverPtr) = NULL;
 	}
 }
 
-STATIC struct Window *
-OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
+STATIC BOOL
+OpenCommonWindow(
+	LONG Left,
+	LONG Top,
+	LONG Width,
+	LONG Height,
+	LONG Level,
+	struct Window ** resultWindowPtr,
+	struct BackgroundCover ** resultBackgroundCoverPtr)
 {
 	struct Window *Window = NULL;
+	struct BackgroundCover * bgc = NULL;
 	LONG OriginalHeight,OriginalWidth,ShadowSize;
 	struct BitMap * CustomBitMap;
 	struct FatHook * Hook;
 	LONG Black;
+	BOOL success = FALSE;
 
 	if(V39 && MenXENBlack)
 		Black = MenXENBlack;
@@ -141,6 +161,8 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 	{
 		BltBitMap(MenScr->RastPort.BitMap,Left,Top,CustomBitMap,0,0,Width,Height,MINTERM_COPY,~0,NULL);
 
+		bgc = CreateBackgroundCover(CustomBitMap,0,0,Width,Height);
+
 		Hook->Hook.h_Entry	= (HOOKFUNC)WindowBackfillRoutine;
 		Hook->BitMap		= CustomBitMap;
 
@@ -165,28 +187,33 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 
 				RPort = Window->RPort;
 
-				SetAfPt (RPort, Crosshatch, 1);
-
-				SetPens(RPort, Black, 0,JAM1);
+				SetPens(RPort, Black, 0, JAM1);
+				SetAfPt(RPort, Crosshatch, 1);
 
 				if(OriginalWidth < Width)
-					RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+					DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
 
 				if(OriginalHeight < Height)
-					RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+					DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
 
 				SetAfPt (RPort, NULL, 0);
 			}
+
+			success = TRUE;
 		}
 	}
 
 	if(Window == NULL)
 	{
+		DeleteBackgroundCover(bgc);
 		disposeBitMap(CustomBitMap, FALSE);
 		FreeVec(Hook);
 	}
 
-	return(Window);
+	(*resultWindowPtr) = Window;
+	(*resultBackgroundCoverPtr) = bgc;
+
+	return(success);
 }
 
 /******************************************************************************/
@@ -633,6 +660,8 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
 
     if (LookMC)
     {
+      CommandText.DrawMode = JAM1;
+
       if (Ghosted)
       {
         CommandText.FrontPen = MenStdGrey2;
@@ -642,8 +671,6 @@ DrawMenuItem (struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD 
       }
       else
         CommandText.FrontPen = (Highlighted) ? MenHiCol : MenTextCol;
-
-      CommandText.DrawMode = JAM1;
     }
 
     PrintIText (rp, &CommandText, z1 - CmdOffs, StartY);
@@ -749,11 +776,7 @@ CleanUpMenuSubBox (VOID)
   {
     if (AktPrefs.mmp_NonBlocking)
     {
-      if (SubBoxWin)
-      {
-        CloseCommonWindow (SubBoxWin);
-        SubBoxWin = NULL;
-      }
+      CloseCommonWindow (&SubBoxWin, &SubBoxBackground);
     }
     else
     {
@@ -767,7 +790,7 @@ CleanUpMenuSubBox (VOID)
 
   if (SubBoxRPort)
   {
-    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer);
+    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer, &SubBoxBackground);
     SubBoxRPort = NULL;
   }
 
@@ -810,7 +833,7 @@ DrawHiSubItem (struct MenuItem *Item)
         {
           if (LookMC)
           {
-            HiRect (SubBoxDrawRPort, l, t, w, h, TRUE);
+            HiRect (SubBoxDrawRPort, l, t, w, h, TRUE, SubBoxBackground);
             DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, TRUE, SubBoxDrawLeft, w);
           }
           else
@@ -886,7 +909,7 @@ DrawNormSubItem (struct MenuItem * Item)
 
       if (LookMC)
       {
-        HiRect (SubBoxDrawRPort, l, t, w, h, FALSE);
+        HiRect (SubBoxDrawRPort, l, t, w, h, FALSE, SubBoxBackground);
         DrawMenuItem (SubBoxDrawRPort, Item, SubBoxDrawLeft + SubBoxLeftOffs, SubBoxDrawTop + SubBoxTopOffs, SubBoxCmdOffs, SubBoxGhosted, FALSE, SubBoxDrawLeft, w);
       }
       else if (Look3D)
@@ -922,9 +945,7 @@ DrawMenuSubBoxContents (struct MenuItem *Item, struct RastPort *RPort, UWORD Lef
 {
   struct MenuItem *ZwItem;
 
-  SetPens (RPort, MenBackGround, 0, JAM1);
-
-  RectFill (RPort, Left, Top, Left + SubBoxWidth - 1, Top + SubBoxHeight - 1);
+  FillBackground(RPort, Left, Top, Left + SubBoxWidth - 1, Top + SubBoxHeight - 1,SubBoxBackground);
 
   SetFont (RPort, MenFont);
   Draw3DRect (RPort, Left, Top, SubBoxWidth, SubBoxHeight, TRUE, ScrHiRes, DblBorder);
@@ -1041,7 +1062,7 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(SubBoxWin = OpenCommonWindow(SubBoxLeft,SubBoxTop,SubBoxWidth,SubBoxHeight,2)))
+    if(CANNOT OpenCommonWindow(SubBoxLeft,SubBoxTop,SubBoxWidth,SubBoxHeight,2,&SubBoxWin,&SubBoxBackground))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
@@ -1056,10 +1077,16 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   else
   {
     if (!InstallRPort (SubBoxLeft, SubBoxTop, SubBoxDepth, SubBoxWidth, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer, &SubBoxCRect,
-                       2))
+                       &SubBoxBackground, 2))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
+    }
+
+    if(SubBoxBackground != NULL)
+    {
+      SubBoxBackground->bgc_Left = 0;
+      SubBoxBackground->bgc_Top = 0;
     }
 
     DrawMenuSubBoxContents (Item, SubBoxRPort, 0, 0);
@@ -1068,6 +1095,12 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
     SubBoxDrawRPort = &ScrRPort;
     SubBoxDrawLeft = SubBoxLeft;
     SubBoxDrawTop = SubBoxTop;
+
+    if(SubBoxBackground != NULL)
+    {
+      SubBoxBackground->bgc_Left = SubBoxDrawLeft;
+      SubBoxBackground->bgc_Top = SubBoxDrawTop;
+    }
   }
 
   SetFont (SubBoxDrawRPort, MenFont);
@@ -1129,11 +1162,7 @@ CleanUpMenuBox (VOID)
   {
     if (AktPrefs.mmp_NonBlocking)
     {
-      if (BoxWin)
-      {
-        CloseCommonWindow (BoxWin);
-        BoxWin = NULL;
-      }
+      CloseCommonWindow (&BoxWin, &BoxBackground);
     }
     else
     {
@@ -1146,7 +1175,7 @@ CleanUpMenuBox (VOID)
 
   if (BoxRPort)
   {
-    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer);
+    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer, &BoxBackground);
     BoxRPort = NULL;
   }
 
@@ -1189,7 +1218,7 @@ DrawHiItem (struct MenuItem *Item)
         {
           if (LookMC)
           {
-            HiRect (BoxDrawRPort, l, t, w, h, TRUE);
+            HiRect (BoxDrawRPort, l, t, w, h, TRUE, BoxBackground);
             DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, TRUE, BoxDrawLeft, w);
           }
           else
@@ -1265,7 +1294,7 @@ DrawNormItem (struct MenuItem * Item)
 
       if (LookMC)
       {
-        HiRect (BoxDrawRPort, l, t, w, h, FALSE);
+        HiRect (BoxDrawRPort, l, t, w, h, FALSE, BoxBackground);
         DrawMenuItem (BoxDrawRPort, Item, BoxDrawLeft + BoxLeftOffs, BoxDrawTop + BoxTopOffs, BoxCmdOffs, BoxGhosted, FALSE, BoxDrawLeft, w);
       }
       else if (Look3D)
@@ -1299,10 +1328,7 @@ DrawMenuBoxContents (struct Menu *Menu, struct RastPort *RPort, UWORD Left, UWOR
 {
   struct MenuItem *ZwItem;
 
-
-  SetPens (RPort, MenBackGround, 0, JAM1);
-
-  RectFill (RPort, Left, Top, Left + BoxWidth - 1, Top + BoxHeight - 1);
+  FillBackground(RPort, Left, Top, Left + BoxWidth - 1, Top + BoxHeight - 1,BoxBackground);
 
   SetFont (RPort, MenFont);
   Draw3DRect (RPort, Left, Top, BoxWidth, BoxHeight, TRUE, ScrHiRes, DblBorder);
@@ -1451,7 +1477,7 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(BoxWin = OpenCommonWindow(BoxLeft,BoxTop,BoxWidth,BoxHeight,1)))
+    if(CANNOT OpenCommonWindow(BoxLeft,BoxTop,BoxWidth,BoxHeight,1,&BoxWin,&BoxBackground))
     {
       CleanUpMenuBox ();
       return (FALSE);
@@ -1469,10 +1495,16 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   else
   {
     if (!InstallRPort (BoxLeft, BoxTop, BoxDepth, BoxWidth, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer, &BoxCRect,
-                       1))
+                       &BoxBackground, 1))
     {
       CleanUpMenuBox ();
       return (FALSE);
+    }
+
+    if(BoxBackground != NULL)
+    {
+      BoxBackground->bgc_Left = 0;
+      BoxBackground->bgc_Top = 0;
     }
 
     DrawMenuBoxContents (Menu, BoxRPort, 0, 0);
@@ -1481,6 +1513,12 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
     BoxDrawRPort = &ScrRPort;
     BoxDrawLeft = BoxLeft;
     BoxDrawTop = BoxTop;
+
+    if(BoxBackground != NULL)
+    {
+      BoxBackground->bgc_Left = BoxDrawLeft;
+      BoxBackground->bgc_Top = BoxDrawTop;
+    }
   }
 
   SetFont (BoxDrawRPort, MenFont);
@@ -1584,14 +1622,14 @@ DrawHiMenu (struct Menu * Menu)
 
         if (Menu->Flags & MENUENABLED)
         {
-          HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, TRUE);
+          HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, TRUE, StripBackground);
           SetFgPen (StripDrawRPort, MenHiCol);
 
           PlaceText (StripDrawRPort, l + offset, t + 1 + StripDrawRPort->TxBaseline, Menu->MenuName, -1);
         }
         else
         {
-          HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, FALSE);
+          HiRect (StripDrawRPort, l, t, StripPopUp ? w : w - 1, h + 1, FALSE, StripBackground);
 
           SetFgPen (StripDrawRPort, MenStdGrey2);
 
@@ -1687,7 +1725,7 @@ DrawNormMenu (struct Menu *Menu)
       if (LookMC)
       {
         SetFont (StripDrawRPort, MenFont);
-        HiRect (StripDrawRPort, l, t, w, h + 1, FALSE);
+        HiRect (StripDrawRPort, l, t, w, h + 1, FALSE, StripBackground);
         SetDrawMode (StripDrawRPort, JAM1);
 
         if (Menu->Flags & MENUENABLED)
@@ -1788,9 +1826,7 @@ CleanUpMenuStrip (VOID)
   {
     if (AktPrefs.mmp_NonBlocking)
     {
-      if (StripWin)
-        CloseCommonWindow (StripWin);
-      StripWin = NULL;
+      CloseCommonWindow (&StripWin, &StripBackground);
     }
     else
     {
@@ -1803,7 +1839,7 @@ CleanUpMenuStrip (VOID)
 
   if (StripRPort)
   {
-    FreeRPort (StripBitMap, StripLayerInfo, StripLayer);
+    FreeRPort (StripBitMap, StripLayerInfo, StripLayer, &StripBackground);
     StripRPort = NULL;
   }
 
@@ -2522,9 +2558,7 @@ DrawMenuStripContents (struct RastPort *RPort, UWORD Left, UWORD Top)
   struct Menu *ZwMenu;
   UWORD ZwY, X, Y;
 
-  SetPens (RPort, MenBackGround, 0, JAM1);
-
-  RectFill (RPort, Left, Top, Left + StripWidth - 1, Top + StripHeight - 1);
+  FillBackground(RPort, Left, Top, Left + StripWidth - 1, Top + StripHeight - 1,StripBackground);
 
   SetFont (RPort, MenFont);
 
@@ -2915,7 +2949,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
         MenSeparatorGrey2 = MenLightEdge;
       }
 
-      LookMC = (MenTextCol != MenBackGround && MenBackGround != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);
+/*    LookMC = (MenTextCol != MenBackGround && MenBackGround != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenStdGrey2);*/
+      /* 2.23: Eigentlich sollte es reichen, wenn man den Text lesen kann und
+       *       sieht, welchen Eintrag man gerade am Wickel hat.
+       */
+      LookMC = (MenTextCol != MenBackGround && MenTextCol != MenFillCol && MenHiCol != MenFillCol && MenStdGrey0 != MenBackGround);
 
       if(LookMC)
       {
@@ -3489,7 +3527,7 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
 
   if (AktPrefs.mmp_NonBlocking)
   {
-    if (!(StripWin = OpenCommonWindow(StripLeft,StripTop,StripWidth,StripHeight,0)))
+    if(CANNOT OpenCommonWindow(StripLeft,StripTop,StripWidth,StripHeight,0,&StripWin,&StripBackground))
     {
       CleanUpMenuStrip ();
       return (FALSE);
@@ -3506,10 +3544,16 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   else
   {
     if (!InstallRPort (StripLeft, StripTop, StripDepth, StripWidth, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer, &StripCRect,
-                       0))
+                       &StripBackground, 0))
     {
       CleanUpMenuStrip ();
       return (FALSE);
+    }
+
+    if(StripBackground != NULL)
+    {
+      StripBackground->bgc_Left = 0;
+      StripBackground->bgc_Top = 0;
     }
 
     DrawMenuStripContents (StripRPort, 0, 0);
@@ -3518,6 +3562,12 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
     StripDrawRPort = &ScrRPort;
     StripDrawLeft = StripLeft;
     StripDrawTop = StripTop;
+
+    if(StripBackground != NULL)
+    {
+      StripBackground->bgc_Left = StripLeft;
+      StripBackground->bgc_Top = StripTop;
+    }
   }
 
   SetFont (StripDrawRPort, MenFont);

@@ -223,8 +223,8 @@ struct LoadThatColour
 
 /******************************************************************************/
 
-extern struct ExecBase		*SysBase;
-extern struct DosLibrary	*DOSBase;
+extern struct ExecBase	*SysBase;
+extern struct Library	*DOSBase;
 
 /******************************************************************************/
 

@@ -4,24 +4,48 @@
 **   :ts=8
 */
 
+/*#define DEBUG*/
+
 #ifndef _GLOBAL_H
 #include "Global.h"
 #endif /* _GLOBAL_H */
 
+/****************************************************************************/
+
+STATIC APTR ASM __saveds LocalSetFunction(REG(a1) struct Library * library,
+                                 REG(a0) LONG funcOffset,
+                                 REG(d0) APTR newFunction,
+                                 REG(a6) struct Library * SysBase);
+
+/****************************************************************************/
+
 #define JMP_ABS 0x4EF9
 
+/****************************************************************************/
+
 #define SEMAPHORE_NAME		"MagicMenu Patches"
-#define SEMAPHORE_VERSION	12
+#define SEMAPHORE_VERSION	13
+
+/****************************************************************************/
+
+typedef struct LibraryVector
+{
+  UWORD Command;
+  APTR Location;
+} LibraryVector;
+
+#define WEDGE_MAGIC 0x1511
 
 typedef struct Wedge
 {
   UWORD Command;
   APTR Location;
 
+  UWORD Magic;
+  APTR PointBack;
   APTR OldLocation;
-  UWORD Pad;
-}
-Wedge;
+  struct PatchEntry * Patch;
+} Wedge;
 
 typedef struct PatchEntry
 {
@@ -31,8 +55,9 @@ typedef struct PatchEntry
   LONG Offset;
   APTR NewRoutine;
   ULONG *OldRoutine;
-}
-PatchEntry;
+} PatchEntry;
+
+/****************************************************************************/
 
 extern LONG __far LVOOpenWindow;
 extern LONG __far LVOOpenWindowTagList;
@@ -61,6 +86,8 @@ extern LONG __far LVORefreshWindowFrame;
 extern LONG __far LVOCreateUpfrontHookLayer;
 extern LONG __far LVOCreateUpfrontLayer;
 
+extern LONG __far LVOSetFunction;
+
 STATIC PatchEntry PatchTable[] =
 {
   &IntuitionBase, 37, NULL, (LONG) & LVOCloseScreen, (APTR) MMCloseScreen, &OldCloseScreen,
@@ -87,6 +114,7 @@ STATIC PatchEntry PatchTable[] =
   &IntuitionBase, 37, NULL, (LONG) & LVORefreshWindowFrame, (APTR) MMRefreshWindowFrame, &OldRefreshWindowFrame,
   &IntuitionBase, 39, NULL, (LONG) & LVOLendMenus, (APTR) MMLendMenus, &OldLendMenus,
 
+  &SysBase,       37, NULL, (LONG) & LVOSetFunction, (APTR) LocalSetFunction, &OldSetFunction,
 };
 
 #define PATCHCOUNT (sizeof(PatchTable) / sizeof(PatchEntry))
@@ -100,10 +128,54 @@ typedef struct PatchSemaphore
 
   Wedge Table[PATCHCOUNT];
   UBYTE Name[sizeof (SEMAPHORE_NAME)];
-}
-PatchSemaphore;
+} PatchSemaphore;
 
 STATIC PatchSemaphore *Patches;
+
+/****************************************************************************/
+
+APTR ASM CallSetFunction(REG(a1) struct Library * library,REG(a0) LONG funcOffset,REG(d0) APTR newFunction,REG(a6) struct Library * SysBase);
+
+STATIC APTR ASM __saveds
+LocalSetFunction(
+	REG(a1) struct Library * library,
+	REG(a0) LONG funcOffset,
+	REG(d0) APTR newFunction,
+	REG(a6) struct Library * SysBase)
+{
+	LibraryVector * lv = (LibraryVector *)(((ULONG)library) + funcOffset);
+	Wedge * w = (Wedge *)lv->Location;
+	APTR result;
+
+	Forbid();
+
+	D(("library |%s| offset %ld",library->lib_Node.ln_Name,funcOffset));
+	SHOWVALUE(w);
+	SHOWVALUE(w->Magic);
+	SHOWVALUE(w->PointBack);
+
+	if(w->Magic == WEDGE_MAGIC && w->PointBack == w)
+	{
+		SHOWMSG("one of our patches");
+
+		result = w->OldLocation;
+
+		w->OldLocation = (APTR)newFunction;
+		(*w->Patch->OldRoutine) = (ULONG)newFunction;
+	}
+	else
+	{
+		SHOWMSG("none of our patches");
+
+		result = CallSetFunction(library,funcOffset,newFunction,SysBase);
+	}
+
+	Permit();
+
+	return(result);
+}
+
+/****************************************************************************/
 
 VOID
 RemovePatches ()
@@ -190,11 +262,14 @@ InstallPatches ()
       {
         Patches->Table[i].Command = JMP_ABS;
         Patches->Table[i].Location = PatchTable[i].NewRoutine;
+        Patches->Table[i].Magic = WEDGE_MAGIC;
+        Patches->Table[i].Patch = &PatchTable[i];
+        Patches->Table[i].PointBack = &Patches->Table[i];
 
-        if (!Patches->Table[i].OldLocation)
+        if (Patches->Table[i].OldLocation == NULL)
 	  Patches->Table[i].OldLocation = SetFunction (*(struct Library **)PatchTable[i].Base, PatchTable[i].Offset, (ULONG (*)()) & Patches->Table[i]);
 
-        *PatchTable[i].OldRoutine = (ULONG) Patches->Table[i].OldLocation;
+        (*PatchTable[i].OldRoutine) = (ULONG) Patches->Table[i].OldLocation;
         PatchTable[i].WedgeCode = &Patches->Table[i];
       }
     }
@@ -208,5 +283,38 @@ InstallPatches ()
     return (TRUE);
   }
   else
+  {
     return (FALSE);
+  }
 }
+
+/*****************************************************************************************/
+
+/*
+BOOL
+AllPatchesOnTop(VOID)
+{
+	struct Library ** libPtr;
+	LibraryVector * lv;
+	BOOL result = TRUE;
+	LONG i;
+
+	Forbid();
+
+	for(i = 0 ; i < PATCHCOUNT ; i++)
+	{
+		libPtr = PatchTable[i].Base;
+
+		lv = (LibraryVector *)((ULONG)(*libPtr) + PatchTable[i].Offset);
+		if(lv->Location != &Patches->Table[i])
+		{
+			result = FALSE;
+			break;
+		}
+	}
+
+	Permit();
+
+	return(result);
+}
+*/

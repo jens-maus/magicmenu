@@ -74,9 +74,9 @@ BOOL CheckReply(struct Message *Msg);
 BOOL CheckEnde(void);
 void disposeBitMap(struct BitMap *BitMap, BOOL IsChipMem);
 struct BitMap *allocBitMap(LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem);
-void FreeRPort(struct BitMap *BitMap, struct Layer_Info *LayerInfo, struct Layer *Layer);
+void FreeRPort(struct BitMap *BitMap, struct Layer_Info *LayerInfo, struct Layer *Layer, struct BackgroundCover **BackgroundCoverPtr);
 struct Hook *GetNOPFillHook(VOID);
-BOOL InstallRPort(LONG Left, LONG Top, LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct ClipRect **ClipRectPtr, LONG Level);
+BOOL InstallRPort(LONG Left, LONG Top, LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct ClipRect **ClipRectPtr, struct BackgroundCover **BackgroundCoverPtr, LONG Level);
 void SwapRPortClipRect(struct RastPort *RPort, struct ClipRect *ClipRect);
 struct ClipRect *GetClipRect(struct BitMap *BitMap, LONG x1, LONG y1, LONG x2, LONG y2);
 void CheckDispClipVisible(WORD MinX, WORD MinY, WORD MaxX, WORD MaxY);
@@ -84,7 +84,7 @@ void Draw3DRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BO
 void DrawNormRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void GhostRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void CompRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
-void HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlited);
+void HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover *bgc);
 BOOL MoveMouse(LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr);
 VOID SPrintf(STRPTR buffer, STRPTR formatString, ...);
 VOID SetPens(struct RastPort *RPort, ULONG FgPen, ULONG BgPen, ULONG DrawMode);
@@ -98,6 +98,12 @@ VOID DrawLine(struct RastPort *rp, LONG x0, LONG y0, LONG x1, LONG y1);
 VOID DrawLinePairs(struct RastPort *rp, LONG totalPairs, LONG left, LONG top, ...);
 VOID PlaceText(struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len);
 LONG AllocateColour(struct ColorMap *ColorMap, ULONG Red, ULONG Green, ULONG Blue);
+BOOL AllocateShadowBuffer(LONG width, LONG height);
+VOID FillBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
+VOID DeleteBackgroundCover(struct BackgroundCover *bgc);
+struct BackgroundCover *CreateBackgroundCover(struct BitMap *friend, LONG left, LONG top, LONG width, LONG height);
+VOID DrawShadow(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY);
+VOID HighlightBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
 
 /* data.c */
 

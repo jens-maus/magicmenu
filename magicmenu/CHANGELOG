@@ -450,3 +450,19 @@ MagicMenu 2.22
 
 - If launched from Workbench, MagicMenu is now quite a bit smarter
   when trying to find its icon to read the tool types.
+
+MagicMenu 2.23
+==============
+
+- MagicMenu now only avoids activating the multicolour mode if the
+  menu text would become unreadable due to the colours chosen, or
+  if the background and the highlighting colours are the same.
+
+- Implemented hi/truecolour shadows.
+
+- MagicMenu now plants its system patches in such a way that
+  allows it to monitor whether any other application tries to
+  put its own patches on top of them. In such a case, MagicMenu
+  will insure that it stays the owner of the first patch code
+  to be invoked. This will hopefully fix all known lockup
+  problems.

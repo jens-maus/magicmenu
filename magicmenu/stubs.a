@@ -46,6 +46,7 @@ Call\1:
 	PATCH	ScreenToFront
 	PATCH	ScreenToBack
 	PATCH	ScreenDepth
+	PATCH	SetFunction
 
 *--------------------------------------------------------------------------
 

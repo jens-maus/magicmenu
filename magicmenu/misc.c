@@ -4,9 +4,15 @@
 **   :ts=8
 */
 
+/*#define DEBUG*/
+
 #ifndef _GLOBAL_H
 #include "Global.h"
 #endif /* _GLOBAL_H */
+
+/*****************************************************************************************/
+
+#define EXTRACT_BITS(v,offset,width) (((v) >> (offset)) & ((1 << width)-1))
 
 /*****************************************************************************************/
 
@@ -110,6 +116,8 @@ MMCheckWindow (struct Window * Win)
 
   return (TRUE);
 }
+
+/*****************************************************************************************/
 
 ULONG __asm __saveds
 MMOpenWindow (REG(a0) struct NewWindow * NW)
@@ -862,7 +870,8 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 void
 FreeRPort (struct BitMap *BitMap,
            struct Layer_Info *LayerInfo,
-           struct Layer *Layer)
+           struct Layer *Layer,
+           struct BackgroundCover ** BackgroundCoverPtr)
 {
   if (Layer)
     DeleteLayer (NULL, Layer);
@@ -870,8 +879,10 @@ FreeRPort (struct BitMap *BitMap,
   if (LayerInfo)
     DisposeLayerInfo (LayerInfo);
 
-  if (BitMap)
-    disposeBitMap (BitMap, FALSE);
+  disposeBitMap (BitMap, FALSE);
+
+  DeleteBackgroundCover((*BackgroundCoverPtr));
+  (*BackgroundCoverPtr) = NULL;
 }
 
 STATIC ULONG
@@ -901,6 +912,7 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
               struct Layer_Info ** LayerInfoPtr,
               struct Layer ** LayerPtr,
               struct ClipRect ** ClipRectPtr,
+              struct BackgroundCover ** BackgroundCoverPtr,
               LONG Level)
 {
   struct BitMap *Friend;
@@ -910,6 +922,7 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
   struct ClipRect * ClipRect;
   LONG OriginalHeight,OriginalWidth,ShadowSize;
   LONG Black;
+  BOOL success = FALSE;
 
   if(V39 && MenXENBlack)
     Black = MenXENBlack;
@@ -943,11 +956,12 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
     ShadowSize = 0;
   }
 
-  *BitMapPtr = NULL;
-  *RastPortPtr = NULL;
-  *LayerPtr = NULL;
-  *LayerInfoPtr = NULL;
-  *ClipRectPtr = NULL;
+  (*BitMapPtr) = NULL;
+  (*RastPortPtr) = NULL;
+  (*LayerPtr) = NULL;
+  (*LayerInfoPtr) = NULL;
+  (*ClipRectPtr) = NULL;
+  (*BackgroundCoverPtr) = NULL;
 
   BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE);
   if (BitMap != NULL)
@@ -961,11 +975,16 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
         Layer = CreateUpfrontHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
         if (Layer != NULL)
         {
-          *BitMapPtr = BitMap;
-          *RastPortPtr = Layer->rp;
-          *LayerPtr = Layer;
-          *LayerInfoPtr = LayerInfo;
-          *ClipRectPtr = ClipRect;
+          struct BackgroundCover *bgc;
+
+          bgc = CreateBackgroundCover(Friend,Left,Top,OriginalWidth,OriginalHeight);
+
+          (*BitMapPtr) = BitMap;
+          (*RastPortPtr) = Layer->rp;
+          (*LayerPtr) = Layer;
+          (*LayerInfoPtr) = LayerInfo;
+          (*ClipRectPtr) = ClipRect;
+          (*BackgroundCoverPtr) = bgc;
 
           if(ShadowSize > 0 && (OriginalWidth < Width || OriginalHeight < Height))
           {
@@ -984,25 +1003,31 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
               BltBitMap(Friend,Left,Top + OriginalHeight,BitMap,0,OriginalHeight,Width,Height - OriginalHeight,MINTERM_COPY,~0,NULL);
 
             if(OriginalWidth < Width)
-              RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+              DrawShadow(RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
 
             if(OriginalHeight < Height)
-              RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+              DrawShadow(RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
 
             SetAfPt (RPort, NULL, 0);
           }
 
-          return (TRUE);
+          success = TRUE;
         }
-        DisposeLayerInfo (LayerInfo);
+        else
+        {
+          DisposeLayerInfo (LayerInfo);
+        }
       }
 
-      FreeVec(ClipRect);
+      if(NO success)
+        FreeVec(ClipRect);
     }
-    disposeBitMap (BitMap, FALSE);
+
+    if(NO success)
+      disposeBitMap (BitMap, FALSE);
   }
 
-  return (FALSE);
+  return (success);
 }
 
 void
@@ -1284,9 +1309,8 @@ GhostRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
   // zu halten, sollte man eigentlich MenDarkEdge nehmen.
   //    -olsen
 
-  SetPens (rp, MenBackGround, 0, JAM1);
-
-  RectFill (rp, x, y, x + Width - 1, y + Height - 1);
+  SetPens(rp, MenBackGround, 0, JAM1);
+  RectFill(rp, x, y, x + Width - 1, y + Height - 1);
 
   SetAfPt (rp, NULL, 0);
   SetFgPen (rp, MenTextCol);
@@ -1310,13 +1334,14 @@ CompRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height)
 }
 
 void
-HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlited)
+HiRect (struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover * bgc)
 {
   if (Width > 0 && Height > 0)
   {
-    SetPens (rp, (Highlited) ? MenFillCol : MenBackGround, 0, JAM1);
-
-    RectFill (rp, x, y, x + Width - 1, y + Height - 1);
+    if(Highlighted)
+      HighlightBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
+    else
+      FillBackground (rp, x, y, x + Width - 1, y + Height - 1,bgc);
   }
 }
 
@@ -1457,7 +1482,7 @@ findchar (char *Text, char Zeichen)
 VOID
 SafeObtainSemaphoreShared (struct SignalSemaphore * Semaphore)
 {
-  if (SysBase->LibNode.lib_Version >= 39)
+  if (SysBase->lib_Version >= 39)
     ObtainSemaphoreShared (Semaphore);
   else
   {
@@ -1547,4 +1572,284 @@ AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
 	TAG_DONE);
 
 	return(colour);
+}
+
+/******************************************************************************/
+
+STATIC APTR ShadowBuffer = NULL;
+STATIC LONG ShadowBufferSize = 0;
+
+BOOL
+AllocateShadowBuffer(LONG width,LONG height)
+{
+	LONG bytesNeeded = 3 * width * height;
+	BOOL success = TRUE;
+
+	if(ShadowBufferSize < bytesNeeded)
+	{
+		FreeVecPooled(ShadowBuffer);
+
+		ShadowBuffer = AllocVecPooled(bytesNeeded,MEMF_ANY);
+		if(ShadowBuffer != NULL)
+		{
+			ShadowBufferSize = bytesNeeded;
+		}
+		else
+		{
+			ShadowBufferSize = 0;
+			success = FALSE;
+		}
+	}
+
+	return(success);
+}
+
+/******************************************************************************/
+
+VOID
+FillBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,struct BackgroundCover * bgc)
+{
+  SetPens (rp, MenBackGround, 0, JAM1);
+
+  SHOWVALUE(minX);
+  SHOWVALUE(minY);
+
+  if(bgc != NULL)
+  {
+    SHOWVALUE(bgc->bgc_Left);
+    SHOWVALUE(bgc->bgc_Top);
+
+    BltBitMapRastPort(bgc->bgc_BitMap,minX - bgc->bgc_Left,minY - bgc->bgc_Top,rp,minX,minY,maxX-minX+1,maxY-minY+1,MINTERM_COPY);
+  }
+  else
+  {
+    RectFill (rp, minX, minY, maxX, maxY);
+  }
+}
+
+/******************************************************************************/
+
+BOOL Transparency = FALSE;
+
+VOID
+DeleteBackgroundCover(struct BackgroundCover * bgc)
+{
+	if(bgc != NULL)
+	{
+		disposeBitMap(bgc->bgc_BitMap, FALSE);
+		FreeVecPooled(bgc);
+	}
+}
+
+STATIC int __inline
+GetAverageLine(UBYTE *pix,LONG mod)
+{
+	int sum;
+
+	sum = ((UWORD)pix[-mod-3]) + ((UWORD)pix[-mod]) + ((UWORD)pix[-mod+3]) +
+	      ((UWORD)pix[    -3]) +                    + ((UWORD)pix[    +3]) +
+	      ((UWORD)pix[ mod-3]) + ((UWORD)pix[ mod]) + ((UWORD)pix[ mod+3]);
+
+	return((sum + 7) / 8);
+}
+
+STATIC VOID
+BlurPixelBuffer(UBYTE * pix,LONG width,LONG height)
+{
+	LONG x,y,mod;
+
+	mod = width*3;
+
+	for(y = 0 ; y < height-1 ; y++)
+	{
+		if(y > 0)
+		{
+			for(x = 0 ; x < width-1 ; x++)
+			{
+				if(x > 0)
+				{
+					(*pix) = GetAverageLine(pix,mod);	pix++;
+					(*pix) = GetAverageLine(pix,mod);	pix++;
+					(*pix) = GetAverageLine(pix,mod);	pix++;
+				}
+				else
+				{
+					pix += 3;
+				}
+			}
+
+			pix += 3;
+		}
+		else
+		{
+			pix += mod;
+		}
+	}
+}
+
+STATIC VOID
+DarkenPixelBuffer(UBYTE * pix,LONG width,LONG height)
+{
+	LONG x,y;
+
+	for(y = 0 ; y < height ; y++)
+	{
+		for(x = 0 ; x < width ; x++)
+		{
+			(*pix) = max(0,((WORD)(*pix)) - 63);pix++;
+			(*pix) = max(0,((WORD)(*pix)) - 63);pix++;
+			(*pix) = max(0,((WORD)(*pix)) - 63);pix++;
+		}
+	}
+}
+
+STATIC VOID
+BrightenPixelBuffer(UBYTE * pix,LONG width,LONG height)
+{
+	LONG x,y;
+
+	for(y = 0 ; y < height ; y++)
+	{
+		for(x = 0 ; x < width ; x++)
+		{
+			(*pix) = min(255,((WORD)(*pix)) + 63);pix++;
+			(*pix) = min(255,((WORD)(*pix)) + 63);pix++;
+			(*pix) = min(255,((WORD)(*pix)) + 63);pix++;
+		}
+	}
+}
+
+STATIC VOID
+TintPixelBuffer(UBYTE * pix,LONG width,LONG height,int r,int g,int b)
+{
+	UBYTE red[256];
+	UBYTE green[256];
+	UBYTE blue[256];
+	LONG x,y,i;
+
+	for(i = 0 ; i < 256 ; i++)
+		red[i] = min(255,31 + (r * i + 254) / 255);
+
+	for(i = 0 ; i < 256 ; i++)
+		green[i] = min(255,31 + (g * i + 254) / 255);
+
+	for(i = 0 ; i < 256 ; i++)
+		blue[i] = min(255,31 + (b * i + 254) / 255);
+
+	for(y = 0 ; y < height ; y++)
+	{
+		for(x = 0 ; x < width ; x++)
+		{
+			(*pix) = red[(*pix)];	pix++;
+			(*pix) = green[(*pix)];	pix++;
+			(*pix) = blue[(*pix)];	pix++;
+		}
+	}
+}
+
+struct BackgroundCover *
+CreateBackgroundCover(
+	struct BitMap *	friend,
+	LONG left,
+	LONG top,
+	LONG width,
+	LONG height)
+{
+	struct BackgroundCover * bgc = NULL;
+
+	if(Transparency && LookMC && CyberGfxBase != NULL && AllocateShadowBuffer(width,height) && GetCyberMapAttr(friend,CYBRMATTR_DEPTH) >= 15)
+	{
+		bgc = AllocVecPooled(sizeof(*bgc),MEMF_ANY|MEMF_CLEAR);
+		if(bgc != NULL)
+		{
+			bgc->bgc_BitMap = allocBitMap(GetBitMapDepth(friend), width, height, friend, FALSE);
+			if(bgc->bgc_BitMap != NULL)
+			{
+				struct RastPort rp;
+
+				BltBitMap(friend,left,top,bgc->bgc_BitMap,0,0,width,height,MINTERM_COPY,~0,NULL);
+
+				bgc->bgc_Width = width;
+				bgc->bgc_Height = height;
+
+				InitRastPort(&rp);
+				rp.BitMap = bgc->bgc_BitMap;
+
+				ReadPixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+
+				BlurPixelBuffer(ShadowBuffer,width,height);
+
+				WritePixelArray(ShadowBuffer,0,0,width*3,&rp,0,0,width,height,RECTFMT_RGB);
+			}
+			else
+			{
+				FreeVecPooled(bgc);
+				bgc = NULL;
+			}
+		}
+	}
+
+	return(bgc);
+}
+
+/******************************************************************************/
+
+VOID
+DrawShadow(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY)
+{
+	BOOL done = FALSE;
+
+	if(CyberGfxBase != NULL)
+	{
+		LONG width,height;
+
+		width	= (maxX - minX) + 1;
+		height	= (maxY - minY) + 1;
+
+		if(AllocateShadowBuffer(width,height) && GetCyberMapAttr(rp->BitMap,CYBRMATTR_DEPTH) >= 15)
+		{
+			ReadPixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
+
+			DarkenPixelBuffer(ShadowBuffer,width,height);
+
+			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
+			done = TRUE;
+		}
+	}
+
+	if(NOT done)
+		RectFill(rp,minX,minY,maxX,maxY);
+}
+
+/******************************************************************************/
+
+VOID
+HighlightBackground(struct RastPort * rp,LONG minX,LONG minY,LONG maxX,LONG maxY,struct BackgroundCover * bgc)
+{
+	BOOL done = FALSE;
+
+	if(bgc != NULL)
+	{
+		LONG width,height;
+
+		width = maxX-minX+1;
+		height = maxY-minY+1;
+
+		if(AllocateShadowBuffer(width,height))
+		{
+			ReadPixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
+
+			BrightenPixelBuffer(ShadowBuffer,width,height);
+
+			WritePixelArray(ShadowBuffer,0,0,width*3,rp,minX,minY,width,height,RECTFMT_RGB);
+
+			done = TRUE;
+		}
+	}
+
+	if(NOT done)
+	{
+		SetPens (rp, MenFillCol, 0, JAM1);
+		RectFill (rp, minX, minY, maxX, maxY);
+	}
 }
