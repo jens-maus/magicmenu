@@ -1,0 +1,1244 @@
+@database MagicMenu.guide
+@width 77
+@author "Olaf Barthel"
+@remark Traduction française par Jérôme Chesnot
+@node main "MagicMenu"
+
+
+                               @{B}MagicMenu 2.15@{UB}
+
+                     Un utilitaire qui étend le système
+                            des menus d'Intuition
+
+                         Écrit par Martin Korndörfer
+                                      et
+                            Olaf `Olsen' Barthel
+
+                   `Stylique' par Mario 'padrino' Cattaneo
+
+                Traduction française par Jérôme Chesnot (A.T.O)
+
+
+                  I.    @{" Installation             " link Installation}
+                  II.   @{" DANGERS !                " link DANGERS}
+                  III.  @{" L'éditeur de préférences " link Prefs}
+                  IV.   @{" Contrôle au clavier      " link Keyboard}
+                  V.    @{" Foire Aux Questions      " link FAQ}
+                  VI.   @{" Historique               " link History}
+                  VII.  @{" Traductions              " link Translations}
+                  VIII. @{" Auteurs                  " link Authors}
+                  IX.   @{" Enregistrement           " link Registration}
+                  X.    @{" Support                  " link Support}
+
+
+@endnode
+
+@node Installation
+
+ MagicMenu est constitué de deux programmes. Copier simplement le
+ programme "MagicMenu" dans le répertoire "WBStartup" de votre partition
+ de démarrage et le programme "MagicMenuPrefs" dans le répertoire "Prefs"
+ de cette même partition. Deux versions du programmes sont proposées.
+ Les versions «68000» fonctionneront sur n'importe quel Amiga, tandis
+ que les versions «020» demanderont un Amiga pourvu d'un processeur
+ 68020 ou supérieur. Prenez garde, les versions «020» auront de grandes
+ chances de planter sur des machines non-équipées.
+
+ Si vous n'avez pas la bibliothèque "gtlayout.library" déjà installée,
+ vous devez la copier dans votre répertoire "Libs:". Elle est requise
+ par le programme de préférences.
+
+ L'ensemble de ces deux programmes utilisent des configurations qui
+ peuvent être éditées via les Types d'Outils des icônes : 
+
+   @{" Types d'Outils de MagicMenu      " link MMToolTypes}
+   @{" Types d'Outils de MagicMenuPrefs " link MMPrefsToolTypes}
+
+
+@endnode
+
+@node MMToolTypes "Les Types d'Outils de MagicMenu"
+
+
+ MagicMenu est une Commodité. Cela veut dire qu'il filtre les évènements
+ de l'utilisateurs et réagit en fonction. Un jeu de Types d'Outils
+ (Tooltypes) est également proposé :
+
+ @{b}CX_PRIORITY=<-128..127>@{ub}
+
+   Toutes les Commodités reçoivent des évènements de l'utilisateur via une
+   priorité d'entrée/sortie (Handler). En d'autres termes, plus la valeur
+   de CX_PRIORITY est haute, plus tôt l'outil recevra l'évènement.
+
+ @{b}CX_POPKEY=<hotkey>@{ub}
+
+   Vous pouvez invoquer l'éditeur de préférences de MagicMenu par une
+   combinaison de Touches d'Appel (Hotkey).
+   Par défaut, elle correspond à "control alt espace", ce qui veut dire
+   que vous devez appuyer simultanément sur les touches [Ctrl], [Alt]
+   et [Espace] pour invoquer l'éditeur. Pour une description complète
+   des Touches d'Appel, veuillez consulter votre manuel AmigaOS.
+   (NdT : Ou la documentation en français de ToolManager).
+
+ @{b}CX_POPUP=<YES or NO>@{ub}
+
+   Si vous désirez ouvrir l'éditeur de préférences immédiatement après
+   le lancement de MagicMenu, vous devez positionner ce Type d'Outil
+   sur "YES" (Oui). Sinon, laissez-le sur "NO" (Non).
+
+ @{b}DONOTWAIT@{ub}
+
+   Ce Type d'Outil est analysé par le Workbench lorsque MagicMenu est lancé
+   depuis le répertoire WBStartup. Il permet au Workbench de ne pas attendre
+   que l'on quitte MagicMenu avant d'exécuter le programme suivant trouvé
+   dans ce répertoire.
+
+ @{b}TOOLPRI=<-128..127>@{ub}
+
+   Ceci est un autre Type d'Outil analysé par le Workbench. Il définit
+   la priorité de tâche de MagicMenu qui lui sera assignée lors du lancement.
+
+ @{b}STARTPRI=<-128..127>@{ub}
+
+   Ce Type d'Outil définit l'ordre de lancement de MagicMenu et des autres
+   outils du répertoire du WBStartup. Plus la valeur sera haute, plus tôt
+   sera lancé MagicMenu.
+
+@endnode
+
+@node MMPrefsToolTypes "Types d'Outils de MagicMenuPrefs"
+
+ L'éditeur de préférences de MagicMenu est semblable aux éditeurs
+ de préférences de l'AmigaOS. Il supporte les Types d'Outil suivants :
+
+ @{b}EDIT@{ub}
+
+   Ceci montre la fenêtre de l'éditeur de préférence, ce qui est l'action
+   par défaut pour ce programme.
+
+ @{b}SAVE@{ub}
+
+   La configuration courante de MagicMenu sera sauvée à titre
+   permanent. Si vous sélectionnez un fichier de configuration pour
+   MagicMenu et que vous double-cliquez sur l'éditeur de préférences,
+   ce dernier lira le fichier et sauvegardera la configuration
+   sur le Disque.
+
+ @{b}USE@{ub}
+
+   Lit le fichier de configuration de MagicMenu et demande à MagicMenu
+   de l'utiliser. Vous pouvez également sélectionner un fichier de
+   configuration et ensuite double-cliquer sur l'éditeur de préférences.
+
+ @{b}PUBSCREEN=<nom de l'écran public>@{ub}
+
+   Le nom de l'écran public sur lequel sera ouverte la fenêtre
+   de l'éditeur de préférences. Si aucun nom n'est donné ou si l'écran
+   nommé ne peut-être trouvé, la fenêtre de l'éditeur sera ouverte
+   sur l'écran public par défaut.
+
+ @{b}CREATEICONS=<YES or NO>@{ub}
+
+   Si vous désirez sauver les fichiers de configuration avec l'éditeur
+   de préférences, ce Type d'Outil définit si une icône sera attachée au
+   fichier (ce qui donc le rendra visible sous Workbench) ou pas.
+
+ @{b}CX_PRIORITY=<-128..127>@{ub}
+
+   Toutes les Commodités reçoivent des évènements de l'utilisateur via une
+   priorité d'entrée/sortie (Handler). En d'autres termes, plus la valeur
+   de CX_PRIORITY est haute, plus tôt l'outil recevra l'évènement.
+
+ @{b}CX_POPKEY=<hotkey>@{ub}
+
+   Vous pouvez invoquer l'éditeur de préférences de MagicMenu par une
+   combinaison de Touches d'Appel (Hotkey).
+   Par défaut, elle correspond à "control alt espace", ce qui veut dire
+   que vous devez appuyer simultanément sur les touches [Ctrl], [Alt]
+   et [Espace] pour invoquer l'éditeur. Pour une description complète
+   des Touches d'Appel, veuillez consulter votre manuel AmigaOS.
+   (NdT : Ou la documentation en français de ToolManager).
+
+ @{b}CX_POPUP=<YES or NO>@{ub}
+
+   Si vous désirez ouvrir l'éditeur de préférences immédiatement après
+   le lancement de MagicMenu, vous devez positionner ce Type d'Outil
+   sur "YES" (Oui). Sinon, laissez-le sur "NO" (Non).
+
+
+@endnode
+
+@node DANGERS
+
+   MagicMenu tire parti de certaines caractéristiques du système
+ d'exploitation de l'Amiga auxquelles on n'est pas sensé toucher.
+ Principalement, cela veut dire que MagicMenu est en quelque sorte
+ un "hack". Il peut vous arriver des ennuis en l'utilisant, mais d'un
+ autre côté il se peut qu'il fonctionne très bien pour vous, sans vous
+ poser aucun problème.
+
+   MagicMenu interagit avec Intuition (l'entité chargée de gérer
+ l'interface utilisateur de l'Amiga et ses menus) : il intercepte l'aspect
+ normal des menus en cherchant les évènements de la souris ou du clavier
+ qui donneraient des opérations de menu normales d'Intuition. Les menus
+ standards d'Intuition sont remplacés par ce que MagicMenu peut proposer.
+ La manière dont Intuition gère ses menus est très spéciale. Par exemple,
+ lorsqu'un menu est ouvert, aucune fenêtre ne pourra s'ouvrir, aucun texte
+ ne pourra défiler à l'écran, ni aucun contenu de fenêtre ne sera mis à jour.
+ C'est pourquoi Intuition entre dans un état spécial lors de la création des
+ menus, ce qui fait que toutes les autres opérations seront différées jusqu'à
+ ce que l'utilisateur relâche son bouton.
+
+   Malheureusement, MagicMenu ne peut user de la même supercherie, qui peut
+ entraîner des conflits. La machine pourrait sembler bloquée, la souris
+ s'arrêterait de bouger, et vous verriez tous les signes d'un plantage du
+ système. Dans un tel cas, Intuition a essayé d'obtenir les propres ressources
+ de MagicMenu à ce moment et attend que MagicMenu les libère. Mais Magic
+ Menu ne peut libérer ces ressources avant qu'Intuition ait stoppé cette
+ attente. L'effet net et précis de ceci est une impasse classique.
+
+   MagicMenu pourra éventuellement se sortir de cette impasse après un certain
+ temps (cette valeur peut être éditée dans l'éditeur de préférence (voir
+ @{" Préférences : Temps de sortie " link Prefs} pour plus d'information). Cette impasse
+ peut tout de même être contournée en configurant MagicMenu dans un mode
+ non-bloquant (voir @{" Préférences : Non-bloquant " link Prefs} pour plus d'information).
+ Ce mode non-bloquant permet une mise à jour de l'affichage des autres programmes
+ qui ont une fenêtre ouverte sur le même écran, sans qu'ils soient ni stoppés,
+ ni différés. Attention, si vous aviez l'habitude de stopper le défilement
+ d'un texte en pressant le bouton droit de la souris, cela ne fonctionnera
+ plus dans un mode non-bloquant.
+
+   Quelques programmes peuvent interagir étrangement avec la façon dont
+ MagicMenu procède pour afficher et construire ses menus. Si vous suspectez
+ un problème, appuyez sur la touche [Ctrl] ou [Alt] avant de pressez le bouton
+ de votre souris : MagicMenu laissera la place à Intuition qui créera ses menus
+ normalement.
+
+
+@endnode
+
+@node Prefs "L'éditeur de préférences"
+
+
+  La fenêtre de l'éditeur de préférences est constituée de trois pages
+ de configuration.
+
+   @{" Apparence et utilisation " link Prefs_Look_and_usage}
+   @{" Contrôle au clavier      " link Prefs_keyboard_control}
+
+   @{" Contrôle des couleurs    " link Prefs_colour_control}
+
+   @{b}Note : cette page est disponible seulement sous Kickstart 3.x et
+         si l'écran sur lequel l'éditeur de préférence est ouvert possède
+         assez de couleurs disponibles pour afficher l'image d'exemple
+         de menu (64 couleurs minimum sont requises).@{ub}
+ 
+  En plus de ceci, il existe une jeu de menus :
+
+   @{" Projet                   " link Prefs_Project}
+   @{" Édition                  " link Prefs_Edit}
+   @{" Préférences              " link Prefs_Settings}
+
+
+@endnode
+
+@node Prefs_Look_and_usage "Apparence et utilisation"
+
+
+ @{b}Menu à la barre de titre :
+
+   Utilisation@{ub}
+
+      Trois options sont disponibles :
+
+         - Compatible avec Intuition
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et se referme lorsque vous relâchez le bouton.
+
+         - Collé à la souris
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et reste ouvert même si vous relâchez le bouton. Pour refermer
+           le menu, pressez le bouton à nouveau.
+
+         - Sélection intelligente
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et reste ouvert même si vous relâchez le bouton. Pour choisir
+           une entrée, utilisez le bouton de sélection (le bouton gauche).
+           Pour refermer le menu, pressez le bouton à nouveau.
+
+   @{b}Apparence@{ub}
+
+      Trois options sont disponibles :
+
+         - Standard
+
+           Les menus sont affichés avec l'aspect familier plat, noir
+           et blanc qu'utilise Intuition.
+
+         - Ancienne 3D
+
+           Ce style de menu est similaire au boutons 3D que le Système
+           d'Exploitation utilise. Il possède également des images
+           spécifiques pour le Checkmark et la touche Amiga.
+
+         - 3D multicolore
+
+           Le style «ringard» popularisé par MagicWB. Il possède
+           des images spécifiques pour les barres de séparation, le
+           Chekmark et la touche Amiga. Il utilise un jeu de couleurs
+           pour l'interface configurables par l'utilisateur.
+
+
+ @{b}Menu sous la souris :
+
+   Utilisation@{ub}
+
+      Trois options sont disponibles :
+
+         - Compatible avec Intuition
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et se referme lorsque vous relâchez le bouton.
+
+         - Collé à la souris
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et reste ouvert même si vous relâchez le bouton. Pour refermer
+           le menu, pressez le bouton à nouveau.
+
+         - Sélection intelligente
+
+           Le menu apparaît lorsque vous pressez le bouton de la souris
+           et reste ouvert même si vous relâchez le bouton. Pour choisir
+           une entrée, utilisez le bouton de sélection (le bouton gauche).
+           Pour refermer le menu, pressez le bouton à nouveau.
+
+   @{b}Apparence@{ub}
+
+      Trois options sont disponibles :
+
+         - Standard
+
+           Les menus sont affichés avec l'aspect familier plat, noir
+           et blanc qu'utilise Intuition.
+
+         - Ancienne 3D
+
+           Ce style de menu est similaire au boutons 3D que le Système
+           d'Exploitation utilise. Il possède également des images
+           spécifiques pour le Checkmark et la touche Amiga.
+
+         - 3D multicolore
+
+           Le style «ringard»  popularisé par MagicWB. Il possède
+           des images spécifiques pour les barres de séparation, le
+           Chekmark et la touche Amiga. Il utilise un jeu de couleurs
+           pour l'interface configurables par l'utilisateur.
+
+   @{b}Centrer (les boîtes)@{ub}
+
+      Si cette option est cochée, MagicMenu essayera de centrer le
+      titre du menu, les boîtes du menu et du sous-menu juste sous
+      le pointeur de la souris.
+
+
+ @{b}Généralités :
+
+   Type de menus@{ub}
+
+      Trois options sont disponibles :
+
+         - À la barre de titre uniquement
+
+           MagicMenu se tiendra au style original d'affichage des
+           menus, en haut de l'écran et qui descendent. Les menus
+           peuvent adopter un look différent, mais le placement des
+           menus se fait à la manière d'Intuition.
+
+         - Sous la souris uniquement
+
+           Chaque fois que vous invoquez les menus, ils apparaîtront
+           juste en dessous du pointeur de la souris.
+
+         - Suivant la position de la souris
+
+           Si le pointeur de la souris se trouve sur la barre de titre,
+           MagicMenu affichera un menu descendant sous la barre de titre.
+           Si la souris se trouve ailleurs sur l'écran, il affichera un
+           menu sous la souris.
+
+   @{b}Marquer les sous-menus@{ub}
+
+      Les entrées auxquelles sont attachées des sous-menus reçoivent un
+      marqueur sur la droite de la boîte du menu (à moins que les
+      entrées ne soient déjà marquées ainsi).
+
+   @{b}Contours doublés@{ub}
+
+      Ceci affecte le style d'affichage des menus dans les modes 3D
+      anciens et multicolores. L'affichage des contours sera modifié
+      et l'affichage de l'entrée en surbrillance renversé.
+
+   @{b}Non-bloquant@{ub}
+
+      Ceci permet de commuter entre deux modes fondamentalement
+      différents des opérations de MagicMenu :
+
+      - Si inactif, l'affichage des menus ne prendra place seulement
+        sur un écran auquel MagicMenu a accès. Les fenêtres ne
+        s'ouvriront pas, le texte ne défilera plus et le contenu
+        des fenêtres ne sera pas mis à jour. Ceci est la manière
+        standard qu'Intuition utilise pour afficher les menus.
+        Mais ceci n'est pas le fin mot de l'histoire. L'énorme
+        différence est qu'Intuition ne sait pas vraiment que
+        MagicMenu avait pris le contrôle de l'écran. Ceci peut
+        faire tomber Intuition dans un piège lorsqu'il voudra aussi
+        prendre le contrôle de l'écran. Dans ce cas, votre Amiga
+        paraîtra bloqué, la souris cessera de bouger... Ceci peut
+        être un petit peu énervant à la longue, spécialement si non
+        seulement la machine peut paraître plantée, mais a vraiment
+        rejoint son concepteur. Vous saurez si MagicMenu peut se
+        sortir de cette impasse au bout de quelques secondes. Si
+        rien ne se passe, vous aurez à relancer votre machine.
+        Et voilà.
+
+        Un autre effet qu'a cette option est que l'affichage de tous
+        les menus ira droit vers le Bitmap de l'écran. Aussi, si le
+        tracé d'un menu est à la rue, il détruira tranquillement de
+        l'innocente mémoire lors de son affichage.
+
+        Pensez-y ! Si vous désirez vivre dans la tourmente, cette
+        configuration est faite pour vous.
+
+      - Si ce commutateur est actif, les mises à jours d'affichage
+        ne seront plus bloquées avant la fermeture du menu. Ceci
+        a de nombreux avantages vis à vis de l'autre mode :
+
+        · Intuition peut toujours prendre le contrôle de l'écran
+          quand il le veut. Il n'y a aucune chance qu'Intuition
+          se bloque dans ce mode.
+
+        · L'affichage du menu est sécurisé. Aussi mystérieux que
+          cela puisse paraître, le tracé des entrées de menu exotiques
+          ou corrompues se fera sans dégrader la mémoire.
+
+        Le gros inconvénient de ce mode est qu'il n'y a pas de mises à
+        jour d'affichage de bloc.
+
+   @{b}Ouverture différée des menus@{ub}
+
+      Normalement, l'ouverture des menus et des sous-menus se fait
+      aussitôt que la souris se déplace dessus. Ceci peut ralentir
+      les choses avec des menus complexes. Si vous choisissez
+      une ouverture différée des menus, il vous faudra stopper la
+      souris un moment avant l'ouverture éventuelle d'un menu.
+
+   @{b}Cadre autour des entrées des menus@{ub}
+
+      Dans un mode 3D, les entrées de menu sont soulignées d'un cadre
+      en 3D lorsque elles deviennent actives. Cela peut rendre le texte
+      un petit peu difficile à lire. Vous pouvez supprimer l'affichage
+      de ces cadres en dévalidant cette option.
+
+   @{b}Dessiner les ombres portées@{ub}
+
+      Vous pouvez demander à MagicMenu de dessiner une ombre portée sous
+      les menus si vous activez ce commutateur. Veuillez noter que les
+      ombres portées ne sont affichées qu'avec des menus sous la souris,
+      dans un mode 3D et avec l'option «Non-bloquant».
+
+
+@endnode
+
+@node Prefs_keyboard_control "Contrôle au clavier"
+
+
+  Cette page comporte les options du contrôle au clavier, qui
+ correspond à ce que vous obtenez lorsque que vous appuyez sur
+ une certaine combinaison de touches ou sur [Amiga Droit]+[Alt Droit] :
+ Le menu s'ouvre et vous pouvez sélectionner une entrée avec les
+ touches du curseur.
+
+ @{b}Contrôle au clavier actif@{ub}
+
+   Ce commutateur valide le mode du contrôle au clavier.
+
+ @{b}Déplace la souris vers la barre de menu@{ub}
+
+   Tandis que le mode de contrôle au clavier rentre en action, le
+   pointeur de la souris est repositionné dans le coin droit de la
+   barre de titre.
+
+ @{b}Activé avec [Amiga Droit]+[Alt Droit]@{ub}
+
+   Ce commutateur valide le raccourci clavier facile. Chaque fois
+   que vous utilisez «l'émulation» du bouton de la souris, MagicMenu
+   prendra la main et passera dans le mode de contrôle au clavier.
+
+ @{b}Raccourci clavier@{ub}
+
+   Ceci est un autre raccourci clavier pour faire passer MagicMenu
+   dans le mode de contrôle au clavier. La combinaison par défaut
+   est [Amiga Droit]+[Espace], ce qui veut dire que vous devez
+   appuyer simultanément sur les touches [Amiga Droit] et [Espace]
+   pour passer en mode de contrôle au clavier.
+
+
+@endnode
+
+@node Prefs_colour_control "Contrôle des couleurs"
+
+
+   @{b}Note : cette page est disponible seulement sous Kickstart 3.x et
+         si l'écran sur lequel l'éditeur de préférence est ouvert possède
+         assez de couleurs disponibles pour afficher l'image d'exemple
+         de menu (64 couleurs minimum sont requises).@{ub}
+
+  Sur cette page, vous pouvez configurer les couleurs que MagicMenu
+  utilisera pour afficher ses menus 3D multicolores.
+
+   Sur le côté gauche de la fenêtre, vous pouvez observer un exemple de
+   menu avec un bouton en dessous. Pour sélectionner une couleur à éditer,
+   utiliser ce bouton ou cliquez directement dans l'image d'exemple,
+   l'éditeur utilisera alors la couleur du point sur lequel vous aurez
+   cliqué.
+
+   Sur le côté droit de la fenêtre, vous trouverez un glisseur vertical,
+   un nuancier de couleurs ainsi que trois autres glisseurs, Rouge/Vert/Bleu
+   ou Nuance/Saturation/Luminosité. C'est ici que vous modifiez la couleur
+   que vous avez sélectionnée.
+
+ @{b}Précision d'harmonisation des couleurs@{ub}
+
+   Le choix des couleurs à utiliser pour les menus sélectionnés depuis
+   la palette de l'écran de MagicMenu peut ne pas correspondre exactement
+   aux couleurs que peut proposer le système d'exploitation. La tolérance
+   d'erreur de MagicMenu peut être configurée grâce à ce glisseur qui
+   propose quatre choix : de «Exacte» qui est le plus précis (il
+   n'acceptera aucune erreur) à «GUI» qui est le moins précis.
+   
+ @{b}Préférer les couleurs de l'écran@{ub}
+
+   Normalement, MagicMenu utilise les couleurs que vous aurez
+   précédemment sélectionnées en choisissant ce à quoi les menus doivent
+   ressembler. Mais vous pouvez aussi obliger MagicMenu à utiliser les
+   couleurs de l'écran sur lequel il se trouve. Pour ceci, activez ce
+   commutateur.
+
+
+@endnode
+
+@node Prefs_Project "Projet"
+
+
+ @{b}Ouvrir...@{ub}
+
+   C'est ici que vous sélectionnez un fichier de configuration à
+   ouvrir dans l'éditeur.
+
+ @{b}Sauver en...@{ub}
+
+   Avec ce menu, vous pouvez sauver la configuration courante dans
+   un fichier séparé.
+
+ @{b}À propos...@{ub}
+
+   Affiche des informations sur les auteurs et le programme.
+
+ @{b}Quitter@{ub}
+
+   Pour en terminer avec l'éditeur.
+
+
+@endnode
+
+@node Prefs_Edit "Édition"
+
+
+ @{b}Valeurs par défaut@{ub}
+
+   Ceci réinitialise la configuration courante avec les «réglages d'usine».
+
+ @{b}Dernières valeurs sauvées@{ub}
+
+   L'éditeur essayera de retrouver le dernier fichier de configuration
+   sauvé. Si cela ne s'avère pas possible, la configuration courante
+   restera inchangée.
+
+ @{b}Valeurs initiales@{ub}
+
+   Ceci reprendra la configuration effective lors du lancement de l'éditeur.
+
+
+@endnode
+
+@node Prefs_Settings "Préférences"
+
+
+ @{b}Créer les icônes ?@{ub}
+
+   Cette option définit si une icône sera attachée au fichier de configuration
+   (ce qui donc le rendra visible sous Workbench) ou pas.
+
+ @{b}Type du glisseur de couleurs@{ub}
+
+   Les glisseurs situés sous le nuancier de couleurs sur la page de @{" contrôle des couleurs " link Prefs_colour_control}
+   peuvent utiliser soit un mode Rouge/Vert/Bleu ou un mode
+   Nuance/Saturation/Luminosité. C'est ici que vous choisissez quel mode
+   utiliser.
+
+
+@endnode
+
+@node Keyboard "Contrôle au clavier"
+
+
+  Les menus sont normalement pilotés entièrement à la souris, mais
+ il reste quelques trucs que vous pouvez réaliser au clavier.
+
+ @{b}Activer le menu@{ub}
+
+   Vous pouvez activer le menu et amener MagicMenu dans le mode de
+   contrôle au clavier en appuyant sur une certaine combinaison de touches.
+   La combinaison par défaut est [Amiga Droit]+[Espace] et [Amiga Droit]
+   +[Alt Droit]. Le menu s'ouvrira et vous aurez la possibilité de
+   sélectionner une entrée du menu avec les touches du curseur.
+   Appuyez sur [Entrée] pour sélectionner une entrée ou ouvrir un sous-menu.
+   Appuyez sur [Esc] pour retourner au menu précédent de la hiérarchie ou
+   pour refermer le menu complètement.
+
+ @{b}Utiliser les menus standards d'Intuition@{ub}
+
+   Vous pouvez obliger MagicMenu de laisser Intuition construire les
+   menus en appuyant sur les touches [Alt] et [Ctrl] avant de presser
+   le bouton de la souris.
+
+ @{b}Changer l'apparence des menus@{ub}
+
+   Lorsque le menu est actif, appuyez sur la touche [Ctrl] pour basculer
+   entre le mode 3D et le mode plat standard.
+
+
+@endnode
+
+@node FAQ "Foire Aux Questions"
+
+
+  MagicMenu et son éditeur de préférences ne feront pas toujours ce
+ que vous attendez d'eux. Voici une courte liste de situations et
+ d'explications que vous pourrez rencontrer :
+
+  @{b}Je n'arrive pas à configurer les couleurs du menu multicolore@{ub}
+
+ L'éditeur de préférences requiert au minimum 24 couleurs pour afficher
+ la page de contrôle des couleurs du menu multicolore. Comme le Système
+ d'Exploitation utilise lui-même 11 couleurs, vous devez lancer l'éditeur
+ de préférences sur un écran avec au moins 64 couleurs disponibles.
+
+  @{b}Le menu multicolore ne s'ouvre jamais, je n'obtiens que l'apparence
+  de l'ancien mode 3D@{ub}
+
+ Pour que le mode multicolore puisse fonctionner, MagicMenu a besoin
+ d'allouer les couleurs depuis une palette qui lui est disponible. Tous
+ les écrans ne permettent pas ceci, si ceux-ci n'ont pas assez de couleurs
+ à allouer, ou si une palette de couleur a déjà les bonnes couleurs à la
+ bonne place. Dans ces cas là, MagicMenu ne pourra obtenir les couleurs
+ qu'il demande et retournera dans l'ancien mode 3D. MagicMenu refusera
+ également de fonctionner dans un mode multicolore si l'écran sur lequel
+ il se trouve est en basse définition.
+
+  @{b}Quelquefois, je n'obtiens aucun menu du tout !@{ub}
+
+ MagicMenu peu manquer de mémoire en essayant d'afficher le menu et il
+ peut aussi manquer de place dans l'écran. Dans la plupart des cas,
+ MagicMenu devra stopper la construction du menu et laissera Intuition
+ faire le boulot à sa place. Désolé, mais c'est tout ce que je peux
+ faire.
+
+ Il est aussi possible que MagicMenu sorte de la construction d'un menu
+ pour éviter une impasse fatale au système. Ceci peut arriver si rapidement
+ que vous ne vous en apercevrez même pas.
+
+ Dans ces deux situations, rien ne vous empêche de réouvrir le
+ menu à nouveau. Cela pourra éventuellement fonctionner.
+
+  @{b}Le menu change la palette de mon écran lorsqu'il apparaît@{ub}
+
+ Certaines applications permettent à d'autres programmes d'allouer des
+ couleurs de la palette de l'écran. Malheureusement, la plupart de ces
+ applications ne semblent pas savoir que certaines de ces couleurs
+ peuvent être modifiées par des programmes tel que MagicMenu.
+ L'utilitaire système Multiview fait partie de ces applications.
+ MagicMenu finira par changer la palette de l'écran car les paramètres
+ de l'écran le permettent. D'autres applications peuvent faire la même
+ faute. Le seul moyen d'éviter cela est de configurer MagicMenu dans
+ le mode «Ancienne 3D».
+
+  @{b}Les images et les cadres de texte recouvrent le texte des entrées
+  des menus@{ub}
+
+ Le programme qui crée les menus détermine également comment ils doivent
+ être placés. Les entrées n'ont pas besoin nécessairement d'être positionées
+ verticalement, les unes en desous des autres, mais peuvent l'être dans
+ n'importe quel sens. MagicMenu ne peut choisir de déplacer des entrées de
+ menus, pour avoir plus de place, sans prendre le risque d'en recouvrir
+ d'autres, ce qui gâcherait tout. Du coup, les cadres de texte ne peuvent
+ être plus grands que ce que permet la taille de l'entrée.
+
+  @{b}MagicMenu rentre en conflit avec un autre utilitaire qui alloue
+  une certaine fonction au bouton du menu@{ub}
+
+ Si cet «autre» utilitaire est une Commodité comme MagicMenu, vous pouvez
+ modifier le type d'outil CX_PRIORITY=<nombre> afin de régler l'ordre
+ dans lequel les évènements d'entrées s'effectueront. Si vous désirez
+ que MagicMenu fasse attention au bouton de menu, réglez une priorité moins
+ élevée, comme «CX_PRIORITY=-1»
+
+
+  (À suivre...)
+
+
+@endnode
+
+@node History "Historique"
+
+
+ Les versions 0.01 jusqu'à 2.3 ont été développées par Martin Korndörfer.
+
+ Depuis la version 2.3, le développement est passé entre les mains de
+ Olaf `Olsen' Barthel.
+
+  (La plupart des changements arrivent à la fin)
+
+
+MagicMenu 2.4 (beta)
+====================
+
+- Improved overall stability under CyberGraphX; the menu rendering code was
+  actually peeking Screen->BitMap instead of Screen->RastPort.BitMap, which
+  among other things could screw up rendering in deep display modes. Menu
+  rendering now works consistently in display depths beyond 8 bit.
+
+- Removed references to SetABPenDrMd() where they were in the wrong place.
+
+- The code that sends the IntuiMessage should be less timing critical and
+  simpler now. It fires off the message and starts to wait for a response
+  if necessary rather than allocating timer requests, message ports, etc.
+  on the spot and then jumping into action.
+
+- Removed the routine that complains about timed out IntuiMessages. It's
+  nice to know that something went wrong, but not that helpful if you
+  cannot do anything about it.
+
+- Since IntuiMessage processing works differently now, MagicMenu now checks
+  for pending, unreplied messages.
+
+- The routine that displays the menu and handles the IDCMP_MENUVERIFY
+  case should be better protected against Intuition state changes and
+  stale pointers. There is still a catch in that the Window to receive
+  the menu event may close or dispose of its menu strip before the
+  event arrives. But actually, Intuition protects itself against
+  such eventualities, anyway.
+
+- For a Window without a UserPort, MagicMenu could lose memory. This
+  has been fixed.
+
+- When an IDCMP_MENUVERIFY message times out, the window to cancel
+  it now properly receives its IDCMP_MOUSEBUTTONS/MENUUP and
+  IDCMP_MENUPICK/MENUNULL messages (as per the RKMs). When menu
+  rendering is finished the other inactive IDCMP_MENUVERIFY windows
+  on the screen now receive the proper IDCMP_MOUSEBUTTONS/MENUUP
+  messages.
+
+- Changed the way BOOPSI images in menus are handled. MagicMenu no longer
+  tries to remap them as if they were BitMap images. Right now it turns
+  them into BitMap images and then remaps them.
+
+- Redid the image remapping code. It no longer fiddles with the raw BitMap
+  data but uses the Blitter.
+
+- Added a patch for ObtainGIRPort() which should make all the SafeGIRPort
+  patches redundant that existed just in support of MagicMenu. The patch
+  checks if the screen it should work upon is currently locked by
+  MagicMenu. If so, ObtainGIRPort() will return NULL. This is a little
+  dangerous since some built-in Intuition classes do not protect themselves
+  against ObtainGIRPort() returning NULL. I can't make the patch tell
+  Intuition to wait until the screen is ready again either, as this would
+  eventually deadlock Intuition.
+
+- Changed the new 3D look text highlight colour to be more consistent with
+  the way gadget text highlighting works.
+
+- MagicMenu no longer detaches from the Shell it was started from. If
+  you need such a feature, use "run >nil: MagicMenu".
+
+- MagicMenu now works with Final Writer. Final Writer calls
+  Clear/ResetMenuStrip whilst in MENUVERIFY state. Previously,
+  MagicMenu did not allow this to happen, causing the verify message
+  to time out.
+
+- The phony IntuiMessages are now ExtIntuiMessages with a NULL tablet
+  data pointer and proper time stamp information.
+
+
+MagicMenu 2.5 (beta)
+====================
+
+- The ObtainGIRPort() patch now handles the NULL parameter case
+  gracefully. Some BOOPSI gadget dispatchers actually end up invoking
+  the draw method in the OM_NEW case with the GInfo pointer not
+  yet initialized.
+
+
+MagicMenu 2.6 (beta)
+====================
+
+- The new 3D colour mode could screw up the screen colour palette.
+  The code did not check for pen allocation failures and, since the
+  pen variables were unsigned, the deallocation code would end up
+  freeing the same pen over and over again.
+
+- Changed the commodities filter setup code. All the initializations
+  are now done at program startup time. MagicMenu enables the filter
+  later instead of building the filter when the menu comes up.
+
+- Changed the way bevel boxes are rendered. Instead of calling
+  Move..Draw..Draw over and over again it now uses RectFill()
+  where possible. For vertical and horizontal lines this is
+  actually faster than calling Move/Draw.
+
+- Made small visual changes to the menu box and title bar rendering
+  in new 3D look mode.
+
+- With the non-blocking option enabled, the new 3D look menus now
+  sport drop shadows.
+
+- In non-blocking mode MagicMenu no longer uses SuperBitMap windows.
+
+- Removed the "demo" menu from the prefs program.
+
+- Integrated Mario's new imagery, including the new colour map
+  that goes with it.
+
+
+MagicMenu 2.7 (beta)
+====================
+
+- The drop shadows no longer cause windows to be moved away from
+  the screen right and bottom edges.
+
+- Disabled menus, items and subitems are no longer rendered with
+  a frame in new 3D mode.
+
+- The drop shadows were only transparent with CyberGraphX.
+  I added another patch to allow this for any Amiga (and which
+  magically also boosts layer creation speed).
+
+- One WaitBlit() was missing in the remapped image cleanup code.
+
+- Removed the "clipping" option. It is now enabled by default in
+  order to avoid big trouble on the way.
+
+- If MagicMenu cannot reuse the patch table installed by an older
+  MagicMenu version that was removed from memory just before the
+  new one was run, it now complains and exits without crashing.
+
+- I tried to make MagicMenu safer by reducing the rendering options
+  to two alternatives only: you either select non-blocking or you
+  don't. Both options imply clipped drawing operations, making it
+  more difficult to trash memory on the way. The "direct draw"
+  option is implicitely enabled for non-blocking mode and
+  implicitely disabled for blocking mode. All this will slow down
+  menu operations a bit, but better a little slower than a little
+  sooner to crash.
+
+- No longer fakes ClipRects and uses sleight-of-hand tricks to get
+  away with it. Instead of calling SwapBitsRastPortClipRect()
+  it now uses a much simpler technique to exchange the on-screen
+  BitMap data and the menu imagery. This technique neither has
+  nor requires the side-effects SwapBitsRastPortClipRect() has.
+
+- Removed the CyberGraphX chunky option; it is now enabled all
+  the time.
+
+- New and improved colour remapping code. Much faster than the
+  old blitter based stuff.
+
+- All new preferences program. The prefs editor goes into
+  SYS:Prefs. The new configuration files go into ENVARC:.
+  Note that the new configuration files are not compatible
+  with the old ones.
+
+- Prefs program and main program now support localization.
+  No catalogs are available yet, sorry.
+
+- Non-blocking operation is now the default mode since it
+  is less likely to trash memory, freeze the machine or
+  crash it.
+
+
+MagicMenu 2.8 (beta)
+====================
+
+- Added two more patches for WindowToBack() and
+  MoveWindowInFrontOf().
+
+- The prefs program should now consistently find the current
+  preferences settings, even if MagicMenu is not running.
+
+- Removed the ghosted text colour options. These colours are
+  now connected to the background colour.
+
+- The prefs program now has a proper version string.
+
+- The keyboard control hotkey combination can be changed at
+  run-time now.
+
+- Resetting the preferences to defaults now properly updates
+  the display and the colours.
+
+- The layer patch was using the wrong rectangle offsets,
+  causing superbitmap windows to screw up.
+
+- The prefs program and the main program now both have
+  new default minimum stack size limits. For the prefs
+  program it's 10K and 8K for the main program.
+
+- The menu image remapping routines show now treat images
+  properly which make use of the PlanePick/PlaneOnOff combo.
+
+- The main program will now find the prefs program when
+  it should do. Previously, it would only start the prefs
+  program if the main program was run from Shell.
+
+- The colour remapping now also takes place in selected state
+  images. The same colour remapping rules are applied for the
+  highlight colour that are used for the normal background
+  colour.
+
+- Added tablet input event processing. So far only one
+  tablet input device is reported to work properly. If there
+  are more, I would like to know :)
+
+- Rewrote the central menu event processing loop. MagicMenu
+  should now snap out of an Intuition deadlock much faster
+  than before. I also removed the global menu timeout,
+  which is now redundant.
+
+- The menus no longer pop out of multicolour style back
+  into old 3D style without warning.
+
+- Starting the main program twice now brings up the
+  prefs editor, just like with any other commodities tool.
+
+- Made the drop shadow a little smaller (4x4 instead of 6x6).
+
+- Fixed two fatal bugs in the bitmap initialization code.
+
+- Added two more patches, this time for OffMenu() and OnMenu().
+
+- MagicMenu now supports menu lending. For this to work, I had
+  to remove the "screen with the active menu pops to front"
+  feature. This screen depth arrangement also got into trouble
+  with child screens, which would always get popped to the
+  background.
+
+- The prefs program now sports a "Test" button. If the main
+  program is not yet running when you hit this button, the
+  prefs program will try to launch it.
+
+
+MagicMenu 2.9 (beta)
+====================
+
+- Moved the default imagery back into chip RAM.
+
+- When in keyboard control mode, [Shift]+[Esc] will abort
+  the entire menu operation, no matter which menu hierarchy
+  you are in.
+
+- The 3D multicolour mode now requires that the menu font is
+  at least nine pixels tall. If it is smaller, you will get
+  the old 3D mode.
+
+- Reworked the menu imagery and made sure that the MX and
+  checkmark images match in size.
+
+- Multicolour ghosted text no longer gets rendered over and
+  over again when moving the mouse across it.
+
+- When running out of pens for the gradient fill slider
+  the prefs editor should now back out gracefully rather than
+  end up trying to load colour register -1 with greyscale
+  data. This could have been the reason for the inexplicable
+  prefs editor crashes.
+
+
+MagicMenu 2.10 (beta)
+=====================
+
+- Default prefs project icon images now come from ENV:sys/def_pref.
+
+- The multicolour 3D look mode no longer requires a font of a least
+  nine pixels. Now eight pixels will do (and don't you complain if the
+  imagery is taller than the menu font).
+
+- The menu image remapping code should now be much smarter for images
+  that use the PlanePick/PlaneOnOff option.
+
+- Removed the "Remove" option from the prefs program.
+
+- The prefs editor could copy too many colours when updating the
+  the program settings.
+
+- Added a "precision" slider to the prefs program. With this slider
+  you can select how much error the colour allocation routine will
+  tolerate when selecting the colours for the multicolour menu.
+
+- Rewrote all the colour management routines to be as careful as
+  possible when releasing the allocated pens. It looks as if not
+  all system configurations will treat pen #-1 as a no-op.
+
+
+MagicMenu 2.11 (beta)
+=====================
+
+- The preferences editor now opens a custom screen with 32 colours
+  if it cannot get that many from the requested public screen.
+
+- When MagicMenu has taken control of the menus, window depth
+  arrangement calls are no longer ignored, but delayed until
+  the menu closes. Actually, I would have to add a whole lot
+  more patches to make operation halfway safe, but for now
+  I'm just plastering patches onto routines which are somewhat
+  likely to get triggered while the menus are up.
+
+
+MagicMenu 2.12 (beta)
+=====================
+
+- The window depth arrangement patches were not installed correctly,
+  causing them to do nothing in most cases.
+
+- In non-blocking mode and when running under Kickstart 2.04 you
+  would still get the shadow borders. As the drop shadows do not
+  work under V37 this was not really sensible.
+
+- Added Mario's new 4 colour images. Note that you will get these
+  only with high resolution screens and fonts >= 11 points. I also
+  changed the old 3D look ghosting style.
+
+
+MagicMenu 2.13 (beta)
+=====================
+
+- Added a new option to the prefs program. If "Prefer screen colours"
+  is enabled, MagicMenu will make up the menu colours from the screen
+  user interface colours rather than using the colours you selected
+  from the palette.
+
+- Updated the WindowToFront/WindowToBack patches to delay window
+  operations on the screen the MagicMenu menus are active on.
+
+- Added more patches to SetWindowTitles and RefreshWindowFrame.
+  I should also patch RefreshGList, RefreshGadget, NewModifyProp,
+  ModifyProp, and about seven other routines but I guess I'd
+  rather stop here. All these routines can cause deadlocks which
+  MagicMenu will back out of safely. This can be a little annoying,
+  but you can still change the MagicMenu operating mode for
+  normal operation.
+
+- The keyboard control commands now consistenly work when they are
+  enabled and go out of the way when the are disabled.
+
+- Changed the settings file format, this time hopefully for the last
+  time.
+
+- Added a new option to have menus open slightly delayed, or put
+  another way, when you have stopped moving the mouse.
+
+- Added another new option to turn off the frames drawn around the
+  active menu item.
+
+
+MagicMenu 2.14 (beta)
+=====================
+
+- Corrected the placement of the Command images in menu items and
+  subitems.
+
+- For the "old look" menus the separator bars now render in the
+  correct colour.
+
+- The old 3D look menu borders are now just one pixel thick,
+  regardless of the display mode used.
+
+- Changed the preferences data exchange interface between the
+  prefs editor and the main program. Now the system should no
+  longer crash if you try to change the settings of the new
+  program with an old prefs editor.
+
+- Drop shadows are now restricted to pop-up menus.
+
+- Some menus will open faster now in non-blocking mode, as they
+  will be "promoted" to simple refresh windows if possible.
+
+- Some of the patches MagicMenu installs to protect itself are
+  no longer active in non-blocking mode. This will help Workbench
+  and other applications which would otherwise get caught in
+  their display update work.
+
+- Changed the alignment rules for the checkmark, Amiga key and
+  submenu arrow images to match those Intuition uses (or would
+  use if it could).
+
+- With "mark submenus" disabled, MagicMenu would cease to render
+  submenu indicators in multicolour 3D mode. It now works again
+  as it should.
+
+
+MagicMenu 2.15
+==============
+
+- An invalid hotkey specification no longer keeps the main program
+  from functioning. It will complain and the feature connected with
+  the hotkey will be unavailable, but the program will continue
+  to run.
+
+- Changed the default colours for the preferences editor fallback
+  screen.
+
+- Added more patches for screen depth arrangement, opening
+  and closing.
+
+- Added Mario's new artwork.
+
+
+@endnode
+
+@node Authors "Auteurs"
+
+
+  Martin Korndörfer a écrit le programme MagicMenu original. Il n'est
+ plus impliqué dans le développement du programme.
+
+  La mise en forme des menus 3D multicolores est une création de Mario
+ 'padrino' Cattaneo. C'est à lui que l'on doit la résurrection de
+ MagicMenu après que le développement de la version 1.29 soit en suspens.
+
+  Cette documentation, l'éditeur de préférences et le travail de
+ développement qui suivent la version 2.3 de MagicMenu sont de
+ Olaf `Olsen' Barthel.
+
+
+@endnode
+
+@node Registration "Enregistrement"
+
+
+  La version originale de MagicMenu est gratuite (Freeware), vous
+ pouvez l'utiliser ans avoir à faire quelquechose de particulier en
+ retour. Ceci a éventuellement changé avec la version 2.13. Nous avons
+ décidé que tel un utilisateur de MagicMenu, vous devriez être encouragé
+ à apporter une contribution.. Il n'y a aucune restriction d'utilisation,
+ requête énervante qui vous force à vous enregistrer, ni une version
+ spéciale que vous pourriez recevoir avec l'enregistrement. Si vous
+ décidez de faire un don, vous nous encouragerez à continuer le
+ développement de ce programme et à l'améliorer.
+
+  C'est à vous de décider ce que vous désirez donner comme contribution
+ et à qui vous voulez l'envoyer :
+
+   Martin Korndörfer a crée la version originale de MagicMenu et
+   développé toutes les versions jusqu'à la 2.3 inclue :
+
+      Martin Korndörfer
+      Pommernstraße 15
+      D-86916 Kaufering, R.F.A
+
+
+   Mario 'padrino' Cattaneo est celui à qui l'on doit la stylique depuis
+   la version 2.0 :
+
+      Mario Cattaneo
+      Bruchwiesenanlage 4-701/2
+      66125 Saarbrücken / Dudweiler, R.F.A
+
+
+   Olaf Barthel a repris le développement depuis la version 2.4, il
+   est responsable de tous les changements, améliorations, corrections
+   de bugs et créations de nouveaux dans cette version :
+
+      Olaf Barthel
+      Brabeckstraße 35
+      30559 Hannover, R.F.A
+
+
+  Toute contribution prend un sens, qu'elle soit petite ou importante.
+
+
+@endnode
+
+@node Translations "Traductions"
+
+  Dès la reprise du développement de MagicMenu, Ole Friis, coordinateur
+ de l'Organisation des Traducteurs Amiga (A.T.O), m'a contacté et m'a
+ proposé son aide pour la traduction des textes concernant le programme.
+ Dans le répertoire «catalogs», vous trouverez le résultat de cette
+ collaboration. Je suis profondément redevables à toutes les personnes
+ qui ont consacré du temps à la traduction du programme.
+
+ Tchèque :
+  Traducteur : Vit Sindlar, xsindl00@fik.dcse.fee.vutbr.cz
+  Relecteur  : -
+
+ Danois :
+  Traducteur : Flemming Steffensen, fsteff@dannug.dk
+  Relecteur  : Ole Friis, ole_f@post3.tele.dk
+
+ Finlandais :
+  Traducteur : Marko Honkanen, marko.honkanen@mail.suomi.net
+  Relecteur  : Ville Pispa, brainvpp@compost.fipnet.fi
+
+ Français :
+  Traducteur : Jérôme Chesnot, jchesnot@pratique.fr
+  Relecteur  : Vincent Oneto, vodka@club-internet.fr
+
+ Grec :
+  Traducteur : Pantelis Kopelias, leestar@acropolis.net
+  Relecteur  : Manos Konstantiniadis, konem@acropolis.net
+
+ Polonais :
+  Traducteur : Konrad Dubiel, konrad@inet.com.pl
+  Relecteur  : Marcin Orîowski, carlos@inet.com.pl
+
+ Espagnol :
+  Traducteur : Juan Antonio Ramirez, goliath@nether.net
+  Relecteur  : Arturo Roa, aroa@redestb.es
+
+ Suédois :
+  Traducteur : Thomas Andersson, steiner@kd.qd.se
+  Relecteur  : Magnus Holmgren, cmh@lls.se
+
+
+@endnode
+
+@node Support "Support"
+
+
+  Vous pouvez non seulement trouver la version courante de MagicMenu
+ sur Aminet, mais également sur la page d'accueil officielle maintenue
+ par Mario 'padrino' Cattaneo :
+
+    http://fsinfo.cs.uni-sb.de/~cattaneo/magicmenu/magicmenu.e.html
+
+
+  Pour toute suggestion ou rapport de bug(s), veuillez contacter :
+
+    <olsen@sourcery.han.de>
+
+
+@endnode
