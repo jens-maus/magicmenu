@@ -280,6 +280,10 @@ MMWindowToFront (REG(a0) struct Window * W)
 {
   ULONG Result;
 
+  /* Bug-Kompatibilität :( */
+  if(!RealWindow(W))
+    return(FALSE);
+
   DB (kprintf ("|%s| in WindowToFront patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
   if (MMCheckParentScreen (W, TRUE))
@@ -408,6 +412,10 @@ ULONG __asm __saveds
 MMRefreshWindowFrame (REG(a0) struct Window * W)
 {
   ULONG Result;
+
+  /* Bug-Kompatibilität :( */
+  if(!RealWindow(W))
+    return(FALSE);
 
   DB (kprintf ("|%s| in RefreshWindowFrame patch\n", FindTask (NULL)->tc_Node.ln_Name));
 
@@ -901,10 +909,20 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
   struct Layer *Layer;
   struct ClipRect * ClipRect;
   LONG OriginalHeight,OriginalWidth,ShadowSize;
+  LONG Black;
+
+  if(V39 && MenXENBlack)
+    Black = MenXENBlack;
+  else
+  {
+    Black = MenDarkEdge;
+    if(Black == MenLightEdge)
+      Black = 0;
+  }
 
   Friend = MenScr->RastPort.BitMap;
 
-  if(Look3D && AktPrefs.mmp_CastShadows)
+  if(Look3D && AktPrefs.mmp_CastShadows && Black != 0)
   {
     ShadowSize = SHADOW_SIZE + Level * 2;
 
@@ -957,7 +975,7 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
 
             SetAfPt (RPort, Crosshatch, 1);
 
-            SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+            SetPens(RPort, Black, 0,JAM1);
 
             if(OriginalWidth < Width)
               BltBitMap(Friend,Left + OriginalWidth,Top,BitMap,OriginalWidth,0,Width - OriginalWidth,Height,MINTERM_COPY,~0,NULL);

@@ -103,8 +103,18 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 	LONG OriginalHeight,OriginalWidth,ShadowSize;
 	struct BitMap * CustomBitMap;
 	struct FatHook * Hook;
+	LONG Black;
 
-	if(Look3D && AktPrefs.mmp_CastShadows)
+	if(V39 && MenXENBlack)
+		Black = MenXENBlack;
+	else
+	{
+		Black = MenDarkEdge;
+		if(Black == MenLightEdge)
+			Black = 0;
+	}
+
+	if(Look3D && AktPrefs.mmp_CastShadows && Black != 0)
 	{
 		ShadowSize = SHADOW_SIZE + Level * 2;
 
@@ -123,7 +133,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 	else
 		ShadowSize = 0;
 
-	CustomBitMap = allocBitMap(Width,Height,GetBitMapDepth(MenScr->RastPort.BitMap),MenScr->RastPort.BitMap,FALSE);
+	CustomBitMap = allocBitMap(GetBitMapDepth(MenScr->RastPort.BitMap),Width,Height,MenScr->RastPort.BitMap,FALSE);
 
 	Hook = AllocVec(sizeof(*Hook),MEMF_ANY|MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -140,7 +150,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 			WA_Width,		Width,
 			WA_Height,		Height,
 			WA_CustomScreen,	MenScr,
-			WA_Flags,		WFLG_BORDERLESS | WFLG_RMBTRAP | WFLG_NOCAREREFRESH | WFLG_SIMPLE_REFRESH,
+			WA_Flags,		WFLG_BORDERLESS | WFLG_RMBTRAP | WFLG_SIMPLE_REFRESH,
 			WA_BackFill,		Hook,
 			WA_ScreenTitle,		MenWin->ScreenTitle,
 		TAG_DONE);
@@ -157,7 +167,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 
 				SetAfPt (RPort, Crosshatch, 1);
 
-				SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+				SetPens(RPort, Black, 0,JAM1);
 
 				if(OriginalWidth < Width)
 					RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
@@ -1984,11 +1994,15 @@ ChangeAktItem (struct MenuItem *NewItem, UWORD NewItemNum)
 {
   if (AktItem)
   {
-    CleanUpMenuSubBox ();
+    if (!AktPrefs.mmp_NonBlocking)
+      CleanUpMenuSubBox (); /* ZZZ */
+
     DrawNormItem (AktItem);
     AktItem->Flags &= ~HIGHITEM;
     AktItem = NULL;
     ItemNum = NOITEM;
+
+    CleanUpMenuSubBox (); /* ZZZ */
   }
 
   if (NewItem)
@@ -2129,11 +2143,18 @@ ChangeAktMenu (struct Menu *NewMenu, UWORD NewMenuNum)
 {
   if (AktMenu)
   {
-    CleanUpMenuSubBox ();
-    CleanUpMenuBox ();
+    if (!AktPrefs.mmp_NonBlocking)
+    {
+      CleanUpMenuSubBox (); /* ZZZ */
+      CleanUpMenuBox ();
+    }
+
     DrawNormMenu (AktMenu);
     AktMenu = NULL;
     MenuNum = NOMENU;
+
+    CleanUpMenuSubBox (); /* ZZZ */
+    CleanUpMenuBox ();
   }
 
   if (NewMenu)
@@ -2350,7 +2371,8 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
 
     if (!NewSelect)
     {
-      CleanUpMenuSubBox ();
+      if (!AktPrefs.mmp_NonBlocking)
+        CleanUpMenuSubBox (); /* ZZZ */
 
       if (AktItem)
       {
@@ -2360,6 +2382,8 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
         AktItem->Flags &= ~HIGHITEM;
         AktItem = NULL;
       }
+
+      CleanUpMenuSubBox (); /* ZZZ */
 
       ItemNum = NOITEM;
 
@@ -2417,8 +2441,11 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
 
   if (!NewSelect)
   {
-    CleanUpMenuSubBox ();
-    CleanUpMenuBox ();
+    if (!AktPrefs.mmp_NonBlocking)
+    {
+      CleanUpMenuSubBox (); /* ZZZ */
+      CleanUpMenuBox ();
+    }
 
     if (AktMenu)
     {
@@ -2426,6 +2453,9 @@ LookMouse (UWORD MouseX, UWORD MouseY, BOOL NewSelect) /* True, wenn ausserhalb 
         DrawNormMenu (AktMenu);
       AktMenu = NULL;
     }
+
+    CleanUpMenuSubBox (); /* ZZZ */
+    CleanUpMenuBox ();
 
     MenuNum = NOMENU;
 

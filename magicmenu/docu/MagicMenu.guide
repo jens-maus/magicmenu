@@ -3,7 +3,7 @@
 @author "Olaf Barthel"
 @node main "MagicMenu"
 
-                               MagicMenu 2.18
+                               MagicMenu 2.21
                      A utility to enhance the Intuition
                             pull-down menu system
 
@@ -1063,6 +1063,26 @@ MagicMenu 2.18
   require any black magic at all. As such, it now also works
   under Kickstart 2.04 and is no longer restricted to non-blocking
   mode (yes kids, that's what you always wanted).
+
+
+MagicMenu 2.19
+==============
+
+- The changes in 2.18 introduced bugs into the menu refresh code.
+  This is what I had to fix in this version.
+
+
+MagicMenu 2.20
+==============
+
+- I got bitten by SetABPenDrMd() again. Darn. Now MagicMenu can
+  cast drop shadows under Kickstart 2.04 as it should.
+
+
+MagicMenu 2.21
+==============
+
+- More fixes to keep WSpeed alive [Frank Mariak].
 @endnode
 
 @node Translations
@@ -1149,8 +1169,8 @@ want to send it to:
    since V2.0:
 
       Mario Cattaneo
-      Bruchwiesenanlage 4-701/2
-      66125 Saarbrücken / Dudweiler, Germany
+      Paul-Marien-Straße 6
+      66111 Saarbrücken, Germany
 
    Olaf Barthel picked up development with V2.4, he is responsible for all
    the changes, enhancements, bug fixes and new bugs in this version:
@@ -1164,9 +1184,9 @@ Any contribution makes sense, large or small.
 
 @node Support
 You can find the most current version of MagicMenu either on Aminet or
-on the official home page, as maintained by Maro 'padrino' Cattaneo:
+on the official home page, as maintained by Mario 'padrino' Cattaneo:
 
-   http://fsinfo.cs.uni-sb.de/~cattaneo/magicmenu/magicmenu.e.html
+   http://fsinfo.cs.uni-sb.de/~cattaneo/magicmenu/
 
 For feature requests or bug reports please contact <olsen@sourcery.han.de>.
 @endnode

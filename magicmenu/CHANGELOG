@@ -423,3 +423,23 @@ MagicMenu 2.18
   require any black magic at all. As such, it now also works
   under Kickstart 2.04 and is no longer restricted to non-blocking
   mode (yes kids, that's what you always wanted).
+
+
+MagicMenu 2.19
+==============
+
+- The changes in 2.18 introduced bugs into the menu refresh code.
+  This is what I had to fix in this version.
+
+
+MagicMenu 2.20
+==============
+
+- I got bitten by SetABPenDrMd() again. Darn. Now MagicMenu can
+  cast drop shadows under Kickstart 2.04 as it should.
+
+
+MagicMenu 2.21
+==============
+
+- More fixes to keep WSpeed alive [Frank Mariak].
