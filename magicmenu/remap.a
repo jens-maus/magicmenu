@@ -1,13 +1,18 @@
-; 1992 Chris Green
-; remap.a - translate a bitmap in via a one byte table
+**
+**	$Id$
+**
+**	:ts=8
+**
 
 	include "graphics/gfx.i"
 
 	section	text,code
 
+*--------------------------------------------------------------------------
+
 do_plane_rd	macro
 	move.l	-(a0),a1
-	move.b	0(a1,a4.l),d7		; d7=bitmap byte
+	move.b	0(a1,a4.l),d7
 	add.b	d7,d7
 	addx.w	d0,d0
 	add.b	d7,d7
@@ -51,11 +56,17 @@ do_plane_wr	macro
 	move.b	d7,0(a1,a4.l)
 	endm
 
-; RemapBitMap(a0=srcbm,a1=destbm,a2=table1,d0=width)
+*--------------------------------------------------------------------------
+
+; VOID __asm RemapBitMap(register __a0 struct BitMap *srcbm,
+;                        register __a1 struct BitMap *destbm,
+;                        register __a2 UBYTE *table1,
+;                        register __d0 UWORD width);
+
 ofs_read_planes		equ	0
 ofs_write_planes	equ	ofs_read_planes+4
 ofs_bperrow		equ	ofs_write_planes+4
-ofs_col_ctr		equ	ofs_bperrow+4	; lword align!
+ofs_col_ctr		equ	ofs_bperrow+4
 ofs_row_ctr		equ	ofs_col_ctr+2
 ofs_adr_add		equ	ofs_row_ctr+2
 ofs_src_offset		equ	ofs_adr_add+4
@@ -113,7 +124,7 @@ byte_loop:
 	jmp	(a6)				; read from the planes
 
 depth_wr_jmp_tbl:
-	dc.l	0		; zero deep?
+	dc.l	0
 	dc.l	one_deep1
 	dc.l	two_deep1
 	dc.l	three_deep1
@@ -124,7 +135,7 @@ depth_wr_jmp_tbl:
 	dc.l	eight_deep1
 
 depth_rd_jmp_tbl:
-	dc.l	0		; zero deep?
+	dc.l	0
 	dc.l	one_deep
 	dc.l	two_deep
 	dc.l	three_deep
@@ -199,5 +210,7 @@ one_deep1:
 	lea	st_depth(a7),a7			; drop the local vars
 	movem.l	(a7)+,d2-d7/a2-a6
 	rts					; and return
+
+*--------------------------------------------------------------------------
 
 	end
