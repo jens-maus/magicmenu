@@ -2275,8 +2275,6 @@ main (int argc, char **argv)
   if (!(GfxBase = (struct GfxBase *) OpenLibrary ((char *) "graphics.library", 37)))
     ErrorPrc ("graphics.library V37");
 
-  StartHihoTask ();
-
   V39 = (BOOL)(GfxBase->LibNode.lib_Version >= 39);
 
   if (!MemoryInit ())
@@ -2347,6 +2345,9 @@ main (int argc, char **argv)
     ErrorPrc ("input.device");
 
   InputBase = (struct Library *) InputIO->io_Device;
+
+  if(!(PeekQualifier() & IEQUALIFIER_LALT))
+    StartHihoTask ();
 
   CheckArguments ();
 

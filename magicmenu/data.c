@@ -228,7 +228,7 @@ struct MMPrefs DefaultPrefs =
 	MODE_STD,				/* PUMode */
 	LOOK_MC,				/* PULook */
 
-	"rcommand space",			/* KCKeyStr */
+	"ramiga space",				/* KCKeyStr */
 
 	10,					/* TimeOut */
 

@@ -12,6 +12,8 @@
 
 #include "MagicMenuPrefs_rev.h"
 
+STRPTR VersTag[] = VERSTAG;
+
 /******************************************************************************/
 
 #define CATCOMP_ARRAY
@@ -44,7 +46,7 @@ struct MMPrefs DefaultPrefs =
 	MODE_STD,				/* PUMode */
 	LOOK_MC,				/* PULook */
 
-	"rcommand space",			/* KCKeyStr */
+	"ramiga space",				/* KCKeyStr */
 
 	10,					/* TimeOut */
 
@@ -1294,26 +1296,26 @@ OpenAll(struct WBStartup *StartupMsg)
 
 					if(Result = FindToolType(Icon->do_ToolTypes,"PUBSCREEN"))
 						PubScreen = LockPubScreen(Result);
-
-					if(Result = FindToolType(Icon->do_ToolTypes,"CX_PRIORITY"))
-					{
-						StrToLong(Result,&CX_Priority);
-
-						if(CX_Priority < -128)
-							CX_Priority = -128;
-						else if (CX_Priority > 127)
-							CX_Priority = 127;
-					}
-
-					if(Result = FindToolType(Icon->do_ToolTypes,"CX_POPUP"))
-					{
-						if(MatchToolValue(Result,"NO"))
-							CX_PopUp = FALSE;
-					}
-
-					if(Result = FindToolType(Icon->do_ToolTypes,"CX_POPKEY"))
-						strncpy(CX_PopKey,Result,sizeof(CX_PopKey));
 				}
+
+				if(Result = FindToolType(Icon->do_ToolTypes,"CX_PRIORITY"))
+				{
+					StrToLong(Result,&CX_Priority);
+
+					if(CX_Priority < -128)
+						CX_Priority = -128;
+					else if (CX_Priority > 127)
+						CX_Priority = 127;
+				}
+
+				if(Result = FindToolType(Icon->do_ToolTypes,"CX_POPUP"))
+				{
+					if(MatchToolValue(Result,"NO"))
+						CX_PopUp = FALSE;
+				}
+
+				if(Result = FindToolType(Icon->do_ToolTypes,"CX_POPKEY"))
+					strncpy(CX_PopKey,Result,sizeof(CX_PopKey));
 
 				FreeDiskObject(Icon);
 			}
@@ -1830,6 +1832,42 @@ OpenAll(struct WBStartup *StartupMsg)
 				TAG_DONE);
 				{
 					LT_New(Handle,
+						LA_Type,	VERTICAL_KIND,
+						LAGR_NoIndent,	TRUE,
+					TAG_DONE);
+					{
+						STATIC LONG PenNameLabels[] =
+						{
+							MSG_BRIGHT_EDGES_TXT,
+							MSG_DARK_EDGES_TXT,
+							MSG_BACKGROUND_TXT,
+							MSG_TEXT_TXT,
+							MSG_SELECTED_TEXT_TXT,
+							MSG_SELECTED_BACKGROUND_TXT,
+							MSG_DARKER_SHADOW_TXT,
+							MSG_LIGHTER_SHADOW_TXT,
+							-1
+						};
+
+						LT_New(Handle,
+							LA_Type,		FRAME_KIND,
+							LAFR_InnerWidth,	SampleMenuWidth,
+							LAFR_InnerHeight,	SampleMenuHeight,
+							LAFR_DrawBox,		TRUE,
+							LAFR_RefreshHook,	&SampleRefreshHook,
+						TAG_DONE);
+
+						LT_New(Handle,
+							LA_Type,		CYCLE_KIND,
+							LA_ID,			GAD_WhichPen,
+							LA_WORD,		&WhichPen,
+							LACY_LabelTable,	PenNameLabels,
+						TAG_DONE);
+
+						LT_EndGroup(Handle);
+					}
+
+					LT_New(Handle,
 						LA_Type,VERTICAL_KIND,
 					TAG_DONE);
 					{
@@ -1961,42 +1999,6 @@ OpenAll(struct WBStartup *StartupMsg)
 
 							LT_EndGroup(Handle);
 						}
-
-						LT_EndGroup(Handle);
-					}
-
-					LT_New(Handle,
-						LA_Type,	VERTICAL_KIND,
-						LAGR_NoIndent,	TRUE,
-					TAG_DONE);
-					{
-						STATIC LONG PenNameLabels[] =
-						{
-							MSG_BRIGHT_EDGES_TXT,
-							MSG_DARK_EDGES_TXT,
-							MSG_BACKGROUND_TXT,
-							MSG_TEXT_TXT,
-							MSG_SELECTED_TEXT_TXT,
-							MSG_SELECTED_BACKGROUND_TXT,
-							MSG_DARKER_SHADOW_TXT,
-							MSG_LIGHTER_SHADOW_TXT,
-							-1
-						};
-
-						LT_New(Handle,
-							LA_Type,		FRAME_KIND,
-							LAFR_InnerWidth,	SampleMenuWidth,
-							LAFR_InnerHeight,	SampleMenuHeight,
-							LAFR_DrawBox,		TRUE,
-							LAFR_RefreshHook,	&SampleRefreshHook,
-						TAG_DONE);
-
-						LT_New(Handle,
-							LA_Type,		CYCLE_KIND,
-							LA_ID,			GAD_WhichPen,
-							LA_WORD,		&WhichPen,
-							LACY_LabelTable,	PenNameLabels,
-						TAG_DONE);
 
 						LT_EndGroup(Handle);
 					}
