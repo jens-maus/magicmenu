@@ -70,3 +70,7 @@
 #define NUM_ELEMENTS(a) (sizeof(a)/sizeof(a[0]))
 
 #define MILLION 1000000
+
+/******************************************************************************/
+
+#define SHADOW_SIZE 4

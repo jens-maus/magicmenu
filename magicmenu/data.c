@@ -1227,3 +1227,7 @@ ULONG IBaseLock;
 
 struct WBStartup *WBMsg;
 char ProgName[32];
+
+/******************************************************************************/
+
+UWORD Crosshatch[2] = {0x5555, 0xAAAA};

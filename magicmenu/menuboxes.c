@@ -41,8 +41,6 @@ struct FatHook
 {
 	struct Hook		Hook;
 	struct BitMap *		BitMap;
-	UWORD			Width;
-	UWORD			Height;
 };
 
 VOID __saveds __asm
@@ -66,8 +64,6 @@ WindowBackfillRoutine(
 
 /******************************************************************************/
 
-#define SHADOW_SIZE 4
-
 STATIC VOID
 CopyBackWindow(struct Window * win)
 {
@@ -89,23 +85,12 @@ CloseCommonWindow(struct Window * win)
 	if(win != NULL)
 	{
 		struct FatHook * hook;
-		struct BitMap * bitmap;
 
 		hook = (struct FatHook *)win->UserData;
 
 		CloseWindow(win);
 
-		bitmap = hook->BitMap;
-
-		if(V39)
-		{
-			WaitBlit();
-			FreeBitMap(bitmap);
-		}
-		else
-		{
-			DeleteBitMap(bitmap, hook->Width, hook->Height);
-		}
+		disposeBitMap(hook->BitMap, FALSE);
 
 		FreeVec(hook);
 	}
@@ -117,10 +102,9 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 	struct Window *Window = NULL;
 	LONG OriginalHeight,OriginalWidth,ShadowSize;
 	struct BitMap * CustomBitMap;
-	LONG Depth;
 	struct FatHook * Hook;
 
-	if(V39 && Look3D && AktPrefs.mmp_CastShadows)
+	if(Look3D && AktPrefs.mmp_CastShadows)
 	{
 		ShadowSize = SHADOW_SIZE + Level * 2;
 
@@ -139,12 +123,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 	else
 		ShadowSize = 0;
 
-	Depth = GetBitMapDepth(MenScr->RastPort.BitMap);
-
-	if(V39)
-		CustomBitMap = AllocBitMap(Width,Height,Depth,BMF_MINPLANES,MenScr->RastPort.BitMap);
-	else
-		CustomBitMap = CreateBitMap(Depth,Width,Height);
+	CustomBitMap = allocBitMap(Width,Height,GetBitMapDepth(MenScr->RastPort.BitMap),MenScr->RastPort.BitMap,FALSE);
 
 	Hook = AllocVec(sizeof(*Hook),MEMF_ANY|MEMF_PUBLIC|MEMF_CLEAR);
 
@@ -154,8 +133,6 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 
 		Hook->Hook.h_Entry	= (HOOKFUNC)WindowBackfillRoutine;
 		Hook->BitMap		= CustomBitMap;
-		Hook->Width		= Width;
-		Hook->Height		= Height;
 
 		Window = OpenWindowTags(NULL,
 			WA_Left,		Left,
@@ -172,10 +149,8 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 		{
 			Window->UserData = (APTR)Hook;
 
-			if(ShadowSize > 0)
+			if(ShadowSize > 0 && (OriginalWidth < Width || OriginalHeight < Height))
 			{
-				STATIC UWORD Crosshatch[2] = {0x5555, 0xAAAA};
-
 				struct RastPort *RPort;
 
 				RPort = Window->RPort;
@@ -184,8 +159,11 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 
 				SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
 
-				RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
-				RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+				if(OriginalWidth < Width)
+					RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+
+				if(OriginalHeight < Height)
+					RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
 
 				SetAfPt (RPort, NULL, 0);
 			}
@@ -194,11 +172,7 @@ OpenCommonWindow(LONG Left,LONG Top,LONG Width,LONG Height,LONG Level)
 
 	if(Window == NULL)
 	{
-		if(V39)
-			FreeBitMap(CustomBitMap);
-		else
-			DeleteBitMap(CustomBitMap, Width, Height);
-
+		disposeBitMap(CustomBitMap, FALSE);
 		FreeVec(Hook);
 	}
 
@@ -783,7 +757,7 @@ CleanUpMenuSubBox (VOID)
 
   if (SubBoxRPort)
   {
-    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer, SubBoxWidth, SubBoxHeight);
+    FreeRPort (SubBoxBitMap, SubBoxLayerInfo, SubBoxLayer);
     SubBoxRPort = NULL;
   }
 
@@ -1072,19 +1046,13 @@ DrawMenuSubBox (struct Menu *Menu, struct MenuItem *Item, BOOL ActivateItem)
   else
   {
     if (!InstallRPort (SubBoxLeft, SubBoxTop, SubBoxDepth, SubBoxWidth, SubBoxHeight, &SubBoxRPort, &SubBoxBitMap, &SubBoxLayerInfo, &SubBoxLayer, &SubBoxCRect,
-                       &ScrRPort))
+                       2))
     {
       CleanUpMenuSubBox ();
       return (FALSE);
     }
 
     DrawMenuSubBoxContents (Item, SubBoxRPort, 0, 0);
-
-    if (!(SubBoxCRect = GetClipRect (SubBoxBitMap, SubBoxLeft, SubBoxTop, SubBoxLeft + SubBoxWidth - 1, SubBoxTop + SubBoxHeight - 1)))
-    {
-      CleanUpMenuSubBox ();
-      return (FALSE);
-    }
 
     SwapRPortClipRect (&ScrRPort, SubBoxCRect);
     SubBoxDrawRPort = &ScrRPort;
@@ -1168,7 +1136,7 @@ CleanUpMenuBox (VOID)
 
   if (BoxRPort)
   {
-    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer, BoxWidth, BoxHeight);
+    FreeRPort (BoxBitMap, BoxLayerInfo, BoxLayer);
     BoxRPort = NULL;
   }
 
@@ -1491,19 +1459,13 @@ DrawMenuBox (struct Menu *Menu, BOOL ActivateItem)
   else
   {
     if (!InstallRPort (BoxLeft, BoxTop, BoxDepth, BoxWidth, BoxHeight, &BoxRPort, &BoxBitMap, &BoxLayerInfo, &BoxLayer, &BoxCRect,
-                       &ScrRPort))
+                       1))
     {
       CleanUpMenuBox ();
       return (FALSE);
     }
 
     DrawMenuBoxContents (Menu, BoxRPort, 0, 0);
-
-    if (!(BoxCRect = GetClipRect (BoxBitMap, BoxLeft, BoxTop, BoxLeft + BoxWidth - 1, BoxTop + BoxHeight - 1)))
-    {
-      CleanUpMenuBox ();
-      return (FALSE);
-    }
 
     SwapRPortClipRect (&ScrRPort, BoxCRect);
     BoxDrawRPort = &ScrRPort;
@@ -1819,7 +1781,7 @@ CleanUpMenuStrip (VOID)
 
   if (StripRPort)
   {
-    FreeRPort (StripBitMap, StripLayerInfo, StripLayer, StripWidth, StripHeight);
+    FreeRPort (StripBitMap, StripLayerInfo, StripLayer);
     StripRPort = NULL;
   }
 
@@ -3415,16 +3377,11 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
      */
     height = MenScr->BarHeight+1;
 
-/*    if(height < MenFont->tf_YSize + 3)*/
-/*      height = MenFont->tf_YSize + 3;*/
-
     StripPopUp = FALSE;
-/*    StripHeight = MenFont->tf_YSize + 3;*/
     StripHeight = height;
     StripWidth = MenScr->Width;
     StripTopOffs = 0;
     StripLeftOffs = 0;
-/*    StripMinHeight = MenFont->tf_YSize + 2;*/
     StripMinHeight = height-1;
     StripMinWidth = 0;
     StripLeft = 0;
@@ -3501,19 +3458,13 @@ DrawMenuStrip (BOOL PopUp, UBYTE NewLook, BOOL ActivateMenu)
   else
   {
     if (!InstallRPort (StripLeft, StripTop, StripDepth, StripWidth, StripHeight, &StripRPort, &StripBitMap, &StripLayerInfo, &StripLayer, &StripCRect,
-                       &ScrRPort))
+                       0))
     {
       CleanUpMenuStrip ();
       return (FALSE);
     }
 
     DrawMenuStripContents (StripRPort, 0, 0);
-
-    if (!(StripCRect = GetClipRect (StripBitMap, StripLeft, StripTop, StripLeft + StripWidth - 1, StripTop + StripHeight - 1)))
-    {
-      CleanUpMenuStrip ();
-      return (FALSE);
-    }
 
     SwapRPortClipRect (&ScrRPort, StripCRect);
     StripDrawRPort = &ScrRPort;

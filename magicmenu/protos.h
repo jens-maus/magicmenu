@@ -62,8 +62,6 @@ ULONG __asm __saveds MMCloseScreen(REG (a0 )struct Screen *S);
 ULONG __asm __saveds MMScreenToFront(REG (a0 )struct Screen *S);
 ULONG __asm __saveds MMScreenToBack(REG (a0 )struct Screen *S);
 ULONG __asm __saveds MMScreenDepth(REG (a0 )struct Screen *S, REG (d0 )ULONG flags, REG (a1 )reserved);
-struct Layer *__saveds __asm MMCreateUpfrontHookLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a3 )struct Hook *Hook, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
-struct Layer *__asm MMCreateUpfrontLayer(REG (a0 )struct Layer_Info *LayerInfo, REG (a1 )struct BitMap *BitMap, REG (d0 )LONG x0, REG (d1 )LONG y0, REG (d2 )LONG x1, REG (d3 )LONG y1, REG (d4 )ULONG Flags, REG (a2 )struct BitMap *Super, REG (a6 )struct Library *LayersBase);
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
 VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
@@ -74,11 +72,11 @@ VOID StopTimeRequest(struct timerequest *TimeRequest);
 VOID ShowRequest(STRPTR Text, ...);
 BOOL CheckReply(struct Message *Msg);
 BOOL CheckEnde(void);
-void disposeBitMap(struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem);
+void disposeBitMap(struct BitMap *BitMap, BOOL IsChipMem);
 struct BitMap *allocBitMap(LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL WantChipMem);
-void FreeRPort(struct BitMap *BitMap, struct Layer_Info *LayerInfo, struct Layer *Layer, LONG Width, LONG Height);
+void FreeRPort(struct BitMap *BitMap, struct Layer_Info *LayerInfo, struct Layer *Layer);
 struct Hook *GetNOPFillHook(VOID);
-BOOL InstallRPort(LONG Left, LONG Top, LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct ClipRect **ClipRectPtr, struct RastPort *FriendRPort);
+BOOL InstallRPort(LONG Left, LONG Top, LONG Depth, LONG Width, LONG Height, struct RastPort **RastPortPtr, struct BitMap **BitMapPtr, struct Layer_Info **LayerInfoPtr, struct Layer **LayerPtr, struct ClipRect **ClipRectPtr, LONG Level);
 void SwapRPortClipRect(struct RastPort *RPort, struct ClipRect *ClipRect);
 struct ClipRect *GetClipRect(struct BitMap *BitMap, LONG x1, LONG y1, LONG x2, LONG y2);
 void CheckDispClipVisible(WORD MinX, WORD MinY, WORD MaxX, WORD MaxY);
@@ -100,8 +98,6 @@ VOID DrawLine(struct RastPort *rp, LONG x0, LONG y0, LONG x1, LONG y1);
 VOID DrawLinePairs(struct RastPort *rp, LONG totalPairs, LONG left, LONG top, ...);
 VOID PlaceText(struct RastPort *RPort, LONG Left, LONG Top, STRPTR String, LONG Len);
 LONG AllocateColour(struct ColorMap *ColorMap, ULONG Red, ULONG Green, ULONG Blue);
-VOID DeleteBitMap(struct BitMap *BitMap, LONG Width, LONG Height);
-struct BitMap *CreateBitMap(LONG Depth, LONG Width, LONG Height);
 
 /* data.c */
 

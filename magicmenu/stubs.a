@@ -35,7 +35,6 @@ Call\1:
 	PATCH	WindowToBack
 	PATCH	ModifyIDCMP
 	PATCH	ObtainGIRPort
-	PATCH	CreateUpfrontHookLayer
 	PATCH	LendMenus
 	PATCH	OffMenu
 	PATCH	OnMenu

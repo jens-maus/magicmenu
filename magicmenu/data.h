@@ -419,3 +419,7 @@ extern ULONG IBaseLock;
 
 extern struct WBStartup *WBMsg;
 extern char ProgName[32];
+
+/******************************************************************************/
+
+extern UWORD Crosshatch[2];

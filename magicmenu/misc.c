@@ -32,7 +32,6 @@ LONG __asm CallLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Windo
 ULONG __asm CallRefreshWindowFrame (REG(a0) struct Window *, REG(a6) struct IntuitionBase *);
 ULONG __asm CallSetWindowTitles (REG(a0) struct Window *, REG(a1) STRPTR, REG(a2) STRPTR, REG(a6) struct IntuitionBase *);
 struct RastPort *__asm CallObtainGIRPort (REG(a0) struct GadgetInfo *GInfo, REG(a6) struct IntuitionBase *IntuitionBase);
-struct Layer *__asm CallCreateUpfrontHookLayer (REG(a0) struct Layer_Info *LayerInfo, REG(a1) struct BitMap *BitMap, REG(d0) LONG x0, REG(d1) LONG y0, REG(d2) LONG x1, REG(d3) LONG y1, REG(d4) ULONG Flags, REG(a3) struct Hook *Hook, REG(a2) struct BitMap *Super, REG(a6) struct Library *LayersBase);
 ULONG __asm CallOpenScreen (REG(a0) struct NewScreen *NS, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallOpenScreenTagList (REG(a0) struct NewScreen *NS, REG(a1) struct TagItem *TI, REG(a6) struct IntuitionBase *IntuitionBase);
 ULONG __asm CallCloseScreen (REG(a0) struct Screen *S, REG(a6) struct IntuitionBase *IntuitionBase);
@@ -547,106 +546,6 @@ MMScreenDepth (REG(a0) struct Screen *S, REG(d0) ULONG flags, REG(a1) reserved)
 	return(rc);
 }
 
-struct Layer *__saveds __asm
-MMCreateUpfrontHookLayer (
-                           REG(a0) struct Layer_Info *LayerInfo,
-                           REG(a1) struct BitMap *BitMap,
-                           REG(d0) LONG x0,
-                           REG(d1) LONG y0,
-                           REG(d2) LONG x1,
-                           REG(d3) LONG y1,
-                           REG(d4) ULONG Flags,
-                           REG(a3) struct Hook *Hook,
-                           REG(a2) struct BitMap *Super,
-                           REG(a6) struct Library *LayersBase)
-{
-  struct Layer *Layer;
-
-  /* Neu in 2.17:
-  /* Bei SuperBitMap wird nichts geändert. Da dieser Patch auch
-   * nur für das Zeichnen der Schatten nötig ist, wird er auch
-   * nur dann aktiv, wenn welche gemalt werden sollen. Das
-   * vermeidet Ärger mit CyberGraphX V3.x.
-   */
-  if(V39 && Look3D && AktPrefs.mmp_CastShadows && !(Flags & LAYERSUPER))
-  {
-    /* Wichtig: Der Layer wird gleich nach der
-     *          Erzeugung verändert und es muß
-     *          verhindert werden, daß ein anderer
-     *          Task an den Layers herumpfuscht, während
-     *          hier noch gearbeitet wird.
-     */
-
-    LockLayerInfo (LayerInfo);
-
-    /* Der Layer wird als Simple-Refresh und ohne Backfill-Funktion
-     * erzeugt. Das hat zwei Vorteile: da der Layer im Hintergrund
-     * erzeugt wird, entstehen automatisch Damage-Regions, wenn es
-     * sich um einen Smart-Refresh-Layer handelt; dies wird vermieden,
-     * indem er als Simple-Refresh-Layer erzeugt wird. Außerdem wird
-     * das Ausfüllen des Layers bis nach seiner Erzeugung verzögert.
-     */
-
-    if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, (Flags & ~LAYERSMART) | LAYERSIMPLE, LAYERS_NOBACKFILL, Super))
-    {
-      /* In den Vordergrund damit, Backdrop-Layers werden automatisch berücksichtigt */
-
-      UpfrontLayer (NULL, Layer);
-
-      /* Die ursprünglichen Flags (LAYERSIMPLE oder LAYERSMART)
-         * werden wieder eingetragen
-       */
-
-      Layer->Flags = (Layer->Flags & ~(LAYERSIMPLE | LAYERSMART)) | (Flags & (LAYERSIMPLE | LAYERSMART));
-
-      /* Der ursprüngliche Hook ebenfalls */
-
-      Layer->BackFill = Hook;
-
-      /* Weg mit der Damage-Liste, dieser Layer liegt im Vordergrund */
-
-      ClearRegion (Layer->DamageList);
-
-      /* Jetzt noch weg mit den Refresh-Flags */
-
-      Layer->Flags &= ~(LAYERIREFRESH | LAYERIREFRESH2 | LAYERREFRESH);
-
-      /* Jetzt wird die entsprechende Backfillfunktion aufgerufen */
-
-      if (Hook != LAYERS_NOBACKFILL)
-        DoHookClipRects (Hook, Layer->rp, NULL);
-    }
-
-    /* Wieder loslassen */
-
-    UnlockLayerInfo (LayerInfo);
-  }
-  else
-  {
-    Layer = CallCreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, Hook, Super, LayersBase);
-  }
-
-  return (Layer);
-}
-
-struct Layer *__asm
-MMCreateUpfrontLayer (
-                       REG(a0) struct Layer_Info *LayerInfo,
-                       REG(a1) struct BitMap *BitMap,
-                       REG(d0) LONG x0,
-                       REG(d1) LONG y0,
-                       REG(d2) LONG x1,
-                       REG(d3) LONG y1,
-                       REG(d4) ULONG Flags,
-                       REG(a2) struct BitMap *Super,
-                       REG(a6) struct Library *LayersBase)
-{
-  /* Sollte so eigentlich nicht nötig sein, aber die layers.library springt nicht
-   * durch den LVO in diese Routine.
-   */
-  return (CreateUpfrontHookLayer (LayerInfo, BitMap, x0, y0, x1, y1, Flags, LAYERS_BACKFILL, Super));
-}
-
 LONG __asm __saveds
 MMLendMenus (REG(a0) struct Window *FromWindow,REG(a1) struct Window *ToWindow)
 {
@@ -744,7 +643,7 @@ MakeRemappedImage (struct Image ** DestImage, struct Image * SrcImage,
 
             RecolourBitMap (TempRPort.BitMap, &Dst, RemapArray, Depth, SrcImage->Width, SrcImage->Height);
 
-            disposeBitMap (TempRPort.BitMap, SrcImage->Width, SrcImage->Height, TRUE);
+            disposeBitMap (TempRPort.BitMap, TRUE);
 
             return (TRUE);
           }
@@ -854,24 +753,39 @@ CheckEnde (void)
   return (TRUE);
 }
 
-void
-disposeBitMap (struct BitMap *BitMap, LONG Width, LONG Height, BOOL IsChipMem)
-{
-  LONG z1;
+/*****************************************************************************************/
 
+struct FatBitMap
+{
+  UWORD         Width;
+  UWORD         Height;
+  struct BitMap BitMap;
+};
+
+void
+disposeBitMap (struct BitMap *BitMap, BOOL IsChipMem)
+{
   WaitBlit ();
 
   if (V39 && !IsChipMem)
     FreeBitMap (BitMap);
   else
   {
-    for (z1 = 0; z1 < BitMap->Depth; z1++)
+    if(BitMap != NULL)
     {
-      if (BitMap->Planes[z1])
-        FreeRaster (BitMap->Planes[z1], Width, Height);
-    }
+      struct FatBitMap * fat;
+      LONG i;
 
-    FreeVecPooled (BitMap);
+      fat = (struct FatBitMap *)(((ULONG)BitMap) - offsetof(struct FatBitMap,BitMap));
+
+      for(i = 0 ; i < BitMap->Depth ; i++)
+      {
+        if(BitMap->Planes[i] != NULL)
+          FreeRaster(BitMap->Planes[i], fat->Width, fat->Height);
+      }
+
+      FreeVecPooled(fat);
+    }
   }
 }
 
@@ -888,6 +802,7 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
     return (AllocBitMap (Width, Height, Depth, BMF_MINPLANES, Friend));
   else
   {
+    struct FatBitMap *fat;
     LONG Extra;
 
     if(Depth > 8)
@@ -895,7 +810,20 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
     else
       Extra = 0;
 
-    if (BitMap = AllocVecPooled (sizeof (struct BitMap) + Extra, MEMF_ANY|MEMF_CLEAR))
+    fat = AllocVecPooled (sizeof (*fat) + Extra, MEMF_ANY|MEMF_CLEAR);
+    if(fat != NULL)
+    {
+      BitMap = &fat->BitMap;
+
+      fat->Width  = Width;
+      fat->Height = Height;
+    }
+    else
+    {
+      BitMap = NULL;
+    }
+
+    if (BitMap != NULL)
     {
       InitBitMap (BitMap, Depth, Width, Height);
 
@@ -910,7 +838,7 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
 
       if (Error)
       {
-        disposeBitMap (BitMap, Width, Height, TRUE);
+        disposeBitMap (BitMap, TRUE);
         return (NULL);
       }
 
@@ -921,11 +849,12 @@ allocBitMap (LONG Depth, LONG Width, LONG Height, struct BitMap *Friend, BOOL Wa
   return (NULL);
 }
 
+/*****************************************************************************************/
+
 void
 FreeRPort (struct BitMap *BitMap,
            struct Layer_Info *LayerInfo,
-           struct Layer *Layer,
-           LONG Width, LONG Height)
+           struct Layer *Layer)
 {
   if (Layer)
     DeleteLayer (NULL, Layer);
@@ -934,7 +863,7 @@ FreeRPort (struct BitMap *BitMap,
     DisposeLayerInfo (LayerInfo);
 
   if (BitMap)
-    disposeBitMap (BitMap, Width, Height, FALSE);
+    disposeBitMap (BitMap, FALSE);
 }
 
 STATIC ULONG
@@ -964,14 +893,37 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
               struct Layer_Info ** LayerInfoPtr,
               struct Layer ** LayerPtr,
               struct ClipRect ** ClipRectPtr,
-              struct RastPort * FriendRPort)
+              LONG Level)
 {
   struct BitMap *Friend;
   struct BitMap *BitMap;
   struct Layer_Info *LayerInfo;
   struct Layer *Layer;
+  struct ClipRect * ClipRect;
+  LONG OriginalHeight,OriginalWidth,ShadowSize;
 
-  Friend = FriendRPort->BitMap;
+  Friend = MenScr->RastPort.BitMap;
+
+  if(Look3D && AktPrefs.mmp_CastShadows)
+  {
+    ShadowSize = SHADOW_SIZE + Level * 2;
+
+    OriginalWidth  = Width;
+    OriginalHeight = Height;
+
+    Width  += ShadowSize;
+    Height += ShadowSize;
+
+    if(Left + Width > MenScr->Width)
+      Width = MenScr->Width - Left;
+
+    if(Top + Height > MenScr->Height)
+      Height = MenScr->Height - Top;
+  }
+  else
+  {
+    ShadowSize = 0;
+  }
 
   *BitMapPtr = NULL;
   *RastPortPtr = NULL;
@@ -979,22 +931,57 @@ InstallRPort (LONG Left,LONG Top,LONG Depth, LONG Width, LONG Height,
   *LayerInfoPtr = NULL;
   *ClipRectPtr = NULL;
 
-  if (BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE))
+  BitMap = allocBitMap (Depth, Width, Height, Friend, FALSE);
+  if (BitMap != NULL)
   {
-    if (LayerInfo = NewLayerInfo ())
+    ClipRect = GetClipRect(BitMap,Left,Top,Left + Width - 1,Top + Height - 1);
+    if(ClipRect != NULL)
     {
-      if (Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL))
+      LayerInfo = NewLayerInfo ();
+      if (LayerInfo != NULL)
       {
-        *BitMapPtr = BitMap;
-        *RastPortPtr = Layer->rp;
-        *LayerPtr = Layer;
-        *LayerInfoPtr = LayerInfo;
+        Layer = CreateBehindHookLayer (LayerInfo, BitMap, 0, 0, Width - 1, Height - 1, LAYERSIMPLE, GetNOPFillHook (), NULL);
+        if (Layer != NULL)
+        {
+          *BitMapPtr = BitMap;
+          *RastPortPtr = Layer->rp;
+          *LayerPtr = Layer;
+          *LayerInfoPtr = LayerInfo;
+          *ClipRectPtr = ClipRect;
 
-        return (TRUE);
+          if(ShadowSize > 0 && (OriginalWidth < Width || OriginalHeight < Height))
+          {
+            struct RastPort *RPort;
+
+            RPort = Layer->rp;
+
+            SetAfPt (RPort, Crosshatch, 1);
+
+            SetABPenDrMd(RPort, MenXENBlack,0,JAM1);
+
+            if(OriginalWidth < Width)
+              BltBitMap(Friend,Left + OriginalWidth,Top,BitMap,OriginalWidth,0,Width - OriginalWidth,Height,MINTERM_COPY,~0,NULL);
+
+            if(OriginalHeight < Height)
+              BltBitMap(Friend,Left,Top + OriginalHeight,BitMap,0,OriginalHeight,Width,Height - OriginalHeight,MINTERM_COPY,~0,NULL);
+
+            if(OriginalWidth < Width)
+              RectFill (RPort, OriginalWidth, ShadowSize, OriginalWidth + ShadowSize - 1, OriginalHeight - 1);
+
+            if(OriginalHeight < Height)
+              RectFill (RPort, ShadowSize, OriginalHeight, OriginalWidth + ShadowSize - 1, OriginalHeight + ShadowSize - 1);
+
+            SetAfPt (RPort, NULL, 0);
+          }
+
+          return (TRUE);
+        }
+        DisposeLayerInfo (LayerInfo);
       }
-      DisposeLayerInfo (LayerInfo);
+
+      FreeVec(ClipRect);
     }
-    disposeBitMap (BitMap, Width, Height, FALSE);
+    disposeBitMap (BitMap, FALSE);
   }
 
   return (FALSE);
@@ -1017,7 +1004,7 @@ SwapRPortClipRect(struct RastPort *RPort,struct ClipRect *ClipRect)
 		BltBitMap(ClipRect->BitMap,0,0,RPort->BitMap,Left,Top,Width,Height,MINTERM_COPY,~0,NULL);
 		BltBitMap(Temp,0,0,ClipRect->BitMap,0,0,Width,Height,MINTERM_COPY,~0,NULL);
 
-		disposeBitMap(Temp,Width,Height,FALSE);
+		disposeBitMap(Temp,FALSE);
 	}
 	else
 	{
@@ -1538,56 +1525,4 @@ AllocateColour(struct ColorMap *ColorMap,ULONG Red,ULONG Green,ULONG Blue)
 		OBP_FailIfBad,	TRUE,
 		OBP_Precision,	AktPrefs.mmp_Precision,
 	TAG_DONE));
-}
-
-/******************************************************************************/
-
-VOID
-DeleteBitMap(struct BitMap *BitMap, LONG Width, LONG Height)
-{
-	if(BitMap)
-	{
-		LONG i;
-
-		WaitBlit();
-
-		for(i = 0 ; i < BitMap->Depth ; i++)
-		{
-			if(BitMap->Planes[i])
-				FreeRaster(BitMap->Planes[i], Width, Height);
-		}
-
-		FreeVec(BitMap);
-	}
-}
-
-struct BitMap *
-CreateBitMap(LONG Depth,LONG Width,LONG Height)
-{
-	struct BitMap *BitMap;
-	LONG Extra;
-
-	if(Depth > 8)
-		Extra = sizeof(PLANEPTR) * (Depth - 8);
-	else
-		Extra = 0;
-
-	if(BitMap = AllocVec(sizeof(struct BitMap) + Extra,MEMF_ANY|MEMF_CLEAR|MEMF_PUBLIC))
-	{
-		LONG i;
-
-		InitBitMap(BitMap,Depth,Width,Height);
-
-		for(i = 0 ; i < BitMap->Depth ; i++)
-		{
-			if(!(BitMap->Planes[i] = AllocRaster(Width,Height)))
-			{
-				DeleteBitMap(BitMap,Width,Height);
-
-				return(NULL);
-			}
-		}
-	}
-
-	return(BitMap);
 }
