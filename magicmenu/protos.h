@@ -65,7 +65,7 @@ ULONG __asm __saveds MMScreenDepth(REG (a0 )struct Screen *S, REG (d0 )ULONG fla
 LONG __asm __saveds MMLendMenus(REG (a0 )struct Window *FromWindow, REG (a1 )struct Window *ToWindow);
 VOID CreateBitMapFromImage(struct Image *Image, struct BitMap *BitMap);
 VOID RecolourBitMap(struct BitMap *Src, struct BitMap *Dst, UBYTE *Mapping, LONG DestDepth, LONG Width, LONG Height);
-BOOL MakeRemappedImage(struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
+VOID MakeRemappedImage(BOOL *good, struct Image **DestImage, struct Image *SrcImage, UWORD Depth, UBYTE *RemapArray);
 VOID FreeRemappedImage(struct Image *Image);
 VOID StartTimeRequest(struct timerequest *TimeRequest, ULONG Seconds, ULONG Micros);
 VOID StopTimeRequest(struct timerequest *TimeRequest);
@@ -85,10 +85,12 @@ void DrawSmooth3DRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Heig
 void DrawNormRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void GhostRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
 void CompRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height);
-BOOL HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover *bgc);
+VOID HiRect(struct RastPort *rp, LONG x, LONG y, LONG Width, LONG Height, BOOL Highlighted, struct BackgroundCover *bgc);
 BOOL MoveMouse(LONG NewX, LONG NewY, BOOL AddEvent, struct InputEvent *Event, struct Screen *Scr);
 VOID SPrintf(STRPTR buffer, STRPTR formatString, ...);
 VOID SetPens(struct RastPort *RPort, ULONG FgPen, ULONG BgPen, ULONG DrawMode);
+LONG GetDrawMode(struct RastPort *rp);
+LONG GetFgPen(struct RastPort *rp);
 VOID SetFgPen(struct RastPort *rp, LONG pen);
 VOID SetDrawMode(struct RastPort *rp, LONG mode);
 VOID SetDrawMask(struct RastPort *rp, LONG mask);
@@ -104,7 +106,7 @@ VOID FillBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG m
 VOID DeleteBackgroundCover(struct BackgroundCover *bgc);
 struct BackgroundCover *CreateBackgroundCover(struct BitMap *friend, LONG left, LONG top, LONG width, LONG height);
 VOID DrawShadow(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, LONG part);
-BOOL HighlightBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
+VOID HighlightBackground(struct RastPort *rp, LONG minX, LONG minY, LONG maxX, LONG maxY, struct BackgroundCover *bgc);
 
 /* data.c */
 
@@ -131,7 +133,7 @@ BOOL MemoryInit(VOID);
 /* menuboxes.c */
 VOID __saveds __asm WindowBackfillRoutine(register __a0 struct FatHook *Hook, register __a2 struct RastPort *RPort, register __a1 struct LayerMsg *Bounds);
 VOID LocalPrintIText(struct RastPort *rp, struct IntuiText *itext, WORD left, WORD top);
-VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width, BOOL UseHighlightImagery);
+VOID DrawMenuItem(struct RastPort *rp, struct MenuItem *Item, LONG x, LONG y, UWORD CmdOffs, BOOL GhostIt, BOOL Highlighted, WORD Left, WORD Width);
 BOOL GetSubItemContCoor(struct MenuItem *MenuItem, LONG *t, LONG *l, LONG *w, LONG *h);
 VOID CleanUpMenuSubBox(VOID);
 BOOL DrawHiSubItem(struct MenuItem *Item);
@@ -180,5 +182,5 @@ UWORD SendIntuiMessage(ULONG Class, UWORD *Code, UWORD Qualifier, APTR IAddress,
 /* remap.a */
 
 /* storage.c */
-LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);
+LONG RestoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr, LONG *NumItemsPtr);
 LONG StoreData(STRPTR Name, STRPTR Type, LONG Version, struct StorageItem *Items, LONG NumItems, APTR DataPtr);

@@ -27,12 +27,13 @@ VERSION = 2
 
 GSTFILE =	system_headers.gst
 OPTIMIZE =	optimize opttime optinlocal optschedule optdepth=10 optrdepth=10
-#CPU =		040
-CPU =		any
+CPU =		040
+#CPU =		any
 DEBUG =		line
 CFLAGS =	idlen=64 streq strmerge nostackcheck params=r \
 		idir=include gst=$(GSTFILE) cpu=$(CPU) debug=$(DEBUG) $(OPTIMIZE)
-AFLAGS =	-D -u
+AFLAGS =	-u
+LFLAGS =	smallcode smalldata noicons
 LIBS =		lib:sc.lib lib:amiga.lib lib:debug.lib
 
 ###############################################################################
@@ -72,7 +73,7 @@ SOURCE = \
 
 ###############################################################################
 
-all: tagfiles $(GSTFILE) protos.h MagicMenu MagicMenuPrefs
+all: tagfiles $(GSTFILE) protos.h MagicMenu.h MagicMenu MagicMenuPrefs
 
 ###############################################################################
 
@@ -156,7 +157,7 @@ xref-clean:
 ###############################################################################
 
 checkin: RCS
-	ci -M -l$(VERSION) -m. -t-. $(SOURCE)
+	ci -M -d -l$(VERSION) -m. -t-. $(SOURCE)
 
 lock: RCS
 	rcs -l $(SOURCE)

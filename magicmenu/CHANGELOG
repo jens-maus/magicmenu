@@ -484,3 +484,28 @@ MagicMenu 2.26 (11.10.1999)
 
 - Added new configuration options "Transparency", "Separator bar style",
   "Highlight disabled menu items", "Verify patches" and "Fix patches".
+
+
+MagicMenu 2.27 (11.10.1999)
+
+- Small detail: with transparency enabled, the highlight image of a tick
+  mark did not get drawn properly. Fixed.
+
+
+MagicMenu 2.28 (12.10.1999)
+
+- Reworked the transparency mode image creation code. The multicolour
+  3D mode images now come out as transparent.
+
+
+MagicMenu 2.29 (15.10.1999)
+
+- Changed the minimum drop shadow size to 2 pixels.
+
+- Transparency is no longer allowed for the traditional pull-down
+  menus.
+
+- MagicMenu no longer resets its entire configuration if it finds
+  a configuration file that does not contain data for recently added
+  configuration items. It now retains the old data and resets the
+  new entries to defaults instead.

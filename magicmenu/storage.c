@@ -212,10 +212,13 @@ PrepareItem(APTR That,WORD Type,WORD Size,STRPTR String)
 /******************************************************************************/
 
 LONG
-RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG NumItems,APTR DataPtr)
+RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG NumItems,APTR DataPtr,LONG * NumItemsPtr)
 {
 	STRPTR LocalBuffer;
 	LONG Error;
+
+	if(NumItemsPtr != NULL)
+		(*NumItemsPtr) = 0;
 
 	if(!(LocalBuffer = (STRPTR)AllocVec(1024,MEMF_ANY)))
 		Error = IoErr();
@@ -323,6 +326,12 @@ RestoreData(STRPTR Name,STRPTR Type,LONG Version,struct StorageItem *Items,LONG 
 
 								if(Error = PrepareItem((APTR)(((ULONG)DataPtr) + Items[Index].si_Offset),Items[Index].si_Type,Items[Index].si_Size,Argument))
 									break;
+
+								if(NumItemsPtr != NULL)
+								{
+									if(Index == 0 || (Index > 0 && Items[Index-1].si_Found))
+										(*NumItemsPtr) = 1 + (*NumItemsPtr);
+								}
 							}
 						}
 					}
