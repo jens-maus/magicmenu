@@ -509,3 +509,16 @@ MagicMenu 2.29 (15.10.1999)
   a configuration file that does not contain data for recently added
   configuration items. It now retains the old data and resets the
   new entries to defaults instead.
+
+
+MagicMenu 2.30 (7.8.2000)
+
+- Bitmaps are now allocated in CyberGraphX V4 friendly form, which
+  permits them to be stored in video memory. The result should be
+  a noticeable speed increase.
+
+
+MagicMenu 2.31 (2.3.2001)
+
+- Made the 'SetFunction()' patch safer, following much good advice
+  from Harry Sintonen.
