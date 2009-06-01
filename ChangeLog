@@ -1,3 +1,14 @@
+---------------------
+MagicMenu - ChangeLog
+---------------------
+
+$Id$
+$URL$
+
+2009-06-01  Jens Langner <Jens.Langner@light-speed.de>
+
+  * misc: final open source release under the GPL license.
+
 2002-03-19  Stephan Rupprecht <mail@stephan-rupprecht.de>
 
   * transparency can be disabled for pull-down menus, now.
