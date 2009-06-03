@@ -1,0 +1,237 @@
+## version $VER: MagicMenu.catalog 1.0 (2.12.96)
+## language polski
+;
+MSG_PREFSTITLE_TXT
+Preferencje MagicMenu %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT
+Wyglâd i dziaîanie
+;
+MSG_PAGELABEL2_TXT
+Klawiatura
+;
+MSG_PAGELABEL3_TXT
+Kolory
+;
+MSG_SAVE_GAD
+Zapisz
+;
+MSG_TEST_GAD
+Testuj
+;
+MSG_USE_GAD
+Uûyj
+;
+MSG_CANCEL_GAD
+Poniechaj
+;
+MSG_USAGELABEL1_TXT
+Jak Intuition
+;
+MSG_USAGELABEL2_TXT
+Trzymaj otwarte
+;
+MSG_USAGELABEL3_TXT
+Otwierane rëcznie
+;
+MSG_LOOKLABEL1_TXT
+Standardowy
+;
+MSG_LOOKLABEL2_TXT
+Trójwymiarowy
+;
+MSG_LOOKLABEL3_TXT
+Wielokolorowy
+;
+MSG_USAGE_GAD
+Dziaîanie:
+;
+MSG_LOOK_GAD
+Wyglâd:
+;
+MSG_CENTRE_BOXES_GAD
+Centruj:
+;
+MSG_TYPELABEL1_TXT
+Tylko menu rozwijane
+;
+MSG_TYPELABEL2_TXT
+Tylko menu ruchome
+;
+MSG_TYPELABEL3_TXT
+Zaleûny od pozycji wskaúnika
+;
+MSG_PULL_DOWN_GROUP_TXT
+Menu rozwijane
+;
+MSG_POP_UP_GROUP_TXT
+Menu ruchome
+;
+MSG_GENERAL_GROUP_TXT
+Ogólne
+;
+MSG_TYPE_GAD
+Typ menu:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD
+_Wîâczona obsîuga menu z klawiatury:
+;
+MSG_MOVE_MOUSE_GAD
+_Przesuwaj wskaúnik myszy do menu:
+;
+MSG_ACTIVATE_WITH_GAD
+_Aktywacja za pomocâ [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD
+_Klawisze wywoîujâce menu:
+;
+MSG_MARK_SUBMENUS_GAD
+Zaznaczaj podmenu:
+;
+MSG_DOUBLE_BORDERS_GAD
+Podwójna ramka menu:
+;
+MSG_NON_BLOCKING_GAD
+Menu nie blokujâce:
+;
+MSG_BRIGHT_EDGES_TXT
+Jasne krawëdzie
+;
+MSG_DARK_EDGES_TXT
+Ciemne krawëdzie
+;
+MSG_BACKGROUND_TXT
+Tîo
+;
+MSG_TEXT_TXT
+Tekst
+;
+MSG_SELECTED_TEXT_TXT
+Zaznaczony tekst
+;
+MSG_SELECTED_BACKGROUND_TXT
+Zaznaczone tîo
+;
+MSG_RED_TXT
+_Czerwony:
+;
+MSG_GREEN_TXT
+_Zielony:
+;
+MSG_BLUE_TXT
+_Niebieski:
+;
+MSG_HUE_TXT
+_Odcieï:
+;
+MSG_SATURATION_TXT
+_Nasycenie:
+;
+MSG_BRIGHTNESS_TXT
+_Jasnoôê:
+;
+MSG_SAMPLE_MENU_TXT
+Przykîadowe menu
+;
+MSG_PROJECT_TITLE_MEN
+Projekt
+;
+MSG_OPEN_MEN
+O\0Wczytaj...
+;
+MSG_SAVE_AS_MEN
+A\0Zapisz jako...
+;
+MSG_ABOUT_MEN
+?\0O programie...
+;
+MSG_QUIT_MEN
+Q\0Skoïcz
+;
+MSG_EDIT_TITLE_MEN
+Edycja
+;
+MSG_RESET_TO_DEFAULTS_MEN
+D\0Ustawienia standardowe
+;
+MSG_LAST_SAVED_MEN
+L\0Ustawienia ostatnio zapisane
+;
+MSG_RESTORE_MEN
+R\0Anuluj zmiany ustawieï
+;
+MSG_SETTINGS_TITLE_MEN
+Ustawienia
+;
+MSG_CREATE_ICONS_MEN
+I\0Zapisuj ikonki?
+;
+MSG_SLIDER_COLOR_MODEL_MEN
+Model barw
+;
+MSG_MODEL_RGB_MEN
+RGB
+;
+MSG_MODEL_HSB_MEN
+HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT
+Bîâd zapisu preferencji
+;
+MSG_ERROR_READING_PREFERENCES_TXT
+Bîâd odczytu preferencji
+;
+MSG_SETUP_FAILURE_TXT
+Bîëdna kombinacja klawiszy %s
+;
+MSG_OPEN_PREFERENCES_TXT
+Wczytaj preferencje
+;
+MSG_SAVE_PREFERENCES_TXT
+Zapisz preferencje
+;
+MSG_ABOUT_TXT
+MagicMenu %ld.%ld (%s)\n\nAutorzy: Martin Korndörfer oraz\nOlaf \"Olsen\" Barthel\n\nGrafika: \
+Mario Cattaneo\n\nPolska wersja jëzykowa: Konrad Dubiel\n<konrad@inet.com.pl>\n\nWszelkie \
+uwagi i raporty o bîëdach proszë\nkierowaê na adres <olsen@sourcery.han.de>
+;
+MSG_COULD_NOT_OPEN_TXT
+Nie mogë wczytaê pliku konfiguracyjnego
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT
+Bîâd w pliku konfiguracyjnym
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT
+wywoîania menu
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT
+wywoîania programu
+;
+MSG_CANNOT_UNINSTALL_TXT
+MagicMenu nie moûe zakoïczyê pracy,\nponiewaû nie otrzymaîo odpowiedzi\nna wszystkie \
+wysîane komunikaty.
+;
+MSG_PRECISION_GAD
+_Precyzja doboru kolorów:
+;
+MSG_PRECISION1_TXT
+Idealna
+;
+MSG_PRECISION2_TXT
+\"Obrazek\"
+;
+MSG_PRECISION3_TXT
+\"Ikonka\"
+;
+MSG_PRECISION4_TXT
+\"GUI\"
+;
+MSG_PREFER_SCREEN_COLOURS_GAD
+P_referuj kolory ekranu:
+;
+MSG_MENUS_OPEN_DELAYED_GAD
+Otwieraj menu z opóúnieniem:
+;
+MSG_DRAW_FRAME_GAD
+Rysuj ramkë dookoîa elementu:
+;

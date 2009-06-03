@@ -1,0 +1,279 @@
+; $VER: magicmenu.cd 1.9 (15.11.96)
+; $VER: magicmenu.español.ct 1.00 (6.12.96)
+; Spanish translation by bengali@iinfo.net <Juan-Antonio Ramirez>
+;
+##version 1.00
+##language español
+##codeset 0
+MSG_PREFSTITLE_TXT
+Preferencias de MagicMenu %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT
+Aspecto y uso
+;***** Estilo y Uso *******
+;
+MSG_PAGELABEL2_TXT
+Control del teclado
+;********** Control de Teclado *******
+;
+MSG_PAGELABEL3_TXT
+Control del color
+;************ Control de Colores **********8
+;
+MSG_SAVE_GAD
+Grabar
+;******** Salvar *********
+;
+MSG_TEST_GAD
+Probar
+;
+MSG_USE_GAD
+Usar
+;
+MSG_CANCEL_GAD
+Cancelar
+;
+MSG_USAGELABEL1_TXT
+Compatible con Intuición
+;
+MSG_USAGELABEL2_TXT
+Botón del ratón pegajoso
+;********** Botón de Mouse Pegajoso **********
+;
+MSG_USAGELABEL3_TXT
+Selección inteligente
+;*********** Selección Inteligente *****************
+;
+MSG_LOOKLABEL1_TXT
+Normal
+;******** Regular ***********
+;
+MSG_LOOKLABEL2_TXT
+3D viejo
+;***************** 3D Normal *************
+;
+MSG_LOOKLABEL3_TXT
+3D multicolor
+;************** 3D Multicolor **************
+;
+MSG_USAGE_GAD
+Uso:
+;
+MSG_LOOK_GAD
+Aspecto:
+;****** Estilo: *******
+;
+MSG_CENTRE_BOXES_GAD
+Centrar cajas:
+;
+MSG_TYPELABEL1_TXT
+Solo menú de barra
+;
+MSG_TYPELABEL2_TXT
+Sólo menú instantáneo
+;
+MSG_TYPELABEL3_TXT
+Dependiente de la posición del puntero
+;********** Dependiendo de la posición del puntero ***********
+;
+MSG_PULL_DOWN_GROUP_TXT
+Menú de Barra
+;
+MSG_POP_UP_GROUP_TXT
+Menú instantáneo
+;
+MSG_GENERAL_GROUP_TXT
+General
+;
+MSG_TYPE_GAD
+Tipo:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD
+Permitir control por leclado:
+;******* Activar control por Teclado: *****************
+;
+MSG_MOVE_MOUSE_GAD
+Mover puntero del ratón a la barra de menú:
+;******* Mover apuntador a barra de menú: *********
+;
+MSG_ACTIVATE_WITH_GAD
+Activar con [Amiga Derecha]+[Alt Derecha]:
+;
+MSG_KEY_SHORTCUT_GAD
+Atajo de teclado:
+;*********** Atajo de Teclado: **************
+;
+MSG_MARK_SUBMENUS_GAD
+Marcar submenús:
+;
+MSG_DOUBLE_BORDERS_GAD
+Bordes dobles:
+;
+MSG_NON_BLOCKING_GAD
+Sin bloqueo:
+;******** No estorboso: **********
+;
+MSG_BRIGHT_EDGES_TXT
+Bordes brillantes
+;********** Esquinas Brillantes *********
+;
+MSG_DARK_EDGES_TXT
+Bordes oscuros
+;********** Esquinas Oscuras ***********
+;
+MSG_BACKGROUND_TXT
+Fondo
+;*********** Escenografía ***********
+;
+MSG_TEXT_TXT
+Texto
+;
+MSG_SELECTED_TEXT_TXT
+Texto seleccionado
+;
+MSG_SELECTED_BACKGROUND_TXT
+Fondo seleccionado
+;*********** Escenografía seleccionada **************
+;
+MSG_RED_TXT
+_Rojo:
+;
+MSG_GREEN_TXT
+_Verde:
+;
+MSG_BLUE_TXT
+_Azul:
+;
+MSG_HUE_TXT
+Tono:
+;
+MSG_SATURATION_TXT
+Saturación:
+;
+MSG_BRIGHTNESS_TXT
+Brillo:
+;
+MSG_SAMPLE_MENU_TXT
+Menú de muestra
+;******** Menú de ejemplo **************
+;
+MSG_PROJECT_TITLE_MEN
+Proyecto
+;
+MSG_OPEN_MEN
+O\0Abrir...
+;
+MSG_SAVE_AS_MEN
+A\0Grabar como...
+;************** A\0Salvar como... ************
+;
+MSG_ABOUT_MEN
+?\0Sobre...
+;********** ?\0Acerca... **************
+;
+MSG_QUIT_MEN
+Q\0Salir
+;
+MSG_EDIT_TITLE_MEN
+Editar
+;
+MSG_RESET_TO_DEFAULTS_MEN
+D\0Restaurar valores
+;******** D\0Restaurar a inicio **************
+;
+MSG_LAST_SAVED_MEN
+L\0Últimos grabados
+;*********** L\0Último salvado ***************
+;
+MSG_RESTORE_MEN
+R\0Restaurar
+;
+MSG_SETTINGS_TITLE_MEN
+Preferencias
+;
+MSG_CREATE_ICONS_MEN
+I\0¿Crear iconos?
+;*********** I\0¿Crear íconos? ************
+;
+MSG_SLIDER_COLOR_MODEL_MEN
+Modelo de color deslizante
+;********** Modelo de color de deslizador **********
+;
+MSG_MODEL_RGB_MEN
+RVA
+;
+MSG_MODEL_HSB_MEN
+TSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT
+Error al escribir preferencias
+;
+MSG_ERROR_READING_PREFERENCES_TXT
+Error al leer preferencias
+;
+MSG_SETUP_FAILURE_TXT
+Error al inicializar %s
+;
+MSG_OPEN_PREFERENCES_TXT
+Abrir preferencias
+;
+MSG_SAVE_PREFERENCES_TXT
+Grabar preferencias
+;********** Salvar preferencias **********
+;
+MSG_ABOUT_TXT
+MagicMenu %ld.%ld (%s)\n\
+\n\
+Escrito por Martin Korndörfer y\n\
+Olaf `Olsen' Barthel\n\
+\n\
+Trabajo artístico por Mario Cattaneo\n\
+\n\
+Para solicitar características o informe de errores\n\
+por favor contacte con <olsen@sourcery.han.de>\n\
+\n\
+Traducido al español por Juan-Antonio Ramirez
+;
+MSG_COULD_NOT_OPEN_TXT
+No puedo abrir archivo de configuración
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT
+Error en archivo de configuración
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT
+secuencia de teclas
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT
+secuencia de teclas para mostrar
+;
+MSG_CANNOT_UNINSTALL_TXT
+MagicMenu no se puede desinstalar a si mismo\n\
+debido a que hay mensajes sin respuesta\n\
+esperando.
+;
+MSG_PRECISION_GAD
+Precisión al igualar color:
+;
+MSG_PRECISION1_TXT
+Exacta
+;
+MSG_PRECISION2_TXT
+`Imagen'
+;
+MSG_PRECISION3_TXT
+`Icono'
+;******** `Icon' **********
+;
+MSG_PRECISION4_TXT
+`GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD
+Preferir colores de pantalla:  ;?????????????????
+;
+MSG_MENUS_OPEN_DELAYED_GAD
+Apertura retrasada de los menús:
+;*********** Menus se abren retrasados: ****************
+;
+MSG_DRAW_FRAME_GAD
+Dibujar marcos alrededor de los objetos de los menús:
+;

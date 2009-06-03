@@ -7,6 +7,7 @@ $URL$
 
 2009-06-03  Jens Langner <Jens.Langner@light-speed.de>
 
+  * locale: added all missing catalog translations to our repository.
   * graphics: added the 'graphics' directory which contains all
     the raw images and tools for the original design of magicmenu.
 

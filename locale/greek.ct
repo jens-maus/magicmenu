@@ -1,0 +1,312 @@
+## version $VER: magicmenu.catalog 10.90 (23.11.96) Pantelis Kopelias
+## codeset 0
+## language greek
+;
+MSG_PREFSTITLE_TXT
+Ρυθμίσεις MagicMenu %ld.%ld <%s>
+; MagicMenu Preferences %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT
+Όψη και χρήση
+; Look and usage
+;
+MSG_PAGELABEL2_TXT
+Ελεγχος πληκτρολογίου
+; Keyboard control
+;
+MSG_PAGELABEL3_TXT
+Έλεγχος χρώματος
+; Colour control
+;
+MSG_SAVE_GAD
+Αποθήκευση
+; Save
+;
+MSG_TEST_GAD
+Δοκιμή
+; Test
+;
+MSG_USE_GAD
+Χρήση
+; Use
+;
+MSG_CANCEL_GAD
+Ακύρωση
+; Cancel
+;
+MSG_USAGELABEL1_TXT
+Συμβατή Intuition
+; Intuition compatible
+;
+MSG_USAGELABEL2_TXT
+Πλήκτρο ποντικιού 'κολημένο'
+; Sticky mouse button
+;
+MSG_USAGELABEL3_TXT
+Έξυπνη επιλογή
+; Smart select
+;
+MSG_LOOKLABEL1_TXT
+Κανονική
+; Standard
+;
+MSG_LOOKLABEL2_TXT
+Παλαιά 3D
+; Old 3D
+;
+MSG_LOOKLABEL3_TXT
+Πολύχρωμη 3D
+; Multicolour 3D
+;
+MSG_USAGE_GAD
+Χρήση:
+; Usage:
+;
+MSG_LOOK_GAD
+Όψη:
+; Look:
+;
+MSG_CENTRE_BOXES_GAD
+Κεντράρισμα πεδίων:
+; Centre boxes:
+;
+MSG_TYPELABEL1_TXT
+Μόνο αναδιπλούμενο μενού
+; Pull-down menu only
+;
+MSG_TYPELABEL2_TXT
+Μόνο Pop-up μενού
+; Pop-up menu only
+;
+MSG_TYPELABEL3_TXT
+Ο δείκτης του ποντικιού εξαρτώμενος από την θέση
+; Mouse pointer position dependent
+;
+MSG_PULL_DOWN_GROUP_TXT
+Αναδιπλούμενο μενού
+; Pull-down menu
+;
+MSG_POP_UP_GROUP_TXT
+Pop-up μενού
+; Pop-up menu
+;
+MSG_GENERAL_GROUP_TXT
+Γενικά
+; General
+;
+MSG_TYPE_GAD
+Τύπος:
+; Type:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD
+Ενεργοποίηση ελέγχου πληκτρολογίου:
+; Keyboard control enabled:
+;
+MSG_MOVE_MOUSE_GAD
+Μετακίνηση του δείκτη mouse στην μπάρα μενού:
+; Move mouse pointer to menu bar:
+;
+MSG_ACTIVATE_WITH_GAD
+Ενεργοποίηση με [Δεξί Amiga]+[Δεξί Alt]:
+; Activate with [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD
+Αντιστοιχία σε πλήκτρο:
+; Keyboard shortcut:
+;
+MSG_MARK_SUBMENUS_GAD
+Μαρκάρισμα Υπομενού:
+; Mark submenus:
+;
+MSG_DOUBLE_BORDERS_GAD
+Διπλή κορνίζα:
+; Double borders:
+;
+MSG_NON_BLOCKING_GAD
+Non blocking:
+; Non blocking:
+;
+MSG_BRIGHT_EDGES_TXT
+Φωτεινές γωνίες
+; Bright edges
+;
+MSG_DARK_EDGES_TXT
+Σκοτεινές γωνίες
+; Dark edges
+;
+MSG_BACKGROUND_TXT
+Φόντο
+; Background
+;
+MSG_TEXT_TXT
+Κείμενο
+; Text
+;
+MSG_SELECTED_TEXT_TXT
+Επιλεγμένο κείμενο
+; Selected text
+;
+MSG_SELECTED_BACKGROUND_TXT
+Επιλεγμένο φόντο
+; Selected background
+;
+MSG_RED_TXT
+_Kόκκινο:
+; _Red:
+;
+MSG_GREEN_TXT
+Πράσσιν_o:_
+; _Green:
+;
+MSG_BLUE_TXT
+_Mπλέ:
+; _Blue:
+;
+MSG_HUE_TXT
+Hue:
+; Hue:
+;
+MSG_SATURATION_TXT
+Saturation:
+; Saturation:
+;
+MSG_BRIGHTNESS_TXT
+Φωτεινότητα:
+; Brightness:
+;
+MSG_SAMPLE_MENU_TXT
+Υπόδειγμα μενού
+; Sample menu
+;
+MSG_PROJECT_TITLE_MEN
+Εργασία
+; Project
+;
+MSG_OPEN_MEN
+O\0Άνοιγμα...
+; O\0Open...
+;
+MSG_SAVE_AS_MEN
+A\0Αποθήκευση σαν...
+; A\0Save as...
+;
+MSG_ABOUT_MEN
+?\0Γιά το πρόγραμμα...
+; ?\0About...
+;
+MSG_QUIT_MEN
+Q\0Τέλος Εργασίας
+; Q\0Quit
+;
+MSG_EDIT_TITLE_MEN
+Διόρθωση
+; Edit
+;
+MSG_RESET_TO_DEFAULTS_MEN
+D\0Επαναφορά στα προκαθορισμένα
+; D\0Reset to defaults
+;
+MSG_LAST_SAVED_MEN
+L\0Τελευταία αποθηκευμένα
+; L\0Last saved
+;
+MSG_RESTORE_MEN
+R\0Επαναφορά
+; R\0Restore
+;
+MSG_SETTINGS_TITLE_MEN
+Ρυθμίσεις
+; Settings
+;
+MSG_CREATE_ICONS_MEN
+I\0Δημιουργία εικονιδίων;
+; I\0Create icons?
+;
+MSG_SLIDER_COLOR_MODEL_MEN
+Μοντέλο χρώματος Slider
+; Slider color model
+;
+MSG_MODEL_RGB_MEN
+RGB
+; RGB
+;
+MSG_MODEL_HSB_MEN
+HSB
+; HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT
+Λάθος κατά την εγγραφή των ρυθμίσεων
+; Error writing preferences
+;
+MSG_ERROR_READING_PREFERENCES_TXT
+Λάθος κατά την ανάγνωση των ρυθμίσεων
+; Error reading preferences
+;
+MSG_SETUP_FAILURE_TXT
+Λάθος κατά την έναρξη του %s
+; Error initializing %s
+;
+MSG_OPEN_PREFERENCES_TXT
+;Άνοιγμα ρυθμίσεων
+; Open preferences
+;
+MSG_SAVE_PREFERENCES_TXT
+Αποθήκευση ρυθμίσεων
+; Save preferences
+;
+MSG_ABOUT_TXT
+MagicMenu %ld.%ld (%s)\n\nΓράφτηκε από τους Martin Korndφrfer και\nOlaf `Olsen' Barthel\n\nΚαλλιτεχνικά από τον Mario Cattaneo\n\nΓια ερωτήσεις και bug reports\nπαρακαλώ να απευθύνεστε στον <olsen@sourcery.han.de>\n\nEλληνική μετάφραση: Παντελής Κοπελιάς\n<leestar@acropolis.net>\nProofReading: Μάνος Κωνσταντινιάδης <konem@acropolis.net>\n
+; MagicMenu %ld.%ld (%s)\n\nWritten by Martin Korndφrfer and\nOlaf `Olsen' Barthel\n\nArtwork created by Mario Cattaneo\n\nFor feature requests or bug reports\nplease contact <olsen@sourcery.han.de>
+;
+MSG_COULD_NOT_OPEN_TXT
+Αδυνατεί να ανοιχθεί το αρχείο ρυθμίσεων
+; Could not open configuration file
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT
+Λάθος στο αρχείο ρυθμίσεων
+; Error in configuration file
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT
+Ακολουθία  keyboard hotkey
+; keyboard hotkey sequence
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT
+Ακολουθία pop-up hotkey
+; pop-up hotkey sequence
+;
+MSG_CANNOT_UNINSTALL_TXT
+Το MagicMenu αδυνατεί να απεγκατασταθεί\nγιατί υπάρχουν ακόμα αναπάντητα\nμυνήματα σε εκρεμότητα.
+; MagicMenu cannot uninstall itself\nbecause there are still unreplied\nmessages pending.
+;
+MSG_PRECISION_GAD
+Ακρίβεια ταιριάσματος χρωμάτων:
+; Colour matching precision:
+;
+MSG_PRECISION1_TXT
+Ακριβής
+; Exact
+;
+MSG_PRECISION2_TXT
+'Είδωλο'
+; `Image'
+;
+MSG_PRECISION3_TXT
+'Εικονίδιο'
+; `Icon'
+;
+MSG_PRECISION4_TXT
+'GUI'
+; `GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD
+Προτίμηση χρωμάτων οθόνης:
+; Prefer screen colours:
+;
+MSG_MENUS_OPEN_DELAYED_GAD
+Καθυστέρηση ανοίγματος μενού:
+; Menus open delayed:
+;
+MSG_DRAW_FRAME_GAD
+Σχεδίαση κορνίζας γύρω από τα στοιχεία του μενού:
+; Draw frames around menu items:
+;

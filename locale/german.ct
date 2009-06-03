@@ -1,0 +1,353 @@
+## version $VER: magicmenu.catalog 1.11 (11.10.1999)
+## codeset 0
+## language deutsch
+;
+MSG_PREFSTITLE_TXT
+MagicMenu Voreinstellungen %ld.%ld <%s>
+; MagicMenu Preferences %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT
+Aussehen und Bedienung
+; Look and usage
+;
+MSG_PAGELABEL2_TXT
+Tastensteuerung
+; Keyboard control
+;
+MSG_PAGELABEL3_TXT
+Farbeinstellungen
+; Colour control
+;
+MSG_SAVE_GAD
+Speichern
+; Save
+;
+MSG_TEST_GAD
+Testen
+; Test
+;
+MSG_USE_GAD
+Benutzen
+; Use
+;
+MSG_CANCEL_GAD
+Abbrechen
+; Cancel
+;
+MSG_USAGELABEL1_TXT
+Intuition-kompatibel
+; Intuition compatible
+;
+MSG_USAGELABEL2_TXT
+Eingerastete Maustaste
+; Sticky mouse button
+;
+MSG_USAGELABEL3_TXT
+Intelligente Moduswahl
+; Smart select
+;
+MSG_LOOKLABEL1_TXT
+Standard
+; Standard
+;
+MSG_LOOKLABEL2_TXT
+3D alt
+; Old 3D
+;
+MSG_LOOKLABEL3_TXT
+3D mehrfarbig
+; Multicolour 3D
+;
+MSG_USAGE_GAD
+Bedienung
+; Usage:
+;
+MSG_LOOK_GAD
+Aussehen
+; Look:
+;
+MSG_CENTRE_BOXES_GAD
+Menüs zentrieren:
+; Centre boxes:
+;
+MSG_TYPELABEL1_TXT
+Nur Pull-down Menü
+; Pull-down menu only
+;
+MSG_TYPELABEL2_TXT
+Nur Pop-up Menü
+; Pop-up menu only
+;
+MSG_TYPELABEL3_TXT
+Abhängig von Mauszeigerposition
+; Mouse pointer position dependent
+;
+MSG_PULL_DOWN_GROUP_TXT
+Pull-down Menü
+; Pull-down menu
+;
+MSG_POP_UP_GROUP_TXT
+Pop-up Menü
+; Pop-up menu
+;
+MSG_GENERAL_GROUP_TXT
+Allgemeines
+; General
+;
+MSG_TYPE_GAD
+Art:
+; Type:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD
+Tastensteuerung aktiviert:
+; Keyboard control enabled:
+;
+MSG_MOVE_MOUSE_GAD
+Mauszeiger zur Menüleiste bewegen:
+; Move mouse pointer to menu bar:
+;
+MSG_ACTIVATE_WITH_GAD
+Aktivieren mit [Rechts Amiga]+[Rechts Alt]:
+; Activate with [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD
+Tastenkurzbefehl:
+; Keyboard shortcut:
+;
+MSG_MARK_SUBMENUS_GAD
+Untermenüs markieren:
+; Mark submenus:
+;
+MSG_DOUBLE_BORDERS_GAD
+Doppelt umrahmen:
+; Double borders:
+;
+MSG_NON_BLOCKING_GAD
+Nicht blockierend:
+; Non blocking:
+;
+MSG_BRIGHT_EDGES_TXT
+Helle Kanten
+; Bright edges
+;
+MSG_DARK_EDGES_TXT
+Dunkle Kanten
+; Dark edges
+;
+MSG_BACKGROUND_TXT
+Hintergrund
+; Background
+;
+MSG_TEXT_TXT
+Text
+; Text
+;
+MSG_SELECTED_TEXT_TXT
+Ausgewählter Text
+; Selected text
+;
+MSG_SELECTED_BACKGROUND_TXT
+Ausgewählter Hintergrund
+; Selected background
+;
+MSG_RED_TXT
+_Rot:
+; _Red:
+;
+MSG_GREEN_TXT
+_Grün:
+; _Green:
+;
+MSG_BLUE_TXT
+_Blau:
+; _Blue:
+;
+MSG_HUE_TXT
+Farbton:
+; Hue:
+;
+MSG_SATURATION_TXT
+Sättigung:
+; Saturation:
+;
+MSG_BRIGHTNESS_TXT
+Helligkeit:
+; Brightness:
+;
+MSG_SAMPLE_MENU_TXT
+Beispielmenü
+; Sample menu
+;
+MSG_PROJECT_TITLE_MEN
+Projekt
+; Project
+;
+MSG_OPEN_MEN
+O\0Öffnen...
+; O\0Open...
+;
+MSG_SAVE_AS_MEN
+A\0Speichern unter...
+; A\0Save as...
+;
+MSG_ABOUT_MEN
+?\0Über dieses Programm...
+; ?\0About...
+;
+MSG_QUIT_MEN
+Q\0Beenden
+; Q\0Quit
+;
+MSG_EDIT_TITLE_MEN
+Bearbeiten
+; Edit
+;
+MSG_RESET_TO_DEFAULTS_MEN
+Z\0Auf Vorgaben zurücksetzen
+; D\0Reset to defaults
+;
+MSG_LAST_SAVED_MEN
+L\0Auf zuletzt gespeichertes
+; L\0Last saved
+;
+MSG_RESTORE_MEN
+S\0Auf vorherigen Stand
+; R\0Restore
+;
+MSG_SETTINGS_TITLE_MEN
+Einstellungen
+; Settings
+;
+MSG_CREATE_ICONS_MEN
+I\0Piktogramme erzeugen?
+; I\0Create icons?
+;
+MSG_SLIDER_COLOR_MODEL_MEN
+Farb-Schieberegler
+; Slider color model
+;
+MSG_MODEL_RGB_MEN
+RGB
+; RGB
+;
+MSG_MODEL_HSB_MEN
+FSH
+; HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT
+Fehler beim Speichern der Einstellungen
+; Error writing preferences
+;
+MSG_ERROR_READING_PREFERENCES_TXT
+Fehler beim Lesen der Einstellungen
+; Error reading preferences
+;
+MSG_SETUP_FAILURE_TXT
+Fehler beim Initialisieren (%s)
+; Error initializing %s
+;
+MSG_OPEN_PREFERENCES_TXT
+Einstellungen lesen
+; Open preferences
+;
+MSG_SAVE_PREFERENCES_TXT
+Einstellungen speichern
+; Save preferences
+;
+MSG_ABOUT_TXT
+MagicMenu %ld.%ld (%s)\n\n\
+Geschrieben von by Martin Korndörfer und\n\
+Olaf `Olsen' Barthel\n\n\
+Grafikdesign erstellt von Mario Cattaneo\n\n\
+Bei Verbesserungsvorschlägen und Programmfehlern\n\
+wenden Sie sich bitte an <olsen@sourcery.han.de>
+; MagicMenu %ld.%ld (%s)\n\nWritten by Martin Korndörfer and\nOlaf `Olsen' Barthel\n\nArtwork created by Mario Cattaneo\n\nFor feature requests or bug reports\nplease contact <olsen@sourcery.han.de>
+;
+MSG_COULD_NOT_OPEN_TXT
+Konnte Konfigurationsdatei nicht öffnen
+; Could not open configuration file
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT
+Die Konfigurationsdatei ist fehlerhaft
+; Error in configuration file
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT
+Tastenbefehl
+; keyboard hotkey sequence
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT
+Pop-up Tastenbefehl
+; pop-up hotkey sequence
+;
+MSG_CANNOT_UNINSTALL_TXT
+MagicMenu kann nicht beendet werden,\n\
+da noch nicht alle Programme ihre\n\
+Eingabeereignisse verarbeitet haben.
+; MagicMenu cannot uninstall itself\nbecause there are still unreplied\nmessages pending.
+;
+MSG_PRECISION_GAD
+Farbgenauigkeit:
+; Colour matching precision:
+;
+MSG_PRECISION1_TXT
+Exakt
+; Exact
+;
+MSG_PRECISION2_TXT
+`Bild'
+; `Image'
+;
+MSG_PRECISION3_TXT
+`Piktogramm'
+; `Icon'
+;
+MSG_PRECISION4_TXT
+`Grafische Benutzeroberfläche'
+; `GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD
+Bildschirmfarben vorziehen:
+; Prefer screen colours:
+;
+MSG_MENUS_OPEN_DELAYED_GAD
+Öffne Menüs verzögert:
+; Menus open delayed:
+;
+MSG_DRAW_FRAME_GAD
+Rahmen um Menüpunkte zeichnen:
+; Draw frames around menu items:
+;
+MSG_CAST_DROP_SHADOWS_GAD
+Schatten werfen:
+; Cast drop shadows:
+;
+;--- start of 1.11 strings
+;
+MSG_HIGHLIGHT_DISABLED_GAD
+Gesperrte Menüpunkte markieren:
+; Highlight disabled menu items:
+;
+MSG_TRANSPARENCY_GAD
+Transparenzeffekte:
+; Transparency:
+;
+MSG_SEPARATOR_STYLE_GAD
+Aussehen der Trennbalken
+; Separator bar style:
+;
+MSG_SEPARATOR_STYLE1_TXT
+Prägung
+; Dent
+;
+MSG_SEPARATOR_STYLE2_TXT
+Lücke
+; Gap
+;
+MSG_VERIFY_PATCHES_GAD
+Systemveränderungen prüfen:
+; Verify patches:
+;
+MSG_FIX_PATCHES_GAD
+Systemveränderungen korrigieren:
+; Fix patches:
+;

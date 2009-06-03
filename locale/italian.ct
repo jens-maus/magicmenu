@@ -1,0 +1,326 @@
+## version $VER: magicmenu.cd 1.10 (29.11.96)  Translated by Francesco Mancuso & Vincenzo Gervasi
+## language italiano
+## codeset 0
+;
+MSG_PREFSTITLE_TXT
+Preferenze di MagicMenu %ld.%ld <%s>
+;MagicMenu Preferences %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT
+Aspetto e uso
+;Look and usage
+;
+MSG_PAGELABEL2_TXT
+Controllo da tastiera
+;Keyboard control
+;
+MSG_PAGELABEL3_TXT
+Controllo colore
+;Colour control
+;
+MSG_SAVE_GAD
+Salva
+;Save
+;
+MSG_TEST_GAD
+Prova
+;Test
+;
+MSG_USE_GAD
+Usa
+;Use
+;
+MSG_CANCEL_GAD
+Annulla
+;Cancel
+;
+MSG_USAGELABEL1_TXT
+Compatibile Intuition
+;Intuition compatible
+;
+MSG_USAGELABEL2_TXT
+Tasto destro premuto
+;Sticky mouse button
+;
+MSG_USAGELABEL3_TXT
+Tasto sinistro
+;Smart select
+;
+MSG_LOOKLABEL1_TXT
+Standard
+;Standard
+;
+MSG_LOOKLABEL2_TXT
+3D Vecchio Stile
+;Old 3D
+;
+MSG_LOOKLABEL3_TXT
+3D Multicolor
+;Multicolour 3D
+;
+MSG_USAGE_GAD
+Uso:
+;Usage:
+;
+MSG_LOOK_GAD
+Aspetto:
+;Look:
+;
+MSG_CENTRE_BOXES_GAD
+Centrato:
+;Centre boxes:
+;
+MSG_TYPELABEL1_TXT
+Solo menu a tendina
+;Pull-down menu only
+;
+MSG_TYPELABEL2_TXT
+Solo menu a comparsa
+;Pop-up menu only
+;
+MSG_TYPELABEL3_TXT
+Secondo la posizione del puntatore
+;Mouse pointer position dependent
+;
+MSG_PULL_DOWN_GROUP_TXT
+Menu a tendina
+;Pull-down menu
+;
+MSG_POP_UP_GROUP_TXT
+Menu a comparsa
+;Pop-up menu
+;
+MSG_GENERAL_GROUP_TXT
+Generale
+;General
+;
+MSG_TYPE_GAD
+Tipo:
+;Type:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD
+Controllo da tastiera:
+;Keyboard control enabled:
+;
+MSG_MOVE_MOUSE_GAD
+Porta il puntatore alla barra menu:
+;Move mouse pointer to menu bar:
+;
+MSG_ACTIVATE_WITH_GAD
+Attiva con [Amiga destro]+[Alt destro]:
+;Activate with [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD
+Abbreviazione da tastiera:
+;Keyboard shortcut:
+;
+MSG_MARK_SUBMENUS_GAD
+Indica sottomenu:
+;Mark submenus:
+;
+MSG_DOUBLE_BORDERS_GAD
+Doppio bordo:
+;Double borders:
+;
+MSG_NON_BLOCKING_GAD
+Non bloccante:
+;Non blocking:
+;
+MSG_BRIGHT_EDGES_TXT
+Bordi chiari
+;Bright edges
+;
+MSG_DARK_EDGES_TXT
+Bordi scuri
+;Dark edges
+;
+MSG_BACKGROUND_TXT
+Sfondo
+;Background
+;
+MSG_TEXT_TXT
+Testo
+;Text
+;
+MSG_SELECTED_TEXT_TXT
+Testo selezionato
+;Selected text
+;
+MSG_SELECTED_BACKGROUND_TXT
+Sfondo selezionato
+;Selected background
+;
+MSG_RED_TXT
+Rosso:
+;_Red:
+;
+MSG_GREEN_TXT
+Verde:
+;_Green:
+;
+MSG_BLUE_TXT
+Blu:
+;_Blue:
+;
+MSG_HUE_TXT
+Tinta:
+;Hue:
+;
+MSG_SATURATION_TXT
+Saturazione:
+;Saturation:
+;
+MSG_BRIGHTNESS_TXT
+Luminosità:
+;Brightness:
+;
+MSG_SAMPLE_MENU_TXT
+Menu campione
+;Sample menu
+;
+MSG_PROJECT_TITLE_MEN
+Progetto
+;Project
+;
+MSG_OPEN_MEN
+C\0Carica...
+;O\0Open...
+;
+MSG_SAVE_AS_MEN
+S\0Salva come...
+;A\0Save as...
+;
+MSG_ABOUT_MEN
+?\0Informazioni...
+;?\0About...
+;
+MSG_QUIT_MEN
+F\0Fine
+;Q\0Quit
+;
+MSG_EDIT_TITLE_MEN
+Editore
+;Edit
+;
+MSG_RESET_TO_DEFAULTS_MEN
+P\0Ripristina valori predefiniti
+;D\0Reset to defaults
+;
+MSG_LAST_SAVED_MEN
+U\0Ripristina ultimi valori
+;L\0Last saved
+;
+MSG_RESTORE_MEN
+A\0Annulla modifiche
+;R\0Restore
+;
+MSG_SETTINGS_TITLE_MEN
+Impostazioni
+;Settings
+;
+MSG_CREATE_ICONS_MEN
+I\0Crea icone?
+;I\0Create icons?
+;
+MSG_SLIDER_COLOR_MODEL_MEN
+Modo cursori colore
+;Slider color model
+;
+MSG_MODEL_RGB_MEN
+RVB/RGB
+;RGB
+;
+MSG_MODEL_HSB_MEN
+TSL/HSB
+;HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT
+Errore durante la scrittura delle preferenze
+;Error writing preferences
+;
+MSG_ERROR_READING_PREFERENCES_TXT
+Errore durante la lettura delle preferenze
+;Error reading preferences
+;
+MSG_SETUP_FAILURE_TXT
+Errore di inizializzazione su %s
+;Error initializing %s
+;
+MSG_OPEN_PREFERENCES_TXT
+Carica preferenze
+;Open preferences
+;
+MSG_SAVE_PREFERENCES_TXT
+Salva preferenze
+;Save preferences
+;
+MSG_ABOUT_TXT
+MagicMenu %ld.%ld (%s)\n\nScritto da Martin Korndörfer e\nOlaf `Olsen' Barthel.\n\nGrafica creata da Mario Cattaneo.\n\nPer richiedere miglioramenti o\nsegnalazioni di errori contattate\n<olsen@sourcery.han.de>\n\nTraduzione di F. Mancuso e V. Gervasi.
+;MagicMenu %ld.%ld (%s)\n\
+;\n\
+;Written by Martin Korndörfer and\n\
+;Olaf `Olsen' Barthel\n\
+;\n\
+;Artwork created by Mario Cattaneo\n\
+;\n\
+;For feature requests or bug reports\n\
+;please contact <olsen@sourcery.han.de>
+;
+MSG_COULD_NOT_OPEN_TXT
+Non posso aprire il file di configurazione
+;Could not open configuration file
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT
+Errore nel file di configurazione
+;Error in configuration file
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT
+tasti per attivazione da tastiera
+;keyboard hotkey sequence
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT
+tasti per i menu a comparsa
+;pop-up hotkey sequence
+;
+MSG_CANNOT_UNINSTALL_TXT
+Magicmenu non può disinstallarsi\nperché vi sono ancora messaggi\nsenza risposta in attesa.
+;MagicMenu cannot uninstall itself\n\
+;because there are still unreplied\n\
+;messages pending.
+;
+MSG_PRECISION_GAD
+Accuratezza dei colori:
+;Colour matching precision:
+;
+MSG_PRECISION1_TXT
+Esatta
+;Exact
+;
+MSG_PRECISION2_TXT
+"Immagine"
+;`Image'
+;
+MSG_PRECISION3_TXT
+"Icona"
+;`Icon'
+;
+MSG_PRECISION4_TXT
+"GUI"
+;`GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD
+Prefer colori schermo:
+;Prefer screen colours:
+;
+MSG_MENUS_OPEN_DELAYED_GAD
+Apertura ritardata Menu:
+;Menus open delayed:
+;
+MSG_DRAW_FRAME_GAD
+Disegna cornice nella voce menu:
+;Draw frames around menu items:
+;
+MSG_CAST_DROP_SHADOWS_GAD
+Mostra l'ombreggiatura:
+;Cast drop shadows:
+;

@@ -1,0 +1,268 @@
+;
+; I there !!!
+;
+;   My name is Rodrigo Agostinho, I am a proud owner of an Amiga 
+; 500 Plus (But with an Amiga 4000T 060, always on the mind), since
+; I like so much of this  program  MagicMenu, I have decided to 
+; translate the catalog of MagicMenu into portuguese (hopefully 
+; usefull to somebody), so it can be included in MagicMenu package.
+; I have already left my signature in the guests  book (the only
+; portuguese, at the moment).  I also give my full consent for the  
+; distribution of the  portuguese catalog of  MagicMenu, through all of 
+; Internet, after all MagicMenu is a really good program.
+;
+; I would like to be of any good for the Amiga Community, by doing 
+; several works  like translating  catalogs for example, as I  don't know
+; how to program games or utils.  I want to finish by saying how great 
+; MagicMenu is, and that it gives that really magic felling to
+; Workbench.
+;
+; You can erase the lines above (if you want to), if you wish to write 
+; me, by any reason, my e-mail is: aylaxperience@hotmail.com
+;
+; $VER: magicmenu.cd 1.11 (11.02.98)
+;
+MSG_PREFSTITLE_TXT (//)
+Preferências MagicMenu %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT (//)
+Ver e usar
+;
+MSG_PAGELABEL2_TXT (//)
+Controlo de teclado
+;
+MSG_PAGELABEL3_TXT (//)
+Controlo de cor
+;
+MSG_SAVE_GAD (//)
+Salvaguardar
+;
+MSG_TEST_GAD (//)
+Testar
+;
+MSG_USE_GAD (//)
+Usar
+;
+MSG_CANCEL_GAD (//)
+Cancelar
+;
+MSG_USAGELABEL1_TXT (//)
+Intuition compativél
+;
+MSG_USAGELABEL2_TXT (//)
+Botão de rato pegajoso
+;
+MSG_USAGELABEL3_TXT (//)
+Selecção inteligente
+;
+MSG_LOOKLABEL1_TXT (//)
+Standard
+;
+MSG_LOOKLABEL2_TXT (//)
+3D Antigo
+;
+MSG_LOOKLABEL3_TXT (//)
+3D Multi cor
+;
+MSG_USAGE_GAD (//)
+Utilização:
+;
+MSG_LOOK_GAD (//)
+Aspecto:
+;
+MSG_CENTRE_BOXES_GAD (//)
+Centrar caixas:
+;
+MSG_TYPELABEL1_TXT (//)
+Pull-down menu apenas
+;
+MSG_TYPELABEL2_TXT (//)
+Pop-up menu apenas
+;
+MSG_TYPELABEL3_TXT (//)
+Posição dependente do ponteiro do rato
+;
+MSG_PULL_DOWN_GROUP_TXT (//)
+Pull-down menu
+;
+MSG_POP_UP_GROUP_TXT (//)
+Pop-up menu
+;
+MSG_GENERAL_GROUP_TXT (//)
+General
+;
+MSG_TYPE_GAD (//)
+Tipo:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD (//)
+Controlo de teclado ligado:
+;
+MSG_MOVE_MOUSE_GAD (//)
+Mova o ponteiro do rato á barra do menu:
+;
+MSG_ACTIVATE_WITH_GAD (//)
+Activar com [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD (//)
+Atalho do teclado:
+;
+MSG_MARK_SUBMENUS_GAD (//)
+Marcar submenus:
+;
+MSG_DOUBLE_BORDERS_GAD (//)
+Margens duplas:
+;
+MSG_NON_BLOCKING_GAD (//)
+Non bloqueio:
+;
+MSG_BRIGHT_EDGES_TXT (//)
+Cantos claros
+;
+MSG_DARK_EDGES_TXT (//)
+Dark edges
+;
+MSG_BACKGROUND_TXT (//)
+Fundo
+;
+MSG_TEXT_TXT (//)
+Texto
+;
+MSG_SELECTED_TEXT_TXT (//)
+Texto selecionado
+;
+MSG_SELECTED_BACKGROUND_TXT (//)
+Fundo selecionado
+;
+MSG_RED_TXT (//)
+_Vermelho:
+;
+MSG_GREEN_TXT (//)
+V_erde:
+;
+MSG_BLUE_TXT (//)
+_Azul:
+;
+MSG_HUE_TXT (//)
+Cor:
+;
+MSG_SATURATION_TXT (//)
+Saturação:
+;
+MSG_BRIGHTNESS_TXT (//)
+Brilho:
+;
+MSG_SAMPLE_MENU_TXT (//)
+Sample menu
+;
+MSG_PROJECT_TITLE_MEN (//)
+Projecto
+;
+MSG_OPEN_MEN (//)
+A\0Abrir...
+;
+MSG_SAVE_AS_MEN (//)
+S\0Salvaguardar como...
+;
+MSG_ABOUT_MEN (//)
+?\0Acerca...
+;
+MSG_QUIT_MEN (//)
+D\0Desistir
+;
+MSG_EDIT_TITLE_MEN (//)
+Editar
+;
+MSG_RESET_TO_DEFAULTS_MEN (//)
+T\0Reset to defaults
+;
+MSG_LAST_SAVED_MEN (//)
+U\0Ultimo salvaguardado
+;
+MSG_RESTORE_MEN (//)
+R\0Restorar
+;
+MSG_SETTINGS_TITLE_MEN (//)
+Settings
+;
+MSG_CREATE_ICONS_MEN (//)
+I\0Criar icons?
+;
+MSG_SLIDER_COLOR_MODEL_MEN (//)
+Slider color model
+;
+MSG_MODEL_RGB_MEN (//)
+RGB
+;
+MSG_MODEL_HSB_MEN (//)
+HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT (//)
+Erro escrevendo preferências
+;
+MSG_ERROR_READING_PREFERENCES_TXT (//)
+Erro lendo preferências
+;
+MSG_SETUP_FAILURE_TXT (//)
+Erro inicializando %s
+;
+MSG_OPEN_PREFERENCES_TXT (//)
+Abrir preferências
+;
+MSG_SAVE_PREFERENCES_TXT (//)
+Salvaguardar preferências
+;
+MSG_ABOUT_TXT (//)
+MagicMenu %ld.%ld (%s)\n\
+\n\
+Escrito by Martin Korndörfer e\n\
+Olaf `Olsen' Barthel\n\
+\n\
+Artwork criado por Mario Cattaneo\n\
+\n\
+Para pedidos de características ou relatório de bug\n\
+por favor contactar <olsen@sourcery.han.de>
+;
+MSG_COULD_NOT_OPEN_TXT (//)
+Não pode abrir ficheiro de configuração
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT (//)
+Erro no ficheiro de configuração
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT (//)
+sequência hotkey de teclado
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT (//)
+sequência de hotkey pop-up
+;
+MSG_CANNOT_UNINSTALL_TXT (//)
+MagicMenu não pode desinstalar-se\n\
+por causa que há ainda mensagens\n\
+por responder pendentes.
+;
+MSG_PRECISION_GAD (//)
+Precisão de combinação de cor:
+;
+MSG_PRECISION1_TXT (//)
+Exacta
+;
+MSG_PRECISION2_TXT (//)
+`Imagem'
+;
+MSG_PRECISION3_TXT (//)
+`Icon'
+;
+MSG_PRECISION4_TXT (//)
+`GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD (//)
+Cores de ecran preferidas:
+;
+MSG_MENUS_OPEN_DELAYED_GAD (//)
+Abertura de menus atrasada:
+;
+MSG_DRAW_FRAME_GAD (//)
+Desenhar estrutura em volta dos items menu:
+;
+MSG_CAST_DROP_SHADOWS_GAD (//)
+Cast drop shadows:
+;
