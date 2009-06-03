@@ -1,0 +1,18 @@
+.c.o:
+	LC $(CFLAGS) $*.c
+
+.asm.o:
+	ASM -IASM: $*.asm
+
+CFLAGS		= -ccimqws -b1 -r1 -mt0 -O -v -HImage2C.SYM
+LFLAGS		= SC SD ND
+LIBS		= LIB:lc.lib LIB:amiga2.0.lib
+OBJS		= Image2C.o ReadILBM.o Format.o
+
+all:		Image2C.SYM Image2C
+
+Image2C:	$(OBJS)
+		BLINK $(OBJS) TO $@ LIB $(LIBS) $(LFLAGS)
+
+Image2C.SYM:	PreInclude.c
+		LC -ph -oImage2C.SYM PreInclude.c

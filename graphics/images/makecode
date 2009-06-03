@@ -1,0 +1,34 @@
+image2c >ram:Images.c file Amiga8_1 image Amiga8_Normal bitmap Amiga8_NormalBitMap
+image2c >>ram:Images.c file Amiga8_2 image Amiga8_Ghosted bitmap Amiga8_GhostedBitMap
+image2c >>ram:Images.c file Check8_1 image Check8_Normal bitmap Check8_NormalBitMap
+image2c >>ram:Images.c file Check8_2 image Check8_Ghosted bitmap Check8_GhostedBitMap
+image2c >>ram:Images.c file MXDown8_1 image MXDown8_Normal bitmap MXDown8_NormalBitMap
+image2c >>ram:Images.c file MXDown8_2 image MXDown8_Ghosted bitmap MXDown8_GhostedBitMap
+image2c >>ram:Images.c file MXUp8_1 image MXUp8_Normal bitmap MXUp8_NormalBitMap
+image2c >>ram:Images.c file MXUp8_2 image MXUp8_Ghosted bitmap MXUp8_GhostedBitMap
+image2c >>ram:Images.c file Arrow8_1 image Arrow8_Normal bitmap Arrow8_NormalBitMap
+image2c >>ram:Images.c file Arrow8_2 image Arrow8_Ghosted bitmap Arrow8_GhostedBitMap
+image2c >>ram:Images.c file Amiga1 image AmigaNormal bitmap AmigaNormalBitMap
+image2c >>ram:Images.c file Amiga2 image AmigaGhosted bitmap AmigaGhostedBitMap
+image2c >>ram:Images.c file Check1 image CheckNormal bitmap CheckNormalBitMap
+image2c >>ram:Images.c file Check2 image CheckGhosted bitmap CheckGhostedBitMap
+image2c >>ram:Images.c file MXDown1 image MXDownNormal bitmap MXDownNormalBitMap
+image2c >>ram:Images.c file MXDown2 image MXDownGhosted bitmap MXDownGhostedBitMap
+image2c >>ram:Images.c file MXUp1 image MXUpNormal bitmap MXUpNormalBitMap
+image2c >>ram:Images.c file MXUp2 image MXUpGhosted bitmap MXUpGhostedBitMap
+image2c >>ram:Images.c file Arrow1 image ArrowNormal bitmap ArrowNormalBitMap
+image2c >>ram:Images.c file Arrow2 image ArrowGhosted bitmap ArrowGhostedBitMap
+
+image2c >ram:Images4.c file Amiga4 image AmigaNormal4 bitmap AmigaNormalBitMap4
+image2c >>ram:Images4.c file Check4 image CheckNormal4 bitmap CheckNormalBitMap4
+image2c >>ram:Images4.c file MXDown4 image MXDownNormal4 bitmap MXDownNormalBitMap4
+image2c >>ram:Images4.c file MXUp4 image MXUpNormal4 bitmap MXUpNormalBitMap4
+image2c >>ram:Images4.c file Arrow4 image ArrowNormal4 bitmap ArrowNormalBitMap4
+image2c >>ram:Images4.c file Amiga8_4 image AmigaNormal8_4 bitmap AmigaNormalBitMap8_4
+image2c >>ram:Images4.c file Check8_4 image CheckNormal8_4 bitmap CheckNormalBitMap8_4
+image2c >>ram:Images4.c file MXDown8_4 image MXDownNormal8_4 bitmap MXDownNormalBitMap8_4
+image2c >>ram:Images4.c file MXUp8_4 image MXUpNormal8_4 bitmap MXUpNormalBitMap8_4
+image2c >>ram:Images4.c file Arrow8_4 image ArrowNormal8_4 bitmap ArrowNormalBitMap8_4
+
+image2c >ram:DemoImages.c  file Demo_8 image Demo_8_Image bitmap Demo_8_BitMap
+image2c >>ram:DemoImages.c file Demo_11 image Demo_11_Image bitmap Demo_11_BitMap
