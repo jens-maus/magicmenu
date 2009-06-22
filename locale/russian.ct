@@ -1,0 +1,291 @@
+;
+; MagicMenu catalog description
+; $VER: magicmenu.cd 1.13 (20.03.02)
+;
+; $Id: MagicMenu.cd 74 2009-06-03 13:33:25Z damato $
+;
+MSG_PREFSTITLE_TXT (//)
+MagicMenu Preferences %ld.%ld <%s>
+;
+MSG_PAGELABEL1_TXT (//)
+Look and usage
+;
+MSG_PAGELABEL2_TXT (//)
+Keyboard control
+;
+MSG_PAGELABEL3_TXT (//)
+Colour control
+;
+MSG_SAVE_GAD (//)
+Save
+;
+MSG_TEST_GAD (//)
+Test
+;
+MSG_USE_GAD (//)
+Use
+;
+MSG_CANCEL_GAD (//)
+Cancel
+;
+MSG_USAGELABEL1_TXT (//)
+Intuition compatible
+;
+MSG_USAGELABEL2_TXT (//)
+Sticky mouse button
+;
+MSG_USAGELABEL3_TXT (//)
+Smart select
+;
+MSG_LOOKLABEL1_TXT (//)
+Standard
+;
+MSG_LOOKLABEL2_TXT (//)
+Old 3D
+;
+MSG_LOOKLABEL3_TXT (//)
+Multicolour 3D
+;
+MSG_USAGE_GAD (//)
+Usage:
+;
+MSG_LOOK_GAD (//)
+Look:
+;
+MSG_CENTRE_BOXES_GAD (//)
+Centre boxes:
+;
+MSG_TYPELABEL1_TXT (//)
+Pull-down menu only
+;
+MSG_TYPELABEL2_TXT (//)
+Pop-up menu only
+;
+MSG_TYPELABEL3_TXT (//)
+Mouse pointer position dependent
+;
+MSG_PULL_DOWN_GROUP_TXT (//)
+Pull-down menu
+;
+MSG_POP_UP_GROUP_TXT (//)
+Pop-up menu
+;
+MSG_GENERAL_GROUP_TXT (//)
+General
+;
+MSG_TYPE_GAD (//)
+Type:
+;
+MSG_KEYBOARD_CONTROL_ENABLED_GAD (//)
+Keyboard control enabled:
+;
+MSG_MOVE_MOUSE_GAD (//)
+Move mouse pointer to menu bar:
+;
+MSG_ACTIVATE_WITH_GAD (//)
+Activate with [Right Amiga]+[Right Alt]:
+;
+MSG_KEY_SHORTCUT_GAD (//)
+Keyboard shortcut:
+;
+MSG_MARK_SUBMENUS_GAD (//)
+Mark submenus:
+;
+MSG_DOUBLE_BORDERS_GAD (//)
+Double borders:
+;
+MSG_NON_BLOCKING_GAD (//)
+Non blocking:
+;
+MSG_BRIGHT_EDGES_TXT (//)
+Bright edges
+;
+MSG_DARK_EDGES_TXT (//)
+Dark edges
+;
+MSG_BACKGROUND_TXT (//)
+Background
+;
+MSG_TEXT_TXT (//)
+Text
+;
+MSG_SELECTED_TEXT_TXT (//)
+Selected text
+;
+MSG_SELECTED_BACKGROUND_TXT (//)
+Selected background
+;
+MSG_RED_TXT (//)
+_Red:
+;
+MSG_GREEN_TXT (//)
+_Green:
+;
+MSG_BLUE_TXT (//)
+_Blue:
+;
+MSG_HUE_TXT (//)
+Hue:
+;
+MSG_SATURATION_TXT (//)
+Saturation:
+;
+MSG_BRIGHTNESS_TXT (//)
+Brightness:
+;
+MSG_SAMPLE_MENU_TXT (//)
+Sample menu
+;
+MSG_PROJECT_TITLE_MEN (//)
+Project
+;
+MSG_OPEN_MEN (//)
+O\0Open...
+;
+MSG_SAVE_AS_MEN (//)
+A\0Save as...
+;
+MSG_ABOUT_MEN (//)
+?\0About...
+;
+MSG_QUIT_MEN (//)
+Q\0Quit
+;
+MSG_EDIT_TITLE_MEN (//)
+Edit
+;
+MSG_RESET_TO_DEFAULTS_MEN (//)
+D\0Reset to defaults
+;
+MSG_LAST_SAVED_MEN (//)
+L\0Last saved
+;
+MSG_RESTORE_MEN (//)
+R\0Restore
+;
+MSG_SETTINGS_TITLE_MEN (//)
+Settings
+;
+MSG_CREATE_ICONS_MEN (//)
+I\0Create icons?
+;
+MSG_SLIDER_COLOR_MODEL_MEN (//)
+Slider color model
+;
+MSG_MODEL_RGB_MEN (//)
+RGB
+;
+MSG_MODEL_HSB_MEN (//)
+HSB
+;
+MSG_ERROR_WRITING_PREFERENCES_TXT (//)
+Error writing preferences
+;
+MSG_ERROR_READING_PREFERENCES_TXT (//)
+Error reading preferences
+;
+MSG_SETUP_FAILURE_TXT (//)
+Error initializing %s
+;
+MSG_OPEN_PREFERENCES_TXT (//)
+Open preferences
+;
+MSG_SAVE_PREFERENCES_TXT (//)
+Save preferences
+;
+MSG_ABOUT_TXT (//)
+MagicMenu %ld.%ld (%s)\n\
+\n\
+Written by Martin Korndörfer,\n\
+Olaf `Olsen' Barthel,\n\
+Stephan Rupprecht and\n\
+Jens `Damato` Langner\n\
+\n\
+Artwork created by Mario Cattaneo\n\
+\n\
+For feature requests or bug reports\n\
+please contact <damato@magicmenu.de> or\n\
+<stephan@magicmenu.de>
+;
+MSG_COULD_NOT_OPEN_TXT (//)
+Could not open configuration file
+;
+MSG_ERROR_IN_CONFIGURATION_FILE_TXT (//)
+Error in configuration file
+;
+MSG_KEYBOARD_HOTKEY_SEQUENCE_INVALID_TXT (//)
+keyboard hotkey sequence
+;
+MSG_POPUP_HOTKEY_SEQUENCE_INVALID_TXT (//)
+pop-up hotkey sequence
+;
+MSG_CANNOT_UNINSTALL_TXT (//)
+MagicMenu cannot uninstall itself\n\
+because there are still unreplied\n\
+messages pending.
+;
+MSG_PRECISION_GAD (//)
+Colour matching precision:
+;
+MSG_PRECISION1_TXT (//)
+Exact
+;
+MSG_PRECISION2_TXT (//)
+`Image'
+;
+MSG_PRECISION3_TXT (//)
+`Icon'
+;
+MSG_PRECISION4_TXT (//)
+`GUI'
+;
+MSG_PREFER_SCREEN_COLOURS_GAD (//)
+Prefer screen colours:
+;
+MSG_MENUS_OPEN_DELAYED_GAD (//)
+Menus open delayed:
+;
+MSG_DRAW_FRAME_GAD (//)
+Draw frames around menu items:
+;
+MSG_CAST_DROP_SHADOWS_GAD (//)
+Cast drop shadows:
+;
+;--- start of 1.11 strings
+;
+MSG_HIGHLIGHT_DISABLED_GAD (//)
+Highlight disabled menu items:
+;
+MSG_TRANSPARENCY_GAD (//)
+Transparency:
+;
+MSG_SEPARATOR_STYLE_GAD (//)
+Separator bar style:
+;
+MSG_SEPARATOR_STYLE1_TXT (//)
+Dent
+;
+MSG_SEPARATOR_STYLE2_TXT (//)
+Gap
+;
+MSG_VERIFY_PATCHES_GAD (//)
+Verify patches:
+;
+MSG_FIX_PATCHES_GAD (//)
+Fix patches:
+;
+MSG_BACKFILL_GAD (//)
+Backfillimage:
+;
+MSG_CANNOT_LOAD_BACKFILL (//)
+Can't load backfillimage
+;
+MSG_PD_TRANSPARENT_GAD (//)
+Allow transparency:
+;
+MSG_BACKFILL_TRANSPARENT_GAD (//)
+Transparent backfill image:
+;
+MSG_HIGHLIGHT_TRANSPARENT_GAD (//)
+Don't brighten selected entry:
+;

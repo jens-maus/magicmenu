@@ -5,6 +5,11 @@ MagicMenu - ChangeLog
 $Id$
 $URL$
 
+2009-06-22  Jens Langner <Jens.Langner@light-speed.de>
+
+  * locale/russian.ct: added russian catalog translation kindly provided
+    by Michael Malyshev.
+
 2009-06-03  Jens Langner <Jens.Langner@light-speed.de>
 
   * locale: added all missing catalog translations to our repository.
