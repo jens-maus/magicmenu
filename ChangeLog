@@ -5,6 +5,10 @@ MagicMenu - ChangeLog
 $Id$
 $URL$
 
+2009-06-22  Mariusz Danilewicz <mandi@interia.pl>
+
+  * locale/polish.ct: updated Polish translation.
+
 2009-06-22  Jens Langner <Jens.Langner@light-speed.de>
 
   * locale/russian.ct: added russian catalog translation kindly provided
