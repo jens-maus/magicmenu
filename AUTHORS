@@ -4,7 +4,7 @@
  Copyright (C) 1993-1997 by Martin Korndörfer
  Copyright (C) 1997-2001 by Olaf 'Olsen' Barthel
  Copyright (C) 2001-2009 by Stephan Rupprecht, Jens Langner
- Copyright (C) 2009      by MagicMenu Open Source Team
+ Copyright (C) 2009-2010 by MagicMenu Open Source Team
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,10 @@ Mario Cattaneo     <padrino@users.sourceoforge.net>
 Martin Korndörfer
 Olaf Barthel       <obarthel@users.sourceforge.net>
 Stephan Rupprecht
+
+Translations provided and maintained by following people:
+
+Polish:    Mariusz Danilewicz <mandi@interia.pl>
 
 The development of MagicMenu is hosted by SourceForge
 http://www.sourceforge.net/
